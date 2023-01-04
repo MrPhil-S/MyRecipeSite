@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Recipes</h1>
+
+{% for recipe in recipes %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
+        <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
+        <a href="/recipes/{{ recipe.id }}" class="btn btn-primary">Read more</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
