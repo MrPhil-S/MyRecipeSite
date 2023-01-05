@@ -28,7 +28,7 @@ def index():
 @app.route('/recipes')
 def all_recipes():
     recipes = Recipe.query.all()
-    return render_template('recipes.html', recipes=recipes)
+    return render_template('recipes.html', recipes=recipes, title='Recipes')
 
 @app.route('/recipes/search_recipes', methods=['GET', 'POST'])
 def search_recipes():
@@ -60,10 +60,10 @@ def add_recipe():
 
         #return redirect(url_for('recipes'))
         return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
-    return render_template('add_recipe.html')
+    return render_template('add_recipe.html', title='Add Recipe')
     
-@app.route('/recipes/add_recipe', methods=['GET', 'POST'])
-def add_recipe():
+@app.route('/recipes/edit_recipe', methods=['GET', 'POST'])
+def edit_recipe():
     if request.method == 'POST':
         # Get form data
         name = request.form['name']
@@ -73,7 +73,7 @@ def add_recipe():
         # Create new recipe
         recipe = Recipe(name=name, instructions=instructions)
         db.session.add(recipe)
-        db.session.commit()
+        db.session.commit() 
 
         # Create ingredients for the recipe
         for ingredient in ingredients:
@@ -91,10 +91,11 @@ def add_recipe():
 def recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
+    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe)
 
 
-
-
-if __name__ == "__name__":
+if __name__ == "__main__":
     app.run(debug=True)
+
+#to start dubug in cmd:
+#set FLASK_DEBUG=1
