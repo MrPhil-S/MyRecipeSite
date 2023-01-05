@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{ recipe.name }}</h1>
+<div class="content-section">
+  <h1>{{ recipe.name }}</h1>
 
-<h2>Instructions</h2>
-<p>{{ recipe.instructions }}</p>
+  <h2>Instructions</h2>
+  <p>{{ recipe.instructions }}</p>
 
-<h2>Ingredients</h2>
-<ul>
-  {% for ingredient in ingredients %}
-  <li>{{ ingredient.name }}</li>
-  {% endfor %}
-</ul>
+  <h2>Ingredients</h2>
+  <ul>
+    {% for ingredient in ingredients %}
+    <li>{{ ingredient.name }}</li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}
