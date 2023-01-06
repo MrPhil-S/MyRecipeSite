@@ -5,23 +5,33 @@
 
 <form method="post">
     <div class="form-group">
-        <label for="ingredient">Ingredient</label>
-        <input type="text" class="form-control" id="ingredient" name="ingredient">
+        <label for="search_for">Recipe or ingredient</label>
+        <input type="text" class="form-control" id="search_for" name="search_for">
     </div>
     <button type="submit" class="btn btn-primary">Search</button>
+    Clear
 </form>
+
+
 
 {% if recipes %}
 <h2>Results</h2>
+{% if recipe_results %}
+<h2>Results</h2>
+{% endif %}
 
-{% for recipe in recipes %}
-<div class="card mb-3">
-    <div class="card-body">
-        <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
-        <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
-        <a href="/recipes/{{ recipe.id }}" class="btn btn-primary">Read more</a>
+<div class="row">
+    {% for recipe in recipes %}
+    <div class="col-md-4">
+        <div class=" card mb-3">
+            <img src=" ..." class="card-img-top" alt="{{ recipe.name }}">
+            <div class="card-body">
+                <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
+                <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
+            </div>
+        </div>
     </div>
+    {% endfor %}
 </div>
-{% endfor %}
 {% endif %}
 {% endblock %}
