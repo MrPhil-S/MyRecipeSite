@@ -31,13 +31,7 @@
         <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
             <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="/recipes">Recipes</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="/recipes/add_recipe">Add Recipe</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/recipes/search_recipes">Search Recipes</a>
                 </li>
             </ul>
             <form class="form-inline my-2 my-lg-0">
@@ -46,16 +40,16 @@
             </form>
         </div>
     </nav>
-    <div class="container mt-5">
+    <div class="container mt-7"> <!-- mt-5 -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-              {{ message }}
-            </div> 
-            {% endfor %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
-      {% endwith %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </div>
     <!-- Optional JavaScript -->
