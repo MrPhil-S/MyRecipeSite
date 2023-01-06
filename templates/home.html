@@ -12,19 +12,16 @@
     Clear
 </form>
 
-
-
-{% if recipes %}
-<h2>Results</h2>
 {% if recipe_results %}
-<h2>Results</h2>
-{% endif %}
+<h2>Results</h2>for {{ recipe_results }}
+{% elif recipes %}
+<h2>Recipes</h2>
 
 <div class="row">
     {% for recipe in recipes %}
     <div class="col-md-4">
         <div class=" card mb-3">
-            <img src=" ..." class="card-img-top" alt="{{ recipe.name }}">
+            <img src="{{ image_file }}" class="card-img-top" alt="{{ recipe.name }}">
             <div class="card-body">
                 <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
                 <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
