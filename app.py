@@ -25,17 +25,17 @@ def setup():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home')
 def home():
-    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
     recipes = Recipe.query.all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
             filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all()   
         return render_template('home.html', recipes=recipes)
-    return render_template('home.html', recipes=recipes, title='Recipes', image_file=image_file)
+    return render_template('home.html', recipes=recipes, title='Recipes')
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def recipe(recipe_id):
+    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
     
