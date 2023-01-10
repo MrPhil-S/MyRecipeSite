@@ -1,4 +1,6 @@
 __pycache__/
-MyRecipeVenv/
+MyRecipesVenv/
 .vscode/
 pi_logs/
+*.bat
+*.zip
