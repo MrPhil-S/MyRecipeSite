@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block content %}
 <h1>Search Recipes</h1>
@@ -6,7 +6,8 @@
 <form method="post">
     <div class="form-group">
         <label for="search_for">Recipe or ingredient</label>
-        <input type="text" class="form-control" id="search_for" name="search_for">
+        <input type="text" class="form-control" id="search_for" name="search_for"
+            placeholder="Search by recipe name or ingredient">
     </div>
     <button type="submit" class="btn btn-primary">Search</button>
     Clear
@@ -21,7 +22,8 @@
     {% for recipe in recipes %}
     <div class="col-md-4">
         <div class=" card mb-3">
-            <img src="{{ image_file }}" class="card-img-top" alt="{{ recipe.name }}">
+            <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
+                alt="{{ recipe.name }}">
             <div class="card-body">
                 <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
                 <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
