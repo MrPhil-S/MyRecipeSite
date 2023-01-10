@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Add Recipe</h1>
 
-<form method="post">
+<form method="POST">
   <div class="form-group">
     <label for="name">Name</label>
     <input type="text" class="form-control" id="name" name="name">
@@ -23,4 +23,11 @@
   </div>
   <button type="submit" class="btn btn-primary">Add Recipe</button>
 </form>
+
+<form method="POST" enctype="multipart/form-data">
+  {{form.hidden_tag()}}
+  {{form.file()}}
+  {{form.submit()}}
+</form>
+
 {% endblock %}

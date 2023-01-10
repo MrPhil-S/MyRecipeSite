@@ -1,36 +1,26 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-#from flask_mysqldb import MySQL
-#from flaskext.mysql import MySQL
-#import mysql.connector 
-#from flask_mysql_connector import MySQL
-#from database import DbConfig
-#from MySQLdb import _mysql
-#import MySQLdb
-#import pymysql
-
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, file_allowed
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired, Length, 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'testing - need to replace!'
 
-
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///MyRecipes.db'
-# 10 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:ly3pFX9llbcUYE_8LK@192.168.1.143/MyRecipes'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://phil:pythonproj2@192.168.1.143/MyRecipes'
-
-#app.config["SQLALCHEMY_DATABASE_URI"] = DbConfig().getUri()
-
-#app.config['SQLALCHEMY_DATABASE_URI'] = MySQLdb.connect(host='192.168.1.143',port=3306,user='phil',passwd='pythonproj2',db='MyRecipes')
-#app.config['SQLALCHEMY_DATABASE_URI'] = pymysql.connect(host='192.168.1.143',user='phil',password='pythonproj2',db='MyRecipes')
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://phil:pythonproj2@192.168.1.143/MyRecipes'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes'
-
-
-
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 #app.config['MYSQL_PORT'] = '3307'
 db = SQLAlchemy(app)
+
+class add_recipe_form(FlaskForm):
+    name = StringField('Name,', validators=[DataRequired, Length(min=1, max=200)])
+    url = StringField('Name,', validators=[DataRequired, Length(min=1, max=500)])
+    instructions = StringField('Instructions', validators=[DataRequired, Length(min=1, max=5000)])
+    ingredient = StringField('Ingredient', validators=[DataRequired, Length(min=1, max=100)])
+    image = FileField("Image")
+    submit = SubmitField("Add Recipe")
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -70,6 +60,7 @@ def recipe(recipe_id):
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
+    form =  add_recipe_form()
     if request.method == 'POST':
         # Get form data
         name = request.form['name']
@@ -90,7 +81,7 @@ def add_recipe():
         #return redirect(url_for('recipes'))
         flash(f'{recipe.name} added', 'success')
         return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
-    return render_template('add_recipe.html', title='Add Recipe')
+    return render_template('add_recipe.html', title='Add Recipe', form=form)
     
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
