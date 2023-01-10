@@ -1,9 +1,35 @@
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+#from flask_mysqldb import MySQL
+#from flaskext.mysql import MySQL
+#import mysql.connector 
+#from flask_mysql_connector import MySQL
+#from database import DbConfig
+#from MySQLdb import _mysql
+#import MySQLdb
+#import pymysql
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'testing - need to replace!'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///MyRecipes.db'
+
+
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///MyRecipes.db'
+# 10 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:ly3pFX9llbcUYE_8LK@192.168.1.143/MyRecipes'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://phil:pythonproj2@192.168.1.143/MyRecipes'
+
+#app.config["SQLALCHEMY_DATABASE_URI"] = DbConfig().getUri()
+
+#app.config['SQLALCHEMY_DATABASE_URI'] = MySQLdb.connect(host='192.168.1.143',port=3306,user='phil',passwd='pythonproj2',db='MyRecipes')
+#app.config['SQLALCHEMY_DATABASE_URI'] = pymysql.connect(host='192.168.1.143',user='phil',password='pythonproj2',db='MyRecipes')
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://phil:pythonproj2@192.168.1.143/MyRecipes'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes'
+
+
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+#app.config['MYSQL_PORT'] = '3307'
 db = SQLAlchemy(app)
 
 class Recipe(db.Model):
@@ -25,17 +51,17 @@ def setup():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home')
 def home():
-    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
     recipes = Recipe.query.all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
             filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all()   
         return render_template('home.html', recipes=recipes)
-    return render_template('home.html', recipes=recipes, title='Recipes', image_file=image_file)
+    return render_template('home.html', recipes=recipes, title='Recipes')
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def recipe(recipe_id):
+    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
     
@@ -90,7 +116,8 @@ def edit_recipe(recipe_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(host="0.0.0.0", port=8000)
 
 #to start dubug in cmd:
 #set FLASK_DEBUG=1
