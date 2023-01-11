@@ -9,28 +9,28 @@
         <input type="text" class="form-control" id="search_for" name="search_for"
             placeholder="Search by recipe name or ingredient">
     </div>
-    <button type="submit" class="btn btn-primary">Search</button>
+    <button type="submit" class="btn btn-outline-info">Search</button>
     Clear
 </form>
 
 {% if recipe_results %}
-<h2>Results</h2>for {{ recipe_results }}
+    <h2>Results</h2>for {{ recipe_results }}
 {% elif recipes %}
-<h2>Recipes</h2>
+    <h2>Recipes</h2>
 
-<div class="row">
-    {% for recipe in recipes %}
-    <div class="col-md-4">
-        <div class=" card mb-3">
-            <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
-                alt="{{ recipe.name }}">
-            <div class="card-body">
-                <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
-                <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
+    <div class="row">
+        {% for recipe in recipes %}
+        <div class="col-md-4">
+            <div class=" card mb-3">
+                <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
+                    alt="{{ recipe.name }}">
+                <div class="card-body">
+                    <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
+                    <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endif %}
 {% endblock %}

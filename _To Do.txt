@@ -1,9 +1,12 @@
 complete edit recipe
     populate the edit fields
-resovlve issue with Ingredients not populating?
+>>resovlve issue with Ingredients not populating?
 create a unique ingredient 
 add quantity to ingredient 
 add Recipes grid
-add photo
-Search - search for ingredient OR title
+X Search - search for ingredient OR title
 Search - add to navgbar field also
+add wtf forms to allow for photo upload
+    add photo
+delete recipe
+add URL field to all templates
