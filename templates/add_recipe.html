@@ -1,33 +1,103 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>Add Recipe</h1>
+<div class="content-section">
+  <!--
+  <form method="POST">
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input type="text" class="form-control" id="name" name="name">
+    </div>
+    <div class="form-group">
+      <label for="instructions">Instructions</label>
+      <textarea class="form-control" id="instructions" name="instructions" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="ingredients">Ingredients</label>
+      <input type="text" class="form-control" id="ingredients" name="ingredients"
+        placeholder="Enter ingredients separated by commas">
+    </div>
+    <div class="mb-3">
+      <label for="formFile" class="form-label">Default file input example</label>
+      <input class="form-control" type="file" id="formFile">
+    </div>
+    <button type="submit" class="btn btn-primary">Add Recipe</button>
+  </form> -->
 
-<form method="POST">
-  <div class="form-group">
-    <label for="name">Name</label>
-    <input type="text" class="form-control" id="name" name="name">
-  </div>
-  <div class="form-group">
-    <label for="instructions">Instructions</label>
-    <textarea class="form-control" id="instructions" name="instructions" rows="3"></textarea>
-  </div>
-  <div class="form-group">
-    <label for="ingredients">Ingredients</label>
-    <input type="text" class="form-control" id="ingredients" name="ingredients"
-      placeholder="Enter ingredients separated by commas">
-  </div>
-  <div class="mb-3">
-    <label for="formFile" class="form-label">Default file input example</label>
-    <input class="form-control" type="file" id="formFile">
-  </div>
-  <button type="submit" class="btn btn-primary">Add Recipe</button>
-</form>
+  <form method="POST" enctype="multipart/form-data" action="">
+    {{form.hidden_tag()}}
+    <fieldset class="form-group">
+      <legend class="border-bottom mb-4">Add Recipe</legend>
+      <div class="form-group">
+        {{ form.name.label(class="form-control-label") }}
+        
+        {% if form.name.errors %}
+          {{ form.name(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+            {% for error in form.name.errors %}
+              <span>{{ error }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          {{ form.name(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group">
+        {{ form.url.label(class="form-control-label") }}
 
-<form method="POST" enctype="multipart/form-data">
-  {{form.hidden_tag()}}
-  {{form.file()}}
-  {{form.submit()}}
-</form>
+        {% if form.url.errors %}
+          {{ form.url(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.url.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+        {% else %}
+          {{ form.url(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group">
+        {{ form.instructions.label(class="form-control-label") }}
+        
+        {% if form.instructions.errors %}
+          {{ form.instructions(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.instructions.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.instructions(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="form-group">
+        {{ form.ingredients.label(class="form-control-label") }}
+        
+          {{ form.ingredients(class="form-control form-control-lg") }}
+      
+      </div>
+      <div class="form-group">
+        {{ form.image.label(class="form-control-label") }}
+        
+        {% if form.image.errors %}
+          {{ form.image(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.image.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% else %}
+          {{ form.image(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+    </fieldset>
+    {{form.submit(class="btn btn-outline-info")}}
+  </form>
+</div>
+<div class="border-top pt-3">
+  <small class="text-muted">
+    Want to go back? <a class="ml-4" href="{{ url_for('home') }}">Home</a>
+  </small>
+</div>
 
 {% endblock %}
