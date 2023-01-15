@@ -4,3 +4,4 @@ MyRecipesVenv/
 pi_logs/
 *.bat
 *.zip
+test/

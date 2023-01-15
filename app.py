@@ -24,17 +24,26 @@ class Recipe(db.Model):
     instructions = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
 
+    def __repr__(self):
+        return f"Recipe('{self.name}','{self.url}','{self.instructions}','{self.image_file}')"
+
 class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
     icon_file = db.Column(db.String(100), nullable=True, default='no_ingredient_image.jpg')
 
+    def __repr__(self):
+        return f"Ingredient('{self.name}','{self.icon_file}')"
+
+
 
 @app.route('/setup')
 def setup():
     db.create_all()
     return 'Tables created'
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home')
@@ -60,28 +69,39 @@ def recipe(recipe_id):
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
     form =  add_recipe_form()
+    ingredient_fields = range(1,6)
     if request.method == 'POST':
+        
         # Get form data
         name = request.form['name']
         instructions = request.form['instructions']
-        ingredients = request.form['ingredients'].split(',')
+        url = request.form['url']
+        #ingredients = request.form['ingredients']
+        ingredients = request.form.getlist('ingredient[]')
+        # Do something with the recipe_name, instructions, and ingredients
 
-        # Create new recipe
-        recipe = Recipe(name=name, instructions=instructions)
+
+
+        # Add new recipe to DB
+        recipe = Recipe(name=name, url=url, instructions=instructions)
         db.session.add(recipe)
         db.session.commit()
-
-        # Create ingredients for the recipe
+        db.session.flush()
+        #id is a Python builtin...
+        recipe_id= recipe.id
+        # Add related ingredients to DB
         for ingredient in ingredients:
-            ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.id)
-            db.session.add(ingredient)
+            if len(ingredient) > 0:  
+                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.id)
+                db.session.add(ingredient)
         db.session.commit()
 
         #return redirect(url_for('recipes'))
         if form.validate_on_submit():
             flash(f'{recipe.name} added!', 'success')
-        return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
-    return render_template('add_recipe.html', title='Add Recipe', form=form)
+        #return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
+        return redirect(url_for('recipe', recipe_id=recipe_id))
+    return render_template('add_recipe.html', title='Add Recipe', form=form, ingredient_fields=ingredient_fields)
     
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
@@ -89,21 +109,24 @@ def edit_recipe(recipe_id):
     form = edit_recipe_form()
     image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
 
+    #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
 
-
+    #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
     form.url.data = recipe.url
     form.instructions.data = recipe.instructions
     
-    form.ingredients.data = ingredients[1]
+    #form.ingredients.data = ingredients[1]
     #image
 
     if request.method == 'POST':
         recipe.name = request.form['name']
         recipe.instructions = request.form['instructions']
-        ingredients = request.form['ingredients'].split(',')
+        recipe.url = request.form['url']
+
+       # ingredients = request.form['ingredients'].split(',')
 
         db.session.commit()
 

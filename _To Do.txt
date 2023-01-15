@@ -10,3 +10,4 @@ add wtf forms to allow for photo upload
     add photo
 delete recipe
 add URL field to all templates
+set min item (recipe) width on mobile to be 2
