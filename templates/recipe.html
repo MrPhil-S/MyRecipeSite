@@ -4,6 +4,7 @@
 
 <div class="content-section">
   <h1>{{ recipe.name }}</h1>
+  <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" alt="{{ recipe.name }}">
   <p>{{ recipe.url }}</p>
 
   <h2>Instructions</h2>

@@ -58,14 +58,12 @@
       }
   </script>
 
-
   <form method="POST" enctype="multipart/form-data" action="">
     {{form.hidden_tag()}}
     <fieldset class="form-group">
       <legend class="border-bottom mb-4">Add Recipe</legend>
       <div class="form-group">
-        {{ form.name.label(class="form-control-label") }}
-        
+        {{ form.name.label(class="form-control-label") }}        
         {% if form.name.errors %}
           {{ form.name(class="form-control form-control-lg is-invalid") }}
           <div class="invalid-feedback">
@@ -79,7 +77,6 @@
       </div>
       <div class="form-group">
         {{ form.url.label(class="form-control-label") }}
-
         {% if form.url.errors %}
           {{ form.url(class="form-control form-control-lg is-invalid") }}
             <div class="invalid-feedback">
@@ -91,7 +88,7 @@
           {{ form.url(class="form-control form-control-lg") }}
         {% endif %}
       </div>
-      
+
       <div class="form-group">
         {{ form.instructions.label(class="form-control-label") }}  
         {% if form.instructions.errors %}
@@ -105,8 +102,6 @@
           {{ form.instructions(class="form-control form-control-lg") }}
         {% endif %}
       </div>
-
-
 
       <div class="form-group">
         {{ form.ingredient.label(class="form-control-label") }}
@@ -124,21 +119,13 @@
         {% endif %}
       </div>
 
-
-
-
-
       <div class="form-group">
         {{ form.image.label(class="form-control-label") }}
+        {{ form.image(class="form-control-file") }}
         {% if form.image.errors %}
-          {{ form.image(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-                {% for error in form.image.errors %}
-                  <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-        {% else %}
-          {{ form.image(class="form-control form-control-lg") }}
+          {% for error in form.image.errors %}
+            <span class="text-danger">{{ error }}</span></br>
+          {% endfor %}
         {% endif %}
       </div>
     </fieldset>

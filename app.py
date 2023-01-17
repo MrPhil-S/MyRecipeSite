@@ -1,3 +1,5 @@
+import os
+import secrets
 import socket
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -59,32 +61,46 @@ def home():
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def recipe(recipe_id):
-    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
+    #image_file = url_for('static', filename='recipe_pics\\' + Recipe.image_file)
     recipe = Recipe.query.get_or_404(recipe_id)
-    ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe.name)
+    image_file = url_for('static', filename='recipe_pics/' + recipe.image_file)
 
+    ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
+    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe.name, image_file=image_file)
+
+def save_image(form_image):
+    #Rename file
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_image.filename)
+    image_fn = random_hex + f_ext
+    image_path = os.path.join(app.root_path, 'static\\recipe_pics', image_fn)
+    form_image.save(image_path)
+    return image_fn
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
     form =  add_recipe_form()
-    ingredient_fields = range(1,6)
-    if request.method == 'POST':
-        
+
+    if form.validate_on_submit():
+        if form.image.data:
+            #image_file = save_image(form.image.data)
+            #image_file = save_image(request.form.save['image'])
+            image_file = save_image(request.files['image'])
+            #file = request.files['image']
+
         # Get form data
         name = request.form['name']
-        instructions = request.form['instructions']
         url = request.form['url']
+        instructions = request.form['instructions']
+
         #ingredients = request.form['ingredients']
         ingredients = request.form.getlist('ingredient[]')
         # Do something with the recipe_name, instructions, and ingredients
 
-
-
         # Add new recipe to DB
-        recipe = Recipe(name=name, url=url, instructions=instructions)
+        recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
         db.session.add(recipe)
+        
         db.session.commit()
         db.session.flush()
         #id is a Python builtin...
@@ -97,11 +113,10 @@ def add_recipe():
         db.session.commit()
 
         #return redirect(url_for('recipes'))
-        if form.validate_on_submit():
-            flash(f'{recipe.name} added!', 'success')
+        flash(f'{recipe.name} added!', 'success')
         #return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
-        return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('add_recipe.html', title='Add Recipe', form=form, ingredient_fields=ingredient_fields)
+        return redirect(url_for('recipe', recipe_id=recipe_id))  #return redirect Per Corey
+    return render_template('add_recipe.html', title='Add Recipe', form=form)
     
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
