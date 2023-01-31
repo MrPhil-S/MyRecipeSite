@@ -43,7 +43,7 @@
               let ingredientField = document.createElement("input");
               ingredientField.setAttribute("type", "text");
               ingredientField.setAttribute("name", "ingredient[]");
-              ingredientField.setAttribute("class", "form-control");
+              ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
               additionalIngredients.appendChild(ingredientField);
           }
       }
@@ -53,7 +53,7 @@
           let ingredientField = document.createElement("input");
           ingredientField.setAttribute("type", "text");
           ingredientField.setAttribute("name", "ingredient[]");
-          ingredientField.setAttribute("class", "form-control");
+          ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
           additionalIngredients.appendChild(ingredientField);
       }
   </script>
@@ -115,7 +115,7 @@
           </div>
         {% else %}
           <div id="additional_ingredients" class="form-group"></div>
-          <button type="button" onclick="addIngredient()" class="btn btn-outline-info">Add Ingredient</button>
+          <button type="button" onclick="addIngredient()" class="btn btn-outline-info">+ Add more ingredients</button>
         {% endif %}
       </div>
 
