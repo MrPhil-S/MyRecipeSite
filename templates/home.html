@@ -1,6 +1,8 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<div class="content-section">
+
 <h1>Search Recipes</h1>
 
 <form method="post">
@@ -19,10 +21,11 @@
 
     <div class="row">
         {% for recipe in recipes %}
-        <div class="col-md-4">
+        <div class="col-lg-3 d-flex align-items-stretch"><!--<div class="col-md-3">-->
             <div class=" card mb-3">
-                <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
-                    alt="{{ recipe.name }}">
+                <a href="/recipes/{{ recipe.id }}"><img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
+                    alt="{{ recipe.name }}" ></a>
+                
                 <div class="card-body">
                     <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
                     <p class="card-text">{{ recipe.instructions | truncate(200) }}</p>
@@ -32,4 +35,7 @@
         {% endfor %}
     </div>
 {% endif %}
+
+</div>
+
 {% endblock %}

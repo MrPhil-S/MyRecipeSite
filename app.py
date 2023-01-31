@@ -1,6 +1,7 @@
 import os
 import secrets
 import socket
+from PIL import Image
 from flask import Flask, request, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from forms import add_recipe_form, edit_recipe_form
@@ -68,18 +69,25 @@ def recipe(recipe_id):
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
     return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe.name, image_file=image_file)
 
+
 def save_image(form_image):
     #Rename file
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
     image_fn = random_hex + f_ext
     image_path = os.path.join(app.root_path, 'static\\recipe_pics', image_fn)
-    form_image.save(image_path)
+    
+    output_size = (1000, 1000)
+    i = Image.open(form_image)
+    i.thumbnail(output_size)
+    
+    i.save(image_path) 
     return image_fn
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
     form =  add_recipe_form()
+    image_file = None
 
     if form.validate_on_submit():
         if form.image.data:
