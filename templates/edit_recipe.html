@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
+<div class="content-section">
 <form method="POST" enctype="multipart/form-data" action="">
   {{form.hidden_tag()}}
   <fieldset class="form-group">
@@ -79,24 +79,6 @@
   {{form.submit(class="btn btn-outline-info")}}
 </form>
 
-
-
-
-<form method="POST">
-  <div class="form-group">
-    <label for="name">Recipe Name</label>
-    <input type="text" class="form-control" id="name" name="name" value="{{ recipe.name }}">
-  </div>
-  <div class="form-group">
-    <label for="instructions">Instructions</label>
-    <textarea class="form-control" id="instructions" name="instructions">{{ recipe.instructions }}</textarea>
-  </div>
-  <div class="form-group">
-    <label for="ingredients">Ingredients</label>
-    <input type="text" class="form-control" id="ingredients" name="ingredients"
-      value="{% for ingredient in ingredients %}{{ ingredient.name }},{% endfor %}">
-  </div>
-  <button type="submit" class="btn btn-primary">Save Changes</button>
-</form>
+</div>
 
 {% endblock %}
