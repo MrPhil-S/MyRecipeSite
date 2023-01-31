@@ -2,6 +2,31 @@
 
 {% block content %}
 <div class="content-section">
+
+
+  <script>
+    window.onload = function() {
+        let additionalIngredients = document.getElementById("additional_ingredients");
+        for (let i = 0; i < 5; i++) {
+            let ingredientField = document.createElement("input");
+            ingredientField.setAttribute("type", "text");
+            ingredientField.setAttribute("name", "ingredient[]");
+            ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
+            additionalIngredients.appendChild(ingredientField);
+        }
+    }
+
+    function addIngredient() {
+        let additionalIngredients = document.getElementById("additional_ingredients");
+        let ingredientField = document.createElement("input");
+        ingredientField.setAttribute("type", "text");
+        ingredientField.setAttribute("name", "ingredient[]");
+        ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
+        additionalIngredients.appendChild(ingredientField);
+    }
+</script>
+
+
 <form method="POST" enctype="multipart/form-data" action="">
   {{form.hidden_tag()}}
   <fieldset class="form-group">
@@ -48,19 +73,26 @@
         {{ form.instructions(class="form-control form-control-lg") }}
       {% endif %}
     </div>
+
+
     <div class="form-group">
-      {{ form.ingredients.label(class="form-control-label") }}
-      {% if form.ingredients.errors %}
-        {{ form.ingredients(class="form-control form-control-lg is-invalid") }}
+      {{ form.ingredient.label(class="form-control-label") }}
+      
+      {% if form.ingredient.errors %}
+        {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
         <div class="invalid-feedback">
-            {% for error in form.ingredients.errors %}
+            {% for error in form.ingredient.errors %}
               <span>{{ error }}</span>
             {% endfor %}
         </div>
       {% else %}
-        {{ form.ingredients(class="form-control form-control-lg") }}
+        <div id="additional_ingredients" class="form-group"></div>
+        <button type="button" onclick="addIngredient()" class="btn btn-outline-info">+ Add more ingredients</button>
       {% endif %}
     </div>
+
+
+
     <div class="form-group">
       {{ form.image.label(class="form-control-label") }}
       

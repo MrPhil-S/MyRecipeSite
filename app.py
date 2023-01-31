@@ -40,12 +40,10 @@ class Ingredient(db.Model):
         return f"Ingredient('{self.name}','{self.icon_file}')"
 
 
-
 @app.route('/setup')
 def setup():
     db.create_all()
     return 'Tables created'
-
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -55,7 +53,8 @@ def home():
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
-            filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all()   
+            filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all() 
+
         return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
 
@@ -96,12 +95,10 @@ def add_recipe():
             image_file = save_image(request.files['image'])
             #file = request.files['image']
 
-        # Get form data
+        # Get populted form data
         name = request.form['name']
         url = request.form['url']
         instructions = request.form['instructions']
-
-        #ingredients = request.form['ingredients']
         ingredients = request.form.getlist('ingredient[]')
         # Do something with the recipe_name, instructions, and ingredients
 
@@ -129,37 +126,58 @@ def add_recipe():
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
-    form = edit_recipe_form()
-    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
-
     #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Ingredient.query.filter_by(recipe_id=recipe_id).all()
+    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
 
+    form = edit_recipe_form()
+     
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
     form.url.data = recipe.url
     form.instructions.data = recipe.instructions
-    
-    #form.ingredients.data = ingredients[1]
-    #image
+    for ingredient in ingredients: 
+        form.ingredient.data = ingredient
 
-    if request.method == 'POST':
-        recipe.name = request.form['name']
-        recipe.instructions = request.form['instructions']
-        recipe.url = request.form['url']
-
-       # ingredients = request.form['ingredients'].split(',')
-
+    if form.validate_on_submit():
+        if form.image.data:
+            image_file = save_image(request.files['image'])
+        recipe.name = form.name.data
+        recipe.instructions = form.instructions.data
+        recipe.url = form.url.data 
         db.session.commit()
 
+        #recipe.name = request.form['name']
+        #recipe.instructions = request.form['instructions']
+        #recipe.url = request.form['url']
+
+       # Get populted form data
+        #name = request.form['name']
+        #url = request.form['url']
+        #instructions = request.form['instructions']
+        #ingredients = request.form.getlist('ingredient[]')
+      
+        db.session.flush()
+        #id is a Python builtin...
+        recipe_id= recipe.id
+        # Add related ingredients to DB
         for ingredient in ingredients:
-            ingredient = Ingredient(name=ingredient, recipe_id=recipe.id)
-            db.session.add(ingredient)
+            if len(ingredient) > 0:  
+                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.id)
+                db.session.add(ingredient)
         db.session.commit()
-        flash(f'{recipe.name} saved', 'success')
+
+        #return redirect(url_for('recipes'))
+        flash(f'{recipe.name} updated!', 'success')
+
+        #for ingredient in ingredients:
+        #    ingredient = Ingredient(name=ingredient, recipe_id=recipe.id)
+        #    db.session.add(ingredient)
+        #db.session.commit()
+        #flash(f'{recipe.name} saved', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, form=form)
+    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, form=form, image_file=image_file)
 
 
 
