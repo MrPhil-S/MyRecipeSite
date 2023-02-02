@@ -15,6 +15,7 @@ if socket.gethostname() == 'raspberrypi':
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV'
 
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 #app.config['MYSQL_PORT'] = '3307'
@@ -49,11 +50,11 @@ def setup():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home')
 def home():
-    recipes = Recipe.query.all()
+    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
-            filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all().order_by(Recipe.id.desc()) 
+            filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all()
 
         return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
@@ -141,13 +142,17 @@ def edit_recipe(recipe_id):
 
 
     if form.validate_on_submit():
-        if form.image.data:
+        if form.image.data is not None:
             image_file = save_image(request.files['image'])
+            recipe.image_file = image_file
 
-        recipe.name = form.name.data
-        recipe.url = form.url.data
-        recipe.instructions = form.instructions.data
-        recipe.image_file = image_file
+        recipe.name = request.form['name']
+        recipe.instructions = request.form['instructions']
+        recipe.url = request.form['url']
+
+        #recipe.name = form.name.data
+        #recipe.url = form.url.data
+        #recipe.instructions = form.instructions.data
         db.session.commit()
         
 
