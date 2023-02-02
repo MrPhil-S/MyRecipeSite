@@ -17,5 +17,5 @@ class edit_recipe_form(FlaskForm):
     url = StringField('URL', validators=[Length(max=500)])
     instructions = TextAreaField('Instructions', validators=[Length(min=1, max=9000)])
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
-    image = FileField('Change Image')#, validators=[FileAllowed(['jpg', 'png'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
+    image = FileField('Change Image', validators=[FileAllowed(['jpg', 'png'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
     submit = SubmitField("Save Changes")
