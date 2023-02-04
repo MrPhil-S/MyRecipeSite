@@ -3,12 +3,13 @@ import secrets
 import socket
 from PIL import Image
 from flask import Flask, request, render_template, redirect, url_for, flash
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 from forms import add_recipe_form, edit_recipe_form
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'testing - need to replace!'
-
 
 if socket.gethostname() == 'raspberrypi':
     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes'
@@ -20,6 +21,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 #app.config['MYSQL_PORT'] = '3307'
 db = SQLAlchemy(app)
+migrate = Migrate(app, db) 
 
 class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -27,6 +29,14 @@ class Recipe(db.Model):
     url = db.Column(db.String(500), nullable=False)
     instructions = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
+    active_cook_time_min = db.Column(db.Integer, nullable=True)
+    passive_cook_time_min = db.Column(db.Integer, nullable=True)
+    rating = db.Column(db.Integer, nullable=True)
+    create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+    update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
+    delete_dt = db.Column(db.DateTime, nullable=True)
+
+    
 
     def __repr__(self):
         return f"Recipe('{self.name}','{self.url}','{self.instructions}','{self.image_file}')"
@@ -50,12 +60,12 @@ def setup():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home')
 def home():
-    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
+    recipes = Recipe.query.order_by(Recipe.id.desc()).\
+            filter(Recipe.delete_dt == None ).all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
             filter((Ingredient.name == search_for )|( Recipe.name.contains(search_for))).all()
-
         return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
 
@@ -75,7 +85,7 @@ def save_image(form_image):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
     image_fn = random_hex + f_ext
-    image_path = os.path.join(app.root_path, 'static\\recipe_pics', image_fn)
+    image_path = os.path.join(app.root_path, 'static/recipe_pics', image_fn)
     
     output_size = (1000, 1000)
     i = Image.open(form_image)
@@ -83,6 +93,7 @@ def save_image(form_image):
     
     i.save(image_path) 
     return image_fn
+
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
@@ -153,8 +164,7 @@ def edit_recipe(recipe_id):
         #recipe.name = form.name.data
         #recipe.url = form.url.data
         #recipe.instructions = form.instructions.data
-        db.session.commit()
-        
+        db.session.commit() 
 
         recipe_id= recipe.id
         # Delete existing ingredients first
@@ -170,13 +180,22 @@ def edit_recipe(recipe_id):
                 db.session.add(ingredient)
         db.session.commit()
 
-
-
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
 
 
     return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, form=form, image_file=image_file)
+
+
+@app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
+def delete_recipe(recipe_id):
+    recipe = Recipe.query.get_or_404(recipe_id)
+    #db.session.delete(recipe)
+    recipe.delete_dt = func.now()
+    db.session.commit()
+    flash(f'{recipe.name} deleted!', 'success')
+    return redirect(url_for('home'))
+    
 
 if __name__ == "__main__":
     #app.run(debug=True)

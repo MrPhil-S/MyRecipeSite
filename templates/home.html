@@ -10,14 +10,13 @@
         <input type="text" class="form-control" id="search_for" name="search_for"
             placeholder="Search by recipe name or ingredient">
     </div>
-    <button type="submit" class="btn btn-outline-info">Search</button>
+    <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
     Clear
 </form>
 
 {% if recipe_results %}
     <h2>Results</h2>for {{ recipe_results }}
 {% elif recipes %}
-    <h2>Recipes</h2>
 
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
         {% for recipe in recipes %}
@@ -28,7 +27,9 @@
                 
                 <div class="card-body">
                     <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
-                    <p class="card-text">{{ recipe.url | truncate(25) }}</p>
+                    {% if recipe.url %}
+                        <p class="card-text">{{ recipe.url | truncate(25) }}</p>
+                    {% endif %}    
                 </div>
 
             </div>
