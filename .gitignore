@@ -5,3 +5,5 @@ pi_logs/
 *.bat
 *.zip
 test/
+migrations/
+pi backup 2-2/
