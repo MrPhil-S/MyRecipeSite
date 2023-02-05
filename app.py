@@ -34,9 +34,6 @@ class Recipe(db.Model):
     rating = db.Column(db.Integer, nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
-    delete_dt = db.Column(db.DateTime, nullable=True)
-
-    
 
     def __repr__(self):
         return f"Recipe('{self.name}','{self.url}','{self.instructions}','{self.image_file}')"
@@ -44,7 +41,7 @@ class Recipe(db.Model):
 class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id', ondelete='CASCADE'), nullable=False)
     icon_file = db.Column(db.String(100), nullable=True, default='no_ingredient_image.jpg')
 
     def __repr__(self):
@@ -58,10 +55,9 @@ def setup():
 
 
 @app.route('/', methods=['GET', 'POST'])
-@app.route('/home')
+@app.route('/home', methods=['GET', 'POST'])
 def home():
-    recipes = Recipe.query.order_by(Recipe.id.desc()).\
-            filter(Recipe.delete_dt == None ).all()
+    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
@@ -190,8 +186,8 @@ def edit_recipe(recipe_id):
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
 def delete_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
-    #db.session.delete(recipe)
-    recipe.delete_dt = func.now()
+    db.session.delete(recipe)
+    #recipe.delete_dt = func.now()
     db.session.commit()
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
