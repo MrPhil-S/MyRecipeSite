@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired, Length
 class add_recipe_form(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=200)])
     url = StringField('URL', validators=[Length(max=500)])
-    instructions = TextAreaField('Instructions', validators=[Length(min=2, max=9000)])
+    instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     image = FileField('Upload image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     submit = SubmitField("Add Recipe")
@@ -15,7 +15,7 @@ class add_recipe_form(FlaskForm):
 class edit_recipe_form(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])
     url = StringField('URL', validators=[Length(max=500)])
-    instructions = TextAreaField('Instructions', validators=[Length(min=1, max=9000)])
+    instructions = TextAreaField('Instructions')#, validators=[Length(min=1, max=9000)])
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     image = FileField('Change Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
     submit = SubmitField("Save Changes")

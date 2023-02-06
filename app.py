@@ -122,7 +122,7 @@ def add_recipe():
         recipe.image_file = image_file
 
         
-        recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
+        #recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
 
         # Add related ingredients to DB
         for ingredient in ingredients:
