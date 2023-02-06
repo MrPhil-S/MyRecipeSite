@@ -24,14 +24,15 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db) 
 
 class Recipe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     url = db.Column(db.String(500), nullable=False)
     instructions = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
-    active_cook_time_min = db.Column(db.Integer, nullable=True)
-    passive_cook_time_min = db.Column(db.Integer, nullable=True)
+    prep_time = db.Column(db.String(20), nullable=True)
+    cook_time = db.Column(db.String(20), nullable=True)
     rating = db.Column(db.Integer, nullable=True)
+    cooked_count = db.Column(db.Integer, nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
 
@@ -39,10 +40,10 @@ class Recipe(db.Model):
         return f"Recipe('{self.name}','{self.url}','{self.instructions}','{self.image_file}')"
 
 class Ingredient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    ingredient_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id', ondelete='CASCADE'), nullable=False)
-    icon_file = db.Column(db.String(100), nullable=True, default='no_ingredient_image.jpg')
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
+    icon_file = db.Column(db.String(100), nullable=True)
 
     def __repr__(self):
         return f"Ingredient('{self.name}','{self.icon_file}')"
@@ -57,7 +58,7 @@ def setup():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
-    recipes = Recipe.query.order_by(Recipe.id.desc()).all()
+    recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Ingredient).\
@@ -76,11 +77,11 @@ def recipe(recipe_id):
     return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe.name, image_file=image_file)
 
 
-def save_image(form_image):
+def save_image(form_image, recipe_id):
     #Rename file
-    random_hex = secrets.token_hex(8)
+    #random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
-    image_fn = random_hex + f_ext
+    image_fn = str(recipe_id) + f_ext
     image_path = os.path.join(app.root_path, 'static/recipe_pics', image_fn)
     
     output_size = (1000, 1000)
@@ -97,31 +98,35 @@ def add_recipe():
     image_file = None
 
     if form.validate_on_submit():
-        if form.image.data:
-            #image_file = save_image(form.image.data)
-            #image_file = save_image(request.form.save['image'])
-            image_file = save_image(request.files['image'])
-            #file = request.files['image']
 
         # Get populted form data
         name = request.form['name']
         url = request.form['url']
         instructions = request.form['instructions']
         ingredients = request.form.getlist('ingredient[]')
-        # Do something with the recipe_name, instructions, and ingredients
 
         # Add new recipe to DB
         recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
         db.session.add(recipe)
-        
-        db.session.commit()
         db.session.flush()
-        #id is a Python builtin...
-        recipe_id= recipe.id
+        db.session.refresh(recipe)
+        recipe_id = recipe.recipe_id
+        db.session.commit()
+        
+        if form.image.data:
+            image_file = save_image(request.files['image'],recipe_id)
+
+        #Get the newly inserted recipe to be used to UPDATE with the image_file
+        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe.image_file = image_file
+
+        
+        recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
+
         # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
-                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.id)
+                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.recipe_id)
                 db.session.add(ingredient)
         db.session.commit()
 
@@ -150,7 +155,9 @@ def edit_recipe(recipe_id):
 
     if form.validate_on_submit():
         if form.image.data is not None:
-            image_file = save_image(request.files['image'])
+            if os.path.exists(image_file):
+                os.remove(image_file) 
+            image_file = save_image(request.files['image'],recipe_id)
             recipe.image_file = image_file
 
         recipe.name = request.form['name']
@@ -162,7 +169,7 @@ def edit_recipe(recipe_id):
         #recipe.instructions = form.instructions.data
         db.session.commit() 
 
-        recipe_id= recipe.id
+        recipe_id= recipe.recipe_id
         # Delete existing ingredients first
         Ingredient.query.filter_by(recipe_id=recipe_id).delete()
 
@@ -172,14 +179,12 @@ def edit_recipe(recipe_id):
          # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
-                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.id)
+                ingredient = Ingredient(name=ingredient.strip(), recipe_id=recipe.recipe_id)
                 db.session.add(ingredient)
         db.session.commit()
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-
-
     return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, form=form, image_file=image_file)
 
 
@@ -187,8 +192,13 @@ def edit_recipe(recipe_id):
 def delete_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     db.session.delete(recipe)
-    #recipe.delete_dt = func.now()
+    Ingredient.query.filter_by(recipe_id=recipe_id).delete()
+
     db.session.commit()
+
+    image_file = url_for('static', filename=f'recipe_pics/{Recipe.image_file}')
+    if os.path.exists(image_file):
+        os.remove(image_file) 
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
     

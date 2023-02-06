@@ -26,7 +26,7 @@
                     alt="{{ recipe.name }}" ></a>
                 
                 <div class="card-body">
-                    <h5 class="card-title"><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h5>
+                    <h5 class="card-title"><a href="/recipes/{{ recipe.recipe_id }}">{{ recipe.name }}</a></h5>
                     {% if recipe.url %}
                         <p class="card-text">{{ recipe.url | truncate(25) }}</p>
                     {% endif %}    

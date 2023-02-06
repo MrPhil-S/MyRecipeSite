@@ -7,16 +7,17 @@
   <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid max-width: 100%">
   <p>{{ recipe.url }}</p>
 
-  <h2>Instructions</h2>
-  <p style="white-space: pre-line">{{ recipe.instructions }}</p>
-
   <h2>Ingredients</h2>
   <ul>
     {% for ingredient in ingredients %}
     <li>{{ ingredient.name }}</li>
     {% endfor %}
   </ul>
-  <a href="{{ url_for('edit_recipe', recipe_id=recipe.id) }}" class="btn btn-outline-info">Edit Recipe</a>
+
+  <h2>Instructions</h2>
+  <p style="white-space: pre-line">{{ recipe.instructions }}</p>
+
+  <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
 </div>
 
 
