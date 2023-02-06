@@ -33,6 +33,7 @@ class Recipe(db.Model):
     cook_time = db.Column(db.String(20), nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     cooked_count = db.Column(db.Integer, nullable=True)
+    notes = db.Column(db.String(200), nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
 
