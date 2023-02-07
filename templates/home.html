@@ -22,7 +22,7 @@
         {% for recipe in recipes %}
         <div class="col d-flex "><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class=" card  mb-3 ">
-                <a href="/recipes/{{ recipe.id }}"><img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
+                <a href="/recipes/{{ recipe.recipe_id }}"><img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
                     alt="{{ recipe.name }}" ></a>
                 
                 <div class="card-body">
