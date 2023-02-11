@@ -2,7 +2,6 @@ __pycache__/
 MyRecipesVenv/
 .vscode/
 pi_logs/
-*.bat
 *.zip
 test/
 migrations/
