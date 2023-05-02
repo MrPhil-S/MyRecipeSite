@@ -55,6 +55,10 @@ def setup():
     db.create_all()
     return 'Tables created'
 
+@app.route('/frontlights')
+def frontlights():
+    return render_template('frontlights.html', title='Front Lights')
+
 
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
@@ -89,6 +93,9 @@ def save_image(form_image, recipe_id):
     i = Image.open(form_image)
     i.thumbnail(output_size)
     
+    if i.mode in ("RGBA", "P"):
+        i = i.convert("RGB")
+
     i.save(image_path) 
     return image_fn
 
@@ -116,7 +123,8 @@ def add_recipe():
         
         if form.image.data:
             image_file = save_image(request.files['image'],recipe_id)
-
+        else:
+            image_file = 'default.jpg'
         #Get the newly inserted recipe to be used to UPDATE with the image_file
         recipe = Recipe.query.get_or_404(recipe_id)
         recipe.image_file = image_file
