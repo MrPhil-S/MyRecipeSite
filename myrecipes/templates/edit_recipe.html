@@ -19,7 +19,7 @@
   {{form.hidden_tag()}}
   <fieldset class="form-group">
     <legend class="border-bottom mb-4">Edit Recipe - {{ recipe.name }}</legend>
-    <img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" alt="{{ recipe.name }}"  class="rounded img-fluid max-width: 100%">
+    <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}"  class="rounded img-fluid max-width: 100%">
 
     <div class="form-group">
       {{ form.name.label(class="form-control-label") }}

@@ -22,17 +22,20 @@
         {% for recipe in recipes %}
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class=" card  mb-3 ">
-                <a href="/recipes/{{ recipe.recipe_id }}"><img src="{{ url_for('static', filename='recipe_pics/' + recipe.image_file) }}" class="card-img-top"
-                    alt="{{ recipe.name }}" >
-                </a>
-                
-                <div class="card-body">
-                    <h5 class="card-title"><a href="/recipes/{{ recipe.recipe_id }}">{{ recipe.name }}</a></h5>
-                    
-                        <p class="card-text">{{ recipe.url+' ' | truncate(25) }}</p>
+                <div class="card-img-container">
+                    <a href="/recipes/{{ recipe.recipe_id }}">
+                        <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
+                        alt="{{ recipe.name }}" >
+                        <div class="card-img-content">
+                            <p class="card-text mt-auto">{{ recipe.url | truncate(25) }}</p>
+                        </div>              
+                </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ recipe.name }}</a></h5>
+                    </div>
+            </a>
                 </div>
 
-            </div>
         </div>
         {% endfor %}
     </div>
