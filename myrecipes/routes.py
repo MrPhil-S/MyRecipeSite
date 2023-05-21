@@ -92,7 +92,7 @@ def add_recipe():
         # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
-                ingredient = Recipe_Ingredient(name=ingredient.strip(), recipe_id=recipe.recipe_id)
+                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id)
                 db.session.add(ingredient)
         db.session.commit()
 
@@ -145,7 +145,7 @@ def edit_recipe(recipe_id):
          # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
-                ingredient = Recipe_Ingredient(name=ingredient.strip(), recipe_id=recipe.recipe_id)
+                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id)
                 db.session.add(ingredient)
         db.session.commit()
 
