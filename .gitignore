@@ -7,3 +7,4 @@ test/
 migrations/
 pi backup 2-2/
 myrecipes/whisk_secrets.py
+static/recipe_images/
