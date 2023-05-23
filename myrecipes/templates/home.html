@@ -27,7 +27,13 @@
                         <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
                         alt="{{ recipe.name }}" >
                         <div class="card-img-content">
-                            <p class="card-text mt-auto">{{ recipe.url | truncate(25) }}</p>
+                            <p class="card-text mt-auto">
+                                {% if recipe.source_url %}
+                                  {{ recipe.source_url | truncate(25) }}
+                                {% else %}
+                                  No source URL available
+                                {% endif %}
+                              </p>
                         </div>              
                 </div>
                     <div class="card-body">
