@@ -4,9 +4,11 @@ from sqlalchemy.sql import func
 class Recipe(db.Model):
     recipe_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    url = db.Column(db.String(500), nullable=False)
+    source_url = db.Column(db.String(500), nullable=True)
+    source_url_short = db.Column(db.String(50), nullable=True)
+    whisk_url = db.Column(db.String(500), nullable=True)
     ingredient_count = db.Column(db.Integer, nullable=True)
-    instructions = db.Column(db.Text, nullable=False) # to be removed
+    instructions = db.Column(db.Text, nullable=True) # to be removed
     image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
     total_time = db.Column(db.String(20), nullable=True) 
     prep_time = db.Column(db.String(20), nullable=True)
@@ -21,7 +23,7 @@ class Recipe(db.Model):
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
 
     def __repr__(self):
-        return f"Recipe('{self.name}','{self.url}','{self.instructions}','{self.image_file}')"
+        return f"Recipe('{self.name}','{self.source_url}','{self.instructions}','{self.image_file}')"
 
 class Recipe_Ingredient(db.Model):
     recipe_ingredient_id = db.Column(db.Integer, primary_key=True)

@@ -6,11 +6,16 @@ from flask import request, render_template, redirect, url_for, flash
 import os
 from PIL import Image
 import secrets
+from myrecipes import get_recipies
 
 @app.route('/setup')
 def setup():
     db.create_all()
     return 'Tables created'
+
+@app.route('/import_recipes')
+def import_recipes():
+    return get_recipies.main()  
 
 @app.route('/frontlights')
 def frontlights():
@@ -66,12 +71,12 @@ def add_recipe():
 
         # Get populted form data
         name = request.form['name']
-        url = request.form['url']
+        source_url = request.form['url']
         instructions = request.form['instructions']
         ingredients = request.form.getlist('ingredient[]')
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
+        recipe = Recipe(name=name, source_url=source_url, instructions=instructions, image_file=image_file)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
@@ -114,7 +119,7 @@ def edit_recipe(recipe_id):
 
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
-    form.url.data = recipe.url
+    form.url.data = recipe.source_url
     form.instructions.data = recipe.instructions
     form.ingredient.data =  ingredients
 
@@ -128,7 +133,7 @@ def edit_recipe(recipe_id):
 
         recipe.name = request.form['name']
         recipe.instructions = request.form['instructions']
-        recipe.url = request.form['url']
+        recipe.source_url = request.form['url']
 
         #recipe.name = form.name.data
         #recipe.url = form.url.data
