@@ -37,7 +37,7 @@ class Recipe_Ingredient(db.Model):
     def __repr__(self):
         return f"Recipe_Ingredient('{self.name_written}','{self.icon_file}')"
     
-class Recipe_Instructions(db.Model):
+class Recipe_Instruction(db.Model):
     recipe_instruction_id = db.Column(db.Integer, primary_key=True)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
     text_contents = db.Column(db.String(1000), nullable=False)

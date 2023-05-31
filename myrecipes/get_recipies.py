@@ -1,9 +1,9 @@
 from myrecipes import db
-from myrecipes.models import Recipe, Recipe_Ingredient
+from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
 
-
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, exc
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import update
 from sqlalchemy.orm import sessionmaker
 
 
@@ -129,7 +129,7 @@ def main():
 
   #get Whisk recipe page URLs
   whisk_urls = []
-  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s194")]')  
+  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s195")]')  
   for card_headers_obj in card_headers_objs:
     card_headers = card_headers_obj.text
     # print(f'HEADERS: {card_headers}')
@@ -167,8 +167,17 @@ def main():
 
     ## NEW DB  ##
     recipe = Recipe(name=name, whisk_url=whisk_url)
-    db.session.add(recipe)
-    db.session.commit()
+    #db.session.add(recipe)
+    #db.session.commit()
+
+    try:
+      db.session.merge(recipe)
+      db.session.commit()
+    except exc.IntegrityError:
+      db.session.rollback()
+      # Handle the case when the whisk_url already exists in the Recipe table
+      print(f'{whisk_url} already exists.')
+
     #######
 
     
@@ -186,7 +195,7 @@ def main():
     sleep(random_sleep)
     
     #get source URL
-    find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s326")]')  
+    find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s327")]')  
     if len(find_href) > 0:
       for source_url in find_href:
         source_url = source_url.get_attribute("href")
@@ -200,8 +209,13 @@ def main():
         
 
         ## NEW DB  ##
-        recipe.source_url = source_url
+        #recipe.source_url = source_url
+        #db.session.commit()
+
+        stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(source_url=source_url)
+        db.session.execute(stmt)
         db.session.commit()
+
         #######
 
 
@@ -214,9 +228,10 @@ def main():
       print(f'{int((source_url_count/total_recipes)*100)}% complete. (Remaining source urls obtained: {total_recipes - source_url_count} of {total_recipes}))')
     else:
       source_urls.append("Not Found")
+      print(f'No source URL found for {whisk_url}')
     
     #get cooking time
-    cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s192 s1180"]')
+    cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s198 s1186"]')
     for cook_prep_time in cook_prep_times:
       cook_prep_time = cook_prep_time.text
       if cook_prep_time.split('\n')[0] == 'Prep:':
@@ -232,8 +247,12 @@ def main():
       #conn.commit()
     
       ## NEW DB  ##
-      recipe.prep_time = prep_time
-      recipe.cook_time = cook_time
+      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
+      db.session.execute(stmt)
+      db.session.commit()
+      
+      #recipe.prep_time = prep_time
+      #recipe.cook_time = cook_time
 
       ##########
 
@@ -253,13 +272,16 @@ def main():
     #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
 
     #get short URL
-    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11790")]')
+    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11829")]')
     
     ##conn.execute('''UPDATE recipe SET servings = ?, source_url_short = ? WHERE whisk_url = ?''', (servings, source_url_short.text, whisk_url))
 
     ## NEW DB  ##
-    recipe.servings = servings
-    recipe.source_url_short = source_url_short
+    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text)
+    db.session.execute(stmt)
+    db.session.commit()
+    #recipe.servings = servings
+    #recipe.source_url_short = source_url_short
     #####
 
     #get recipe ID to be used for ingredient table FK
@@ -269,28 +291,35 @@ def main():
     #current_recipe = db.session.query()
     #current_recipe_id = current_recipe[0]
     #current_recipe_id = session.query(Recipe.recipe_id).filter_by(whisk_url=whisk_url)
-    engine = create_engine( 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV')
+    ##engine = create_engine( 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV')
+##
+    ##Session = sessionmaker(bind=engine)
+    ##session = Session()
+    ##current_recipe_id = session.query(Recipe.recipe_id).filter(Recipe.whisk_url==whisk_url).first()
+    ##current_recipe_id = current_recipe_id[0]
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    current_recipe_id = session.query(Recipe.recipe_id).filter(Recipe.whisk_url==whisk_url).first()
-    current_recipe_id = current_recipe_id[0]
+    current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
+    current_recipe_id = current_recipe.recipe_id if current_recipe else None
 
     #If recipe image does not already exist, click on recipe image to expand and save to file
     if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
-      image = driver.find_element("xpath", '//img[ contains(@class, "s326")]')
+      image = driver.find_element("xpath", '//img[ contains(@class, "s327")]')
       sleep(2)
       image.click()    
-      sleep(4)
+      sleep(5)
       #open file in write and binary mode
       with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
 
         #identify image to be captured
-        large_image = driver.find_element('xpath', '//img[ contains(@class, "s12016")]')
+        large_image = driver.find_element('xpath', '//img[ contains(@class, "s12029")]')
         #write file
         file.write(large_image.screenshot_as_png)
       #close the overlay window by clicking
       large_image.click()
+      #Update recipe with image file
+      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
+      db.session.execute(stmt)
+      db.session.commit()
 
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
@@ -307,7 +336,7 @@ def main():
         else:
           try:
             #identify ingredient image to be captured
-            ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12775")]')
+            ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12769")]')
             #write file
             with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
               file.write(ingredient_image.screenshot_as_png)
@@ -317,15 +346,21 @@ def main():
         #get the ingredient, quantity and note from the UI
         ingredient_full = ingredient_parent.find_element("xpath", './/span[ @data-testid="recipe-ingredient"]') 
 
-        ingredient_written = ingredient_full.text.split('\n')[0]
+        name_written = ingredient_full.text.split('\n')[0]
         try:  
           ingredient_note = ingredient_full.text.split('\n')[1]
         except:
           ingredient_note = None
-        ingredient_data = [current_recipe_id, ingredient_written, ingredient_note, ingredient_name ]
-        insert_statement = '''INSERT INTO recipe_ingredient (recipe_id, ingredient_written, ingredient_note, ingredient_name ) VALUES (?, ?, ?, ?)'''
-        conn.execute(insert_statement, ingredient_data)
-        conn.commit()
+        #ingredient_data = [current_recipe_id, ingredient_written, ingredient_note, ingredient_name ]
+        #insert_statement = '''INSERT INTO recipe_ingredient (recipe_id, ingredient_written, ingredient_note, ingredient_name ) VALUES (?, ?, ?, ?)'''
+        #conn.execute(insert_statement, ingredient_data)
+        #conn.commit()
+        ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
+        db.session.add(ingredient)
+        db.session.commit()
+
+
+
 
   #for allrecipes, get intructions/notes
   #cursor.execute('SELECT * FROM recipe WHERE source__url like ''https://www.allrecipes.com/%''')
@@ -338,15 +373,21 @@ def main():
       sequence = 0
       for instruction in all_instructions:
         sequence += 1
-        data = [current_recipe_id, instruction, 1, sequence]
-        insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type, sequence) VALUES (?, ?, ?, ?)'
-        conn.execute(insert_statement, data)
+        #data = [current_recipe_id, instruction, 1, sequence]
+        #insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type, sequence) VALUES (?, ?, ?, ?)'
+        #conn.execute(insert_statement, data)
+        instruction_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=instruction, type=1, sequence=sequence)
+        db.session.add(instruction_query)
+        db.session.commit()
       sequence = 0  
       for note in notes:
         sequence += 1
-        data = [current_recipe_id, note, 2, sequence]
-        insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type sequence) VALUES (?, ?, ?, ?)'
-        conn.execute(insert_statement, data)
+        #data = [current_recipe_id, note, 2, sequence]
+        #insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type sequence) VALUES (?, ?, ?, ?)'
+        #conn.execute(insert_statement, data)
+        instruction_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=instruction, type=2, sequence=sequence)
+        db.session.add(instruction_query)
+        db.session.commit()
       conn.commit()
 
 
