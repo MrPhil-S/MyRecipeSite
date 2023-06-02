@@ -1,18 +1,15 @@
 from myrecipes import db
 from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
 
-from sqlalchemy import create_engine, Column, Integer, String, exc
+from sqlalchemy import delete, exc
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import update
-from sqlalchemy.orm import sessionmaker
-
-
 
 import os
 import re
 import random
-import sqlite3
 import urllib
+#import sqlite3  <<Need to pip uninstall
 from myrecipes import whisk_secrets
 from myrecipes import ScrapeAR  #.scrapeAR
 
@@ -24,55 +21,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 def main():
-  conn = sqlite3.connect('whiskdata.db')
-
-  # create a cursor to execute SQL commands
-  cursor = conn.cursor()
-
-  # create a table
-  cursor.execute('DROP TABLE IF EXISTS recipe')
-  #cursor.execute('CREATE TABLE recipe (id TEXT PRIMARY KEY, title TEXT)')
-  cursor.execute('''CREATE TABLE recipe (
-          recipe_id INTEGER PRIMARY KEY,
-          title TEXT,
-          whisk_url TEXT UNIQUE,
-          source_url TEXT,
-          source_url_short TEXT,
-          ingredient_count INTEGER, 
-        total_time TEXT,
-          prep_time TEXT,
-          cook_time TEXT,
-          additional_time, TEXT,
-          servings INTEGER
-          note_from_user TEXT)''')
-
-  cursor.execute('DROP TABLE IF EXISTS recipe_ingredient')
-
-  cursor.execute('''CREATE TABLE recipe_ingredient (
-          recipe_ingredient_id INTEGER PRIMARY KEY,
-          recipe_id INTEGER,
-        ingredient_id INTEGER,
-        ingredient_written TEXT,
-        ingredient_note TEXT,
-        ingredient_name TEXT)''')
-
-  # create a table
-  cursor.execute('DROP TABLE IF EXISTS recipe_instruction')
-  cursor.execute('''CREATE TABLE recipe_instruction (
-        recipe_instruction_id INTEGER PRIMARY KEY,
-        recipe_id INTEGER,
-
-        text_contents TEXT,
-        type INTEGER,
-        sequence INTEGER)''')
-
-  # query the database
-  #cursor.execute('SELECT * FROM recipe')
-
-  # print the results
-  #for row in cursor.fetchall():
-  #    print(row)
-
   url =  'https://my.whisk.com/recipes'
   email =  whisk_secrets.email
   password =  whisk_secrets.password
@@ -89,7 +37,10 @@ def main():
   username_field = wait.until(EC.presence_of_element_located((By.NAME, 'username')))
 
   # enter the email and click continue
-  username_field.send_keys(email)
+  # wait for each character due to issue with every other character being input in to the field
+  for char in email:
+    username_field.send_keys(char)
+    sleep(.1)
   username_field.send_keys(Keys.ENTER)
 
   #wait 30s unitl password field present
@@ -99,7 +50,12 @@ def main():
   inputElement = driver.find_element(By.ID, '_input-3')
 
   #inputElement = driver.find_element_by_class_name(fieldID)
-  inputElement.send_keys(password)
+  
+  # wait for each character due to issue with every other character being input in to the field
+  #inputElement.send_keys(password)
+  for char in password:
+    inputElement.send_keys(char)
+    sleep(.1)
   inputElement.send_keys(Keys.ENTER)
 
   sleep(2)
@@ -129,7 +85,7 @@ def main():
 
   #get Whisk recipe page URLs
   whisk_urls = []
-  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s195")]')  
+  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s188")]')  
   for card_headers_obj in card_headers_objs:
     card_headers = card_headers_obj.text
     # print(f'HEADERS: {card_headers}')
@@ -166,12 +122,12 @@ def main():
     #conn.commit()
 
     ## NEW DB  ##
-    recipe = Recipe(name=name, whisk_url=whisk_url)
+    recipe = Recipe(name=name, whisk_url=whisk_url, ingredient_count=ingredient_count, total_time=total_time)
     #db.session.add(recipe)
     #db.session.commit()
 
     try:
-      db.session.merge(recipe)
+      recipe = db.session.merge(recipe)
       db.session.commit()
     except exc.IntegrityError:
       db.session.rollback()
@@ -195,7 +151,7 @@ def main():
     sleep(random_sleep)
     
     #get source URL
-    find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s327")]')  
+    find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s320")]') #class="s11674 s190 wx-link-dark s12746 s320" 
     if len(find_href) > 0:
       for source_url in find_href:
         source_url = source_url.get_attribute("href")
@@ -225,45 +181,37 @@ def main():
 
       #Prints progress status
       source_url_count += 1
-      print(f'{int((source_url_count/total_recipes)*100)}% complete. (Remaining source urls obtained: {total_recipes - source_url_count} of {total_recipes}))')
+      print(f'{int((source_url_count/total_recipes)*100)}%. {whisk_url} completed. (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
     else:
       source_urls.append("Not Found")
       print(f'No source URL found for {whisk_url}')
     
     #get cooking time
-    cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s198 s1186"]')
-    for cook_prep_time in cook_prep_times:
-      cook_prep_time = cook_prep_time.text
-      if cook_prep_time.split('\n')[0] == 'Prep:':
-          prep_time = cook_prep_time.split('\n')[1]
-      else:
-          prep_time = -1
-      if cook_prep_time.split('\n')[2] == 'Cook:':
-          cook_time = cook_prep_time.split('\n')[3]
-      else:
-          cook_time = -1
-      
-      #conn.execute('''UPDATE recipe SET prep_time = ?, cook_time = ?  WHERE whisk_url = ?''', (prep_time, cook_time, whisk_url))
-      #conn.commit()
-    
+    cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s191 s1179"]')  #class="s191 s1179"
+    try:
+      for cook_prep_time in cook_prep_times:
+        cook_prep_time = cook_prep_time.text
+        if cook_prep_time.split('\n')[0] == 'Prep:':
+            prep_time = cook_prep_time.split('\n')[1]
+        else:
+            prep_time = -1
+        if cook_prep_time.split('\n')[2] == 'Cook:':
+            cook_time = cook_prep_time.split('\n')[3]
+        else:
+            cook_time = -1
+        
       ## NEW DB  ##
       stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
       db.session.execute(stmt)
       db.session.commit()
+    except:
+      print(f'cook_prep_time failed for {whisk_url}')
       
-      #recipe.prep_time = prep_time
-      #recipe.cook_time = cook_time
-
-      ##########
-
-
-
-
 
     #get serving count
     try:
       #if provided
-      servings_elment = driver.find_element(By.CLASS_NAME, "s11293")
+      servings_elment = driver.find_element(By.CLASS_NAME, "s11297") #old: s11293
       servings = servings_elment.text.split(' ')[0]
     except:
       #when no serving count is provided
@@ -272,7 +220,7 @@ def main():
     #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
 
     #get short URL
-    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11829")]')
+    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11799")]') #s28 s30 s31 s11799
     
     ##conn.execute('''UPDATE recipe SET servings = ?, source_url_short = ? WHERE whisk_url = ?''', (servings, source_url_short.text, whisk_url))
 
@@ -280,38 +228,21 @@ def main():
     stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text)
     db.session.execute(stmt)
     db.session.commit()
-    #recipe.servings = servings
-    #recipe.source_url_short = source_url_short
-    #####
-
-    #get recipe ID to be used for ingredient table FK
-    #cursor.execute('''SELECT recipe_id from recipe WHERE whisk_url = ?''', (whisk_url,))
-    #current_recipe = cursor.fetchone()
-    #current_recipe = Recipe.query(Recipe.recipe_id).filter_by(whisk_url=whisk_url).all()
-    #current_recipe = db.session.query()
-    #current_recipe_id = current_recipe[0]
-    #current_recipe_id = session.query(Recipe.recipe_id).filter_by(whisk_url=whisk_url)
-    ##engine = create_engine( 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV')
-##
-    ##Session = sessionmaker(bind=engine)
-    ##session = Session()
-    ##current_recipe_id = session.query(Recipe.recipe_id).filter(Recipe.whisk_url==whisk_url).first()
-    ##current_recipe_id = current_recipe_id[0]
 
     current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
     current_recipe_id = current_recipe.recipe_id if current_recipe else None
 
     #If recipe image does not already exist, click on recipe image to expand and save to file
     if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
-      image = driver.find_element("xpath", '//img[ contains(@class, "s327")]')
+      image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')  #s68-146 s11706 s12502 s320
       sleep(2)
       image.click()    
       sleep(5)
       #open file in write and binary mode
       with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
 
-        #identify image to be captured
-        large_image = driver.find_element('xpath', '//img[ contains(@class, "s12029")]')
+        #get large image to be captured
+        large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
         #write file
         file.write(large_image.screenshot_as_png)
       #close the overlay window by clicking
@@ -323,10 +254,15 @@ def main():
 
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
-    first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12924")]')
+    first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12919")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
     first_ingredient.location_once_scrolled_into_view
 
-    ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12924")]')
+    ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12919")]')
+
+    stmt = delete(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == current_recipe_id)
+    db.session.execute(stmt)
+    db.session.commit()
+
     for ingredient_parent in ingredient_parents:
         #get the official raw name and store image 
         #sleep(.5)
@@ -336,7 +272,7 @@ def main():
         else:
           try:
             #identify ingredient image to be captured
-            ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12769")]')
+            ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12806")]') #class="s68-145 s12808 s12806"
             #write file
             with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
               file.write(ingredient_image.screenshot_as_png)
@@ -355,19 +291,13 @@ def main():
         #insert_statement = '''INSERT INTO recipe_ingredient (recipe_id, ingredient_written, ingredient_note, ingredient_name ) VALUES (?, ?, ?, ?)'''
         #conn.execute(insert_statement, ingredient_data)
         #conn.commit()
+
+
         ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
         db.session.add(ingredient)
         db.session.commit()
 
 
-
-
-  #for allrecipes, get intructions/notes
-  #cursor.execute('SELECT * FROM recipe WHERE source__url like ''https://www.allrecipes.com/%''')
-
-  # get the results
-  #for row in cursor.fetchall():
-  # ar_url = (row)
     if 'https://www.allrecipes.com/' in source_url:  
       all_instructions, notes = ScrapeAR.scrapeAR(source_url)
       sequence = 0
@@ -385,14 +315,16 @@ def main():
         #data = [current_recipe_id, note, 2, sequence]
         #insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type sequence) VALUES (?, ?, ?, ?)'
         #conn.execute(insert_statement, data)
+        stmt = delete(Recipe_Instruction).where(Recipe_Instruction.recipe_id == current_recipe_id)
+        db.session.execute(stmt)
+        db.session.commit()
+
         instruction_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=instruction, type=2, sequence=sequence)
         db.session.add(instruction_query)
         db.session.commit()
-      conn.commit()
 
 
 
-  conn.close()
   return(whisk_urls)
 
   #driver.quit()

@@ -15,8 +15,11 @@
   </ul>
 
   <h2>Instructions</h2>
-  <p style="white-space: pre-line">{{ recipe.instructions }}</p>
-
+  <ul>
+    {% for instruction in instructions %}
+    <li>{{ instruction.text_contents }}</li>
+    {% endfor %}
+  </ul>
   <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
 </div>
 
