@@ -1,7 +1,7 @@
 from myrecipes import app
 from myrecipes import db
 from myrecipes.forms import add_recipe_form, edit_recipe_form
-from myrecipes.models import Recipe, Recipe_Ingredient
+from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
 from flask import request, render_template, redirect, url_for, flash
 import os
 from PIL import Image
@@ -41,7 +41,9 @@ def recipe(recipe_id):
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
 
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, title=recipe.name, image_file=image_file)
+    instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id).all()
+    
+    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, title=recipe.name, image_file=image_file)
 
 
 def save_image(form_image, recipe_id):

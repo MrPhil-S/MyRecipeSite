@@ -4,11 +4,10 @@ from sqlalchemy.sql import func
 class Recipe(db.Model):
     recipe_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    source_url = db.Column(db.String(500), nullable=True)
+    source_url = db.Column(db.String(255), nullable=True)
     source_url_short = db.Column(db.String(50), nullable=True)
-    whisk_url = db.Column(db.String(500), nullable=True)
+    whisk_url = db.Column(db.String(255), nullable=True, unique=True)
     ingredient_count = db.Column(db.Integer, nullable=True)
-    instructions = db.Column(db.Text, nullable=True) # to be removed
     image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
     total_time = db.Column(db.String(20), nullable=True) 
     prep_time = db.Column(db.String(20), nullable=True)
@@ -34,6 +33,10 @@ class Recipe_Ingredient(db.Model):
     name_official = db.Column(db.String(100), nullable=True)
     icon_file = db.Column(db.String(100), nullable=True)
 
+    #__table_args__ = (
+    #    UniqueConstraint('recipe_id', 'name_written', name='uq_recipe_ingredient'),
+    #)
+
     def __repr__(self):
         return f"Recipe_Ingredient('{self.name_written}','{self.icon_file}')"
     
@@ -44,5 +47,6 @@ class Recipe_Instruction(db.Model):
     type = db.Column(db.Integer, nullable=True)
     sequence = db.Column(db.Integer, nullable=True)
 
+
     def __repr__(self):
-        return f"Recipe_Instructions('{self.name_written}','{self.icon_file}')"
+        return f"Recipe_Instructions('{self.text_contents}','{self.type}','{self.sequence}')"
