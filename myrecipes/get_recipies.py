@@ -81,11 +81,11 @@ def main():
         if new_height == last_height:
             break
         last_height = new_height
-  #scroll_to_bottom() #temporarly commented out to avoid extra calls to website
+  scroll_to_bottom() #temporarly commented out to avoid extra calls to website
 
   #get Whisk recipe page URLs
   whisk_urls = []
-  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s188")]')  
+  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s188")]')   #  s69-21 s188   
   for card_headers_obj in card_headers_objs:
     card_headers = card_headers_obj.text
     # print(f'HEADERS: {card_headers}')
@@ -103,7 +103,7 @@ def main():
     
     try:
       total_time = card_headers.split('\n')[2]
-      matches = ['h ', "min"]
+      matches = ['h ', 'h', 'min']
       if any([x in total_time for x in matches]):
         pass
       else:
@@ -115,17 +115,8 @@ def main():
     whisk_url =  whisk_url.split('?')[0]
     whisk_urls.append(whisk_url)
 
-                                                                                                                                                                              
-    #data = [title, whisk_url, ingredient_count, total_time]
-    #insert_statement = 'INSERT INTO recipe (title, whisk_url, ingredient_count, total_time) VALUES (?, ?, ?, ?)'
-    #conn.execute(insert_statement, data)
-    #conn.commit()
-
-    ## NEW DB  ##
+    #UPSERT INTO recipe 
     recipe = Recipe(name=name, whisk_url=whisk_url, ingredient_count=ingredient_count, total_time=total_time)
-    #db.session.add(recipe)
-    #db.session.commit()
-
     try:
       recipe = db.session.merge(recipe)
       db.session.commit()
@@ -234,7 +225,7 @@ def main():
 
     #If recipe image does not already exist, click on recipe image to expand and save to file
     if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
-      image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')  #s68-146 s11706 s12502 s320
+      image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320
       sleep(2)
       image.click()    
       sleep(5)
@@ -287,45 +278,40 @@ def main():
           ingredient_note = ingredient_full.text.split('\n')[1]
         except:
           ingredient_note = None
-        #ingredient_data = [current_recipe_id, ingredient_written, ingredient_note, ingredient_name ]
-        #insert_statement = '''INSERT INTO recipe_ingredient (recipe_id, ingredient_written, ingredient_note, ingredient_name ) VALUES (?, ?, ?, ?)'''
-        #conn.execute(insert_statement, ingredient_data)
-        #conn.commit()
 
-
+        #INSERT ingredient
         ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
         db.session.add(ingredient)
         db.session.commit()
 
+        update_AR_recipes(current_recipe_id, source_url)
+  return(whisk_urls)
 
+
+def update_AR_recipes(current_recipe_id, source_url):
     if 'https://www.allrecipes.com/' in source_url:  
       all_instructions, notes = ScrapeAR.scrapeAR(source_url)
+      stmt = delete(Recipe_Instruction).where(Recipe_Instruction.recipe_id == current_recipe_id)
+      db.session.execute(stmt)
+      db.session.commit()
+      
       sequence = 0
       for instruction in all_instructions:
         sequence += 1
-        #data = [current_recipe_id, instruction, 1, sequence]
-        #insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type, sequence) VALUES (?, ?, ?, ?)'
-        #conn.execute(insert_statement, data)
+
+        #INSERT INTO recipe_instruction
         instruction_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=instruction, type=1, sequence=sequence)
         db.session.add(instruction_query)
         db.session.commit()
       sequence = 0  
       for note in notes:
         sequence += 1
-        #data = [current_recipe_id, note, 2, sequence]
-        #insert_statement = 'INSERT INTO recipe_instruction (recipe_id, text_contents, type sequence) VALUES (?, ?, ?, ?)'
-        #conn.execute(insert_statement, data)
-        stmt = delete(Recipe_Instruction).where(Recipe_Instruction.recipe_id == current_recipe_id)
-        db.session.execute(stmt)
+        
+        #INSERT INTO recipe_instruction
+        note_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=note, type=2, sequence=sequence)
+        db.session.add(note_query)
         db.session.commit()
 
-        instruction_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=instruction, type=2, sequence=sequence)
-        db.session.add(instruction_query)
-        db.session.commit()
-
-
-
-  return(whisk_urls)
 
   #driver.quit()
 if __name__ == "__main__":
