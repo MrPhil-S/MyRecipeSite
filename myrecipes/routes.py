@@ -17,6 +17,13 @@ def setup():
 def import_recipes():
     return get_recipies.main()  
 
+@app.route('/updateAR')
+def updateAR():
+    recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
+    for recipe in recipes:
+        get_recipies.update_AR_recipes(recipe.recipe_id, recipe.source_url)  
+    return 'Done'
+
 @app.route('/frontlights')
 def frontlights():
     return render_template('frontlights.html', title='Front Lights')
@@ -41,9 +48,10 @@ def recipe(recipe_id):
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
 
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id).all()
+    instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, title=recipe.name, image_file=image_file)
+    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file)
 
 
 def save_image(form_image, recipe_id):
