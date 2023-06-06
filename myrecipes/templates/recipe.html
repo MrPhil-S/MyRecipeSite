@@ -10,7 +10,7 @@
   <h2>Ingredients</h2>
   <ul>
     {% for ingredient in ingredients %}
-    <li>{{ ingredient.name_written }}</li>
+    <ul><img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">{{ ingredient.name_written }}</ul>
     {% endfor %}
   </ul>
 
@@ -34,6 +34,6 @@
   </ul>
   <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
 </div>
-
+<p>View count: {{recipe.page_view_count}}</p>
 
 {% endblock %}

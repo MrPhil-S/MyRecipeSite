@@ -13,10 +13,12 @@ class Recipe(db.Model):
     prep_time = db.Column(db.String(20), nullable=True)
     cook_time = db.Column(db.String(20), nullable=True)
     additional_time = db.Column(db.String(20), nullable=True)
+    cuisine = db.Column(db.String(50), nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     servings = db.Column(db.Integer, nullable=True)
     note_from_user = db.Column(db.String(1000), nullable=True)
     cooked_count = db.Column(db.Integer, nullable=True)
+    page_view_count = db.Column(db.Integer, nullable=True, default=0)
 #    notes = db.Column(db.String(200), nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
@@ -31,14 +33,14 @@ class Recipe_Ingredient(db.Model):
     name_written = db.Column(db.String(100), nullable=False)
     note = db.Column(db.String(100), nullable=True)
     name_official = db.Column(db.String(100), nullable=True)
-    icon_file = db.Column(db.String(100), nullable=True)
+    #icon_file = db.Column(db.String(100), nullable=True)
 
     #__table_args__ = (
     #    UniqueConstraint('recipe_id', 'name_written', name='uq_recipe_ingredient'),
     #)
 
     def __repr__(self):
-        return f"Recipe_Ingredient('{self.name_written}','{self.icon_file}')"
+        return f"Recipe_Ingredient('{self.name_written}','{self.name_official}')"
     
 class Recipe_Instruction(db.Model):
     recipe_instruction_id = db.Column(db.Integer, primary_key=True)
