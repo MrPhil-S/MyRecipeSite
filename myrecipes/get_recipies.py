@@ -69,7 +69,7 @@ def main():
     x -= 1
     sleep(1)
     print(f'{x}')
-  print(f'{x} seconds left, continuing...')
+  print(f'{x-1} seconds left, continuing...')
 
   #scroll to bottom of cards
   def scroll_to_bottom():
@@ -141,6 +141,10 @@ def main():
     random_sleep = random.uniform(1.5, 3)
     sleep(random_sleep)
     
+    current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
+    current_recipe_id = current_recipe.recipe_id if current_recipe else None
+    recipe_name = current_recipe.name if name else None
+    
     #get source URL
     find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s320")]') #class="s11674 s190 wx-link-dark s12746 s320" 
     if len(find_href) > 0:
@@ -172,13 +176,14 @@ def main():
 
       #Prints progress status
       source_url_count += 1
-      print(f'{int((source_url_count/total_recipes)*100)}%. {whisk_url} completed. (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
+      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} completed. (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
     else:
       source_urls.append("Not Found")
-      print(f'No source URL found for {whisk_url}')
+      print(f'No source URL found for {recipe_name}')
     
     #get cooking time
     cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s191 s1179"]')  #class="s191 s1179"
+    print(f'{recipe_name} cook_prep_time: {cook_prep_time.text}')
     try:
       for cook_prep_time in cook_prep_times:
         cook_prep_time = cook_prep_time.text
@@ -196,7 +201,7 @@ def main():
       db.session.execute(stmt)
       db.session.commit()
     except:
-      print(f'cook_prep_time failed for {whisk_url}')
+      print(f'cook_prep_time failed for {recipe_name}')
       
 
     #get serving count
@@ -212,36 +217,53 @@ def main():
 
     #get short URL
     source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11799")]') #s28 s30 s31 s11799
-    
     ##conn.execute('''UPDATE recipe SET servings = ?, source_url_short = ? WHERE whisk_url = ?''', (servings, source_url_short.text, whisk_url))
 
-    ## NEW DB  ##
-    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text)
+    #get cuisine
+    try:
+      cuisine = driver.find_element('xpath', '//a[ contains(@href, "/search/recipes?cuisines")]').text 
+    except:
+      print(f'No cuisine found for {recipe_name}')
+
+    #UPDATE Recipe
+    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text, cuisine=cuisine)
     db.session.execute(stmt)
     db.session.commit()
 
-    current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
-    current_recipe_id = current_recipe.recipe_id if current_recipe else None
+
 
     #If recipe image does not already exist, click on recipe image to expand and save to file
     if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
-      image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320
-      sleep(2)
-      image.click()    
-      sleep(5)
-      #open file in write and binary mode
-      with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
+      save_image = 1
+      try: 
+        image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+        sleep(2)
+        image.click()    
+      except:
+        sleep(5)
+        try:
+          image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+          sleep(4)
+          image.click()
+        except:
+          print(f'Could not get recipe image for {recipe_name}')
+          save_image = 0
+      
+      if save_image == 1:  
+        sleep(5)
+        #open file in write and binary mode
+        with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
 
-        #get large image to be captured
-        large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
-        #write file
-        file.write(large_image.screenshot_as_png)
-      #close the overlay window by clicking
-      large_image.click()
-      #Update recipe with image file
-      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
-      db.session.execute(stmt)
-      db.session.commit()
+          #get large image to be captured
+          large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
+          #write file
+          file.write(large_image.screenshot_as_png)
+        #close the overlay window by clicking
+        large_image.click()
+        #Update recipe with image file
+        stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
+        db.session.execute(stmt)
+        db.session.commit()
 
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
@@ -261,11 +283,13 @@ def main():
         if os.path.exists (f'myrecipes//static//ingredient_images//{ingredient_name}.jpg'):
           pass
         else:
+          
           try:
             #identify ingredient image to be captured
             ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12806")]') #class="s68-145 s12808 s12806"
             #write file
             with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
+              sleep(.5)
               file.write(ingredient_image.screenshot_as_png)
           except:
             ingredient_name == '_unknown'
@@ -284,7 +308,7 @@ def main():
         db.session.add(ingredient)
         db.session.commit()
 
-        update_AR_recipes(current_recipe_id, source_url)
+    update_AR_recipes(current_recipe_id, source_url)
   return(whisk_urls)
 
 

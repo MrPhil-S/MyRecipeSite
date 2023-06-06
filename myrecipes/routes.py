@@ -45,6 +45,8 @@ def home():
 def recipe(recipe_id):
     #image_file = url_for('static', filename='recipe_images\\' + Recipe.image_file)
     recipe = Recipe.query.get_or_404(recipe_id)
+    recipe.page_view_count += 1
+    db.session.commit()
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
 
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
