@@ -1,7 +1,7 @@
 from myrecipes import app
 from myrecipes import db
 from myrecipes.forms import add_recipe_form, edit_recipe_form
-from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
+from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page_View
 from flask import request, render_template, redirect, url_for, flash
 import os
 from PIL import Image
@@ -43,17 +43,21 @@ def home():
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def recipe(recipe_id):
-    #image_file = url_for('static', filename='recipe_images\\' + Recipe.image_file)
+
     recipe = Recipe.query.get_or_404(recipe_id)
-    recipe.page_view_count += 1
+
+    page_view = Page_View(page_name=recipe.name)
+    db.session.add(page_view)
     db.session.commit()
+    view_count = Page_View.query.filter_by(page_name=recipe.name).count()
+
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
 
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file)
+    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count)
 
 
 def save_image(form_image, recipe_id):

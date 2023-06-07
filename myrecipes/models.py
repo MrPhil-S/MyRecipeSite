@@ -18,7 +18,6 @@ class Recipe(db.Model):
     servings = db.Column(db.Integer, nullable=True)
     note_from_user = db.Column(db.String(1000), nullable=True)
     cooked_count = db.Column(db.Integer, nullable=True)
-    page_view_count = db.Column(db.Integer, nullable=True, default=0)
 #    notes = db.Column(db.String(200), nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
@@ -35,10 +34,6 @@ class Recipe_Ingredient(db.Model):
     name_official = db.Column(db.String(100), nullable=True)
     #icon_file = db.Column(db.String(100), nullable=True)
 
-    #__table_args__ = (
-    #    UniqueConstraint('recipe_id', 'name_written', name='uq_recipe_ingredient'),
-    #)
-
     def __repr__(self):
         return f"Recipe_Ingredient('{self.name_written}','{self.name_official}')"
     
@@ -52,3 +47,12 @@ class Recipe_Instruction(db.Model):
 
     def __repr__(self):
         return f"Recipe_Instructions('{self.text_contents}','{self.type}','{self.sequence}')"
+    
+class Page_View(db.Model):
+    page_view_id = db.Column(db.Integer, primary_key=True)
+    page_name = db.Column(db.String(30), nullable=False)
+    page_view_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+
+
+    def __repr__(self):
+        return f"Page_View('{self.page_name}')"
