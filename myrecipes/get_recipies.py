@@ -176,33 +176,34 @@ def main():
 
       #Prints progress status
       source_url_count += 1
-      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} completed. (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
+      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} processing... (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
     else:
       source_urls.append("Not Found")
       print(f'No source URL found for {recipe_name}')
     
     #get cooking time
-    cook_prep_times = driver.find_elements(By.XPATH, '//div[ @class="s191 s1179"]')  #class="s191 s1179"
-    print(f'{recipe_name} cook_prep_time: {cook_prep_time.text}')
+    prep_time = None
+    cook_time = None
     try:
-      for cook_prep_time in cook_prep_times:
-        cook_prep_time = cook_prep_time.text
+      cook_prep_time = driver.find_element('xpath', '//div[ @class="s191 s1179"]')  #class="s191 s1179"
+      cook_prep_time = cook_prep_time.text
+      try:
         if cook_prep_time.split('\n')[0] == 'Prep:':
             prep_time = cook_prep_time.split('\n')[1]
-        else:
-            prep_time = -1
+      except:
+        pass
+      
+      try:
         if cook_prep_time.split('\n')[2] == 'Cook:':
             cook_time = cook_prep_time.split('\n')[3]
-        else:
-            cook_time = -1
-        
-      ## NEW DB  ##
-      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
-      db.session.execute(stmt)
-      db.session.commit()
+      except:
+        pass
     except:
-      print(f'cook_prep_time failed for {recipe_name}')
-      
+      pass
+    ## NEW DB  ##
+    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
+    db.session.execute(stmt)
+    db.session.commit()
 
     #get serving count
     try:
@@ -250,20 +251,29 @@ def main():
           save_image = 0
       
       if save_image == 1:  
-        sleep(5)
+        
         #open file in write and binary mode
         with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
-
+          sleep(5)
           #get large image to be captured
-          large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
+          try:
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
+          except:
+            print(f'Retrying save of large image in 10s for {recipe_name}')
+            sleep(10)
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
           #write file
-          file.write(large_image.screenshot_as_png)
-        #close the overlay window by clicking
-        large_image.click()
-        #Update recipe with image file
-        stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
-        db.session.execute(stmt)
-        db.session.commit()
+          try:
+            file.write(large_image.screenshot_as_png)
+            #close the overlay window by clicking
+            large_image.click()
+            
+            #Update recipe with image file
+            stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
+            db.session.execute(stmt)
+            db.session.commit()
+          except:
+            print(f'Failed to save screenshot for {recipe_name}')
 
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
