@@ -131,8 +131,8 @@ def main():
     #######
 
   
-  del total_recipes[0:248]
-  
+  del whisk_urls[0:248]             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
   total_recipes = len(whisk_urls)
   print(f'{total_recipes} URLs found ')
 
@@ -143,9 +143,12 @@ def main():
   source_url_count = 0
   source_urls = []
   for whisk_url in whisk_urls:
-    driver.get(whisk_url)
-    random_sleep = random.uniform(1.5, 3)
+    random_sleep = random.uniform(4, 8) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     sleep(random_sleep)
+
+    driver.get(whisk_url)
+    sleep(2) 
+    
     
     current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
     current_recipe_id = current_recipe.recipe_id if current_recipe else None
@@ -161,24 +164,11 @@ def main():
         if source_url.startswith('https://my.whisk.com/profile/'):
           source_url = driver.current_url
         
-        #conn.execute('''UPDATE recipe SET source_url = ? WHERE whisk_url = ?''', (source_url, whisk_url))
-        #conn.commit()
-        
-
-        ## NEW DB  ##
-        #recipe.source_url = source_url
-        #db.session.commit()
-
         stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(source_url=source_url)
         db.session.execute(stmt)
         db.session.commit()
 
-        #######
-
-
         source_urls.append(source_url)
-
-      
 
       #Prints progress status
       source_url_count += 1
@@ -206,6 +196,8 @@ def main():
         pass
     except:
       pass
+      print(f'cook_prep time not found for {recipe_name}')
+
     ## NEW DB  ##
     stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
     db.session.execute(stmt)
@@ -214,16 +206,17 @@ def main():
     #get serving count
     try:
       #if provided
-      servings_elment = driver.find_element(By.CLASS_NAME, "s11297") #old: s11293
+      servings_elment = driver.find_element(By.CLASS_NAME, "s11286") #old: s11293
       servings = servings_elment.text.split(' ')[0]
     except:
       #when no serving count is provided
       servings = None
+      print(f'Servings not found for {recipe_name}')
     
     #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
 
     #get short URL
-    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11799")]') #s28 s30 s31 s11799
+    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11871")]') #s28 s30 s31 s11799
     ##conn.execute('''UPDATE recipe SET servings = ?, source_url_short = ? WHERE whisk_url = ?''', (servings, source_url_short.text, whisk_url))
 
     #get cuisine
@@ -263,11 +256,11 @@ def main():
           sleep(5)
           #get large image to be captured
           try:
-            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
           except:
             print(f'Retrying save of large image in 10s for {recipe_name}')
             sleep(10)
-            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11744")]')  #class="s68-148 s11744"
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
           #write file
           try:
             file.write(large_image.screenshot_as_png)
@@ -284,10 +277,10 @@ def main():
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
     try:
-      first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12919")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
+      first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12953")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
       first_ingredient.location_once_scrolled_into_view
 
-      ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12919")]')
+      ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12953")]')
 
       stmt = delete(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == current_recipe_id)
       db.session.execute(stmt)
@@ -308,7 +301,7 @@ def main():
             
             try:
               #identify ingredient image to be captured
-              ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12806")]') #class="s68-145 s12808 s12806"
+              ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12892")]') #class="s68-145 s12808 s12806"
               #write file
               with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
                 sleep(.5)
@@ -336,7 +329,7 @@ def main():
     
     if 'https://www.allrecipes.com/' not in source_url:  
       try:
-        instructions = driver.find_elements(By.XPATH, '//a[contains (@class, "s10139")]')
+        instructions = driver.find_elements(By.XPATH, '//span[contains (@class, "s28 s32 s10139")]') #use the parent to the initial span. Use "Balsamic Benihana sauce will turn any vegetable into a scene-stealer" as an example
         instruction_sequence = 0
         for instruction in instructions:
           instruction_sequence =+ 1
