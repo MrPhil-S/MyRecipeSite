@@ -3,9 +3,24 @@
 {% block content %}
 
 <div class="content-section">
-  <h1>{{ recipe.name }}</h1>
-  <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid max-width: 100%">
-  <p>{{ recipe.source_url }}</p>
+  <div class="pt-3 mb-4">
+    <small class="text-muted">
+      <a class="ml-4 link-secondary" href="{{ url_for('home') }}">Back to all recipies</a>
+    </small>
+  </div>
+
+
+  <div class="row">
+    <div class="col-5">
+      <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid max-width: 100%">
+    </div>
+    <div class="col">
+      <h1>{{ recipe.name }}</h1>
+      <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>
+    </div>
+  </div>
+
+
 
   <h2>Ingredients</h2>
   <ul>
@@ -15,23 +30,29 @@
   </ul>
 
   <h2>Instructions</h2>
-  <ul>
+  <ol>
     {% for instruction in instructions %}
     <li>{{ instruction.text_contents }}</li>
     {% endfor %}
-  </ul>
+  </ol>
 
-  <h2>Source Notes</h2>
-  <ul>
-    {% for source_note in source_notes %}
-    <li>{{ source_note.text_contents }}</li>
-    {% endfor %}
-  </ul>
+  {% if recipe.source_notes %}
+    <h2>Source Notes</h2>
+    <ul>
+      {% for source_note in source_notes %}
+      <li>{{ source_note.text_contents }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
+  {% if recipe.note_from_user %}
   <h2>My Notes</h2>
   <ul>
     <li>{{recipe.note_from_user}}</li>
   </ul>
+  {% endif %}
+
+
   <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
 </div>
 <p>View count: {{view_count}}</p>
