@@ -1,13 +1,12 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from time import sleep
+from webdriver_manager.chrome import ChromeDriverManager
 
+driver = webdriver.Chrome(ChromeDriverManager().install())
 
-#url =  'https://www.allrecipes.com/recipe/213238/indian-fish-curry/'
-
-#Selenium config:
-PATH = "C:\\projects\\chromedriver.exe"
-driver = webdriver.Chrome(PATH)
+#PATH = "C:\\projects\\chromedriver.exe"
+driver = webdriver.Chrome()
 
 def scrapeAR(url):
     
