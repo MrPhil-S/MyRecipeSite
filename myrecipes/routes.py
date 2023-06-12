@@ -13,16 +13,6 @@ def setup():
     db.create_all()
     return 'Tables created'
 
-@app.route('/import_recipes')
-def import_recipes():
-    return get_recipies.main()  
-
-@app.route('/updateAR')
-def updateAR():
-    recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
-    for recipe in recipes:
-        get_recipies.update_AR_recipes(recipe.recipe_id, recipe.source_url)  
-    return 'Done'
 
 @app.route('/frontlights')
 def frontlights():
@@ -40,6 +30,27 @@ def home():
         return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
 
+
+@app.route('/import_recipes')
+def import_recipes():
+    #return get_recipies.main()  
+    return render_template('import_recipes.html')
+
+@app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
+def process_recipes(option):
+    #options: Onlyaddnew    Upsertall AROnly
+    if option in (1, 2):
+        get_recipies.main(option)
+        if option == 1:
+            flash(f'Only added new recipes', 'success')
+        elif option == 2:
+            flash(f'Updated all recipes', 'success')
+    elif option == 3:
+        recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
+        for recipe in recipes:
+            get_recipies.update_AR_recipes(recipe.recipe_id, recipe.source_url)  
+        flash('AR recipes updated', 'success')     
+    return redirect(url_for('import_recipes'))
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def recipe(recipe_id):
