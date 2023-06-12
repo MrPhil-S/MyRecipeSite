@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="content-section">
+  <div class="pt-3 mb-4">
+    <small class="text-muted">
+      <a class="ml-4 link-secondary" href="{{ url_for('home') }}">Back to all recipies</a>
+    </small>
+  </div>
+
+    <h1>Import Recipes</h1>
+
+
+    <a href="{{ url_for('process_recipes', option=1) }}" class="btn btn-outline-info">Add new recipes only</a>
+    <a href="{{ url_for('process_recipes', option=2) }}" class="btn btn-outline-info">Upsert all recipes</a>
+    <a href="{{ url_for('process_recipes', option=3) }}" class="btn btn-outline-info">Scrape AR only</a>
+</div>
+
+{% endblock %}
