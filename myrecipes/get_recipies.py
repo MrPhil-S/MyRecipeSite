@@ -84,17 +84,21 @@ def main(option):
         if new_height == last_height:
             break
         last_height = new_height
-  scroll_to_bottom() #temporarly commented out to avoid extra calls to website
+  scroll_to_bottom() #temporarly comment out to avoid extra calls to website
 
   #get Whisk recipe page URLs
   whisk_urls = []
+  new_whisk_urls = []
   card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s188")]')   #  s69-21 s188   
   for card_headers_obj in card_headers_objs:
     card_headers = card_headers_obj.text
     # print(f'HEADERS: {card_headers}')
 
     name = card_headers.split('\n')[0]
-    
+    whisk_url = card_headers_obj.get_attribute("href")
+    whisk_url =  whisk_url.split('?')[0]
+    whisk_urls.append(whisk_url)
+
     try:
       ingredient_count = card_headers.split('\n')[1]
       if "ingredients" in ingredient_count:
@@ -114,14 +118,10 @@ def main(option):
     except:
       total_time = None
 
-    whisk_url = card_headers_obj.get_attribute("href")
-    whisk_url =  whisk_url.split('?')[0]
-    whisk_urls.append(whisk_url)
-
+    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4
 
     #UPSERT INTO recipe 
     if option in (1, 2):
-      new_whisk_urls = []
       recipe = Recipe(name=name, whisk_url=whisk_url, ingredient_count=ingredient_count, total_time=total_time)
       try:
         recipe = db.session.merge(recipe)
@@ -131,10 +131,9 @@ def main(option):
         db.session.rollback()
         # Handle the case when the whisk_url already exists in the Recipe table
         print(f'{name} already exists.')
+  ### End for loop over cards ###
 
-    #######
-
-  
+    
   #del whisk_urls[0:248]             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   #provide option to upsert all urls or only add new ones
   if option == 1:
@@ -145,213 +144,217 @@ def main(option):
   #TESTING - limite the amount
   #whisk_urls = whisk_urls[:30]
 
-  if option == 1:
-    ####for each Whisk page, navigate within and scrape 
-    source_url_count = 0
-    source_urls = []
-    for whisk_url in whisk_urls:
-      random_sleep = random.uniform(4, 8) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-      sleep(random_sleep)
+  ####for each W page, navigate within and scrape 
+  if option in (1, 2):
+    scrape_recipe_pages(driver, whisk_urls, name, total_recipes)
 
-      driver.get(whisk_url)
-      sleep(2) 
-      
-      
-      current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
-      current_recipe_id = current_recipe.recipe_id if current_recipe else None
-      recipe_name = current_recipe.name if name else None
-      
-      #get source URL
-      find_href = driver.find_elements(By.XPATH, '//a[ contains(@class, "s320")]') #class="s11674 s190 wx-link-dark s12746 s320" 
-      if len(find_href) > 0:
-        for source_url in find_href:
-          source_url = source_url.get_attribute("href")
-          source_url =  source_url.split('?')[0]
-          #some recipes do not have an extranal URL. If so, this will return the current URL
-          if source_url.startswith('https://my.whisk.com/profile/'):
-            source_url = driver.current_url
-          
-          stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(source_url=source_url)
-          db.session.execute(stmt)
-          db.session.commit()
 
-          source_urls.append(source_url)
+def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
+  source_url_count = 0
+  source_urls = []
+  for whisk_url in whisk_urls:
+    random_sleep = random.uniform(4, 8) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    sleep(random_sleep)
 
-        #Prints progress status
-        source_url_count += 1
-        print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} processing... (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
-      else:
-        source_urls.append("Not Found")
-        print(f'No source URL found for {recipe_name}')
-      
-      #get cooking time
-      try:
-        prep_time = None
-        cook_time = None
-        cook_prep_time = driver.find_element('xpath', '//div[ @class="s191 s1179"]')  #class="s191 s1179"
-        cook_prep_time = cook_prep_time.text
-        try:
-          if cook_prep_time.split('\n')[0] == 'Prep:':
-              prep_time = cook_prep_time.split('\n')[1]
-        except:
-          pass
+    driver.get(whisk_url)
+    sleep(2)       
+    
+    current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
+    current_recipe_id = current_recipe.recipe_id if current_recipe else None
+    recipe_name = current_recipe.name if name else None
+    
+    #get source URL
+    find_href = driver.find_elements(By.XPATH, '//a[ @class="s11736 s190 wx-link-dark s12815 s320"]')  
+    if len(find_href) > 0:
+      for source_url in find_href:
+        source_url = source_url.get_attribute("href")
+        source_url =  source_url.split('?')[0]
+        #some recipes do not have an extranal URL. If so, this will return the current URL
+        if source_url.startswith('https://my.whisk.com/profile/'):
+          source_url = driver.current_url
         
-        try:
-          if cook_prep_time.split('\n')[2] == 'Cook:':
-              cook_time = cook_prep_time.split('\n')[3]
-        except:
-          pass
-      except:
-        pass
-        print(f'cook_prep time not found for {recipe_name}')
-
-      ## NEW DB  ##
-      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
-      db.session.execute(stmt)
-      db.session.commit()
-
-      #get serving count
-      try:
-        #if provided
-        servings_elment = driver.find_element(By.CLASS_NAME, "s11286") #old: s11293
-        servings = servings_elment.text.split(' ')[0]
-      except:
-        #when no serving count is provided
-        servings = None
-        print(f'Servings not found for {recipe_name}')
-      
-      #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
-
-      #get short URL
-      source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11871")]') #s28 s30 s31 s11799
-      ##conn.execute('''UPDATE recipe SET servings = ?, source_url_short = ? WHERE whisk_url = ?''', (servings, source_url_short.text, whisk_url))
-
-      #get cuisine
-      try:
-        cuisine = driver.find_element('xpath', '//a[ contains(@href, "/search/recipes?cuisines")]').text 
-      except:
-        print(f'No cuisine found for {recipe_name}')
-
-      #UPDATE Recipe
-      stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text, cuisine=cuisine)
-      db.session.execute(stmt)
-      db.session.commit()
-
-
-
-      #If recipe image does not already exist, click on recipe image to expand and save to file
-      if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
-        save_image = 1
-        try: 
-          image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
-          sleep(2)
-          image.click()    
-        except:
-          sleep(5)
-          try:
-            image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
-            sleep(4)
-            image.click()
-          except:
-            print(f'Could not get recipe image for {recipe_name}')
-            save_image = 0
-        
-        if save_image == 1:  
-          
-          #open file in write and binary mode
-          with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
-            sleep(5)
-            #get large image to be captured
-            try:
-              large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
-            except:
-              print(f'Retrying save of large image in 10s for {recipe_name}')
-              sleep(10)
-              large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
-            #write file
-            try:
-              file.write(large_image.screenshot_as_png)
-              #close the overlay window by clicking
-              large_image.click()
-              
-              #Update recipe with image file
-              stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
-              db.session.execute(stmt)
-              db.session.commit()
-            except:
-              print(f'Failed to save screenshot for {recipe_name}')
-
-      #get ingredients
-      #element.scrollIntoView({ alignToTop: "True" });
-      try:
-        first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12953")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
-        first_ingredient.location_once_scrolled_into_view
-
-        ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12953")]')
-
-        stmt = delete(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == current_recipe_id)
+        stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(source_url=source_url)
         db.session.execute(stmt)
         db.session.commit()
-        ingredient_number = 0
-        for ingredient_parent in ingredient_parents:
 
-            #scroll browser down if 10 ingredients are hit - resolved issue with capturing ingredient image       
-            ingredient_number += 1
-            if ingredient_number % 10 == 0:
-              ingredient_parent.location_once_scrolled_into_view
-            
-            #get the official raw name and store image 
-            ingredient_name = ingredient_parent.get_attribute("href").replace('https://my.whisk.com/ingredients/','')
-            if os.path.exists (f'myrecipes//static//ingredient_images//{ingredient_name}.jpg'):
-              pass
-            else:
-              
-              try:
-                #identify ingredient image to be captured
-                ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12892")]') #class="s68-145 s12808 s12806"
-                #write file
-                with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
-                  sleep(.5)
-                  file.write(ingredient_image.screenshot_as_png)
-              except:
-                ingredient_name == '_unknown'
-                    
-            #get the ingredient, quantity and note from the UI
-            ingredient_full = ingredient_parent.find_element("xpath", './/span[ @data-testid="recipe-ingredient"]') 
+        source_urls.append(source_url)
 
-            name_written = ingredient_full.text.split('\n')[0]
-            try:  
-              ingredient_note = ingredient_full.text.split('\n')[1]
-            except:
-              ingredient_note = None
-
-            #INSERT ingredient
-            ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
-            db.session.add(ingredient)
-            db.session.commit()
+      #Prints progress status
+      source_url_count += 1
+      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} processing... (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
+    else:
+      source_urls.append("Not Found")
+      print(f'No source URL found for {recipe_name}')
+    
+    #get cooking time
+    try:
+      prep_time = None
+      cook_time = None
+      cook_prep_time = driver.find_element('xpath', '//div[ @class="s191 s1179"]')  #class="s191 s1179"
+      cook_prep_time = cook_prep_time.text
+      try:
+        if cook_prep_time.split('\n')[0] == 'Prep:':
+            prep_time = cook_prep_time.split('\n')[1]
       except:
-        print(f'ingredients not found for {recipe_name}')
-
-      update_AR_recipes(current_recipe_id, source_url)
+        pass
       
-      if 'https://www.allrecipes.com/' not in source_url:  
+      try:
+        if cook_prep_time.split('\n')[2] == 'Cook:':
+            cook_time = cook_prep_time.split('\n')[3]
+      except:
+        pass
+    except:
+      pass
+      print(f'cook_prep time not found for {recipe_name}')
+
+    ## NEW DB  ##
+    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(prep_time=prep_time, cook_time=cook_time)
+    db.session.execute(stmt)
+    db.session.commit()
+
+    #get serving count
+    try:
+      #if provided
+      servings_elment = driver.find_element(By.CLASS_NAME, "s11286") #old: s11293
+      servings = servings_elment.text.split(' ')[0]
+    except:
+      #when no serving count is provided
+      servings = None
+      print(f'Servings not found for {recipe_name}')
+    
+    #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
+
+    #get short URL
+    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11871")]') #s28 s30 s31 s11799
+
+    #get cuisine
+    try:
+      cuisine = driver.find_element('xpath', '//a[ contains(@href, "/search/recipes?cuisines")]').text 
+    except:
+      print(f'No cuisine found for {recipe_name}')
+
+    #UPDATE Recipe
+    stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(servings=servings, source_url_short=source_url_short.text, cuisine=cuisine)
+    db.session.execute(stmt)
+    db.session.commit()
+    
+    #If recipe image does not already exist, click on recipe image to expand and save to file
+    if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
+      save_image = 1
+      try: 
+        image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+        sleep(2)
+        image.click()    
+      except:
+        sleep(5)
         try:
-          instructions = driver.find_elements(By.XPATH, '//span[contains (@class, "s28 s32 s10139")]') #use the parent to the initial span. Use "Balsamic Benihana sauce will turn any vegetable into a scene-stealer" as an example
-          instruction_sequence = 0
-          for instruction in instructions:
-            instruction_sequence =+ 1
-            #INSERT instruction
-            instruction_to_db = Recipe_Ingredient(recipe_id=current_recipe_id, type=1, text_contents=instruction.text, sequence=instruction_sequence)
-            db.session.add(instruction_to_db)
-          db.session.commit()
+          image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+          sleep(4)
+          image.click()
         except:
-          pass
+          print(f'Could not get recipe image for {recipe_name}')
+          save_image = 0
+      
+      if save_image == 1:  
+        
+        #open file in write and binary mode
+        with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
+          sleep(5)
+          #get large image to be captured
+          try:
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
+          except:
+            print(f'Retrying save of large image in 10s for {recipe_name}')
+            sleep(10)
+            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
+          #write file
+          try:
+            file.write(large_image.screenshot_as_png)
+            #close the overlay window by clicking
+            large_image.click()
+            
+            #Update recipe with image file
+            stmt = update(Recipe).where(Recipe.whisk_url == whisk_url).values(image_file=str(current_recipe_id)+'.jpg')
+            db.session.execute(stmt)
+            db.session.commit()
+          except:
+            print(f'Failed to save screenshot for {recipe_name}')
 
-    return(whisk_urls)
+    #get ingredients
+    #element.scrollIntoView({ alignToTop: "True" });
+    try:
+      first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12953")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
+      first_ingredient.location_once_scrolled_into_view
 
-def update_AR_recipes(current_recipe_id, source_url):
+      ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12953")]')
+
+      stmt = delete(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == current_recipe_id)
+      db.session.execute(stmt)
+      db.session.commit()
+      ingredient_number = 0
+      for ingredient_parent in ingredient_parents:
+
+          #scroll browser down if 10 ingredients are hit - resolved issue with capturing ingredient image       
+          ingredient_number += 1
+          if ingredient_number % 10 == 0:
+            ingredient_parent.location_once_scrolled_into_view
+          
+          #get the official raw name and store image 
+          ingredient_name = ingredient_parent.get_attribute("href").replace('https://my.whisk.com/ingredients/','')
+          if os.path.exists (f'myrecipes//static//ingredient_images//{ingredient_name}.jpg'):
+            pass
+          else:
+            
+            try:
+              #identify ingredient image to be captured
+              ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12892")]') #class="s68-145 s12808 s12806"
+              #write file
+              with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
+                sleep(.5)
+                file.write(ingredient_image.screenshot_as_png)
+            except:
+              ingredient_name == '_unknown'
+                  
+          #get the ingredient, quantity and note from the UI
+          ingredient_full = ingredient_parent.find_element("xpath", './/span[ @data-testid="recipe-ingredient"]') 
+
+          name_written = ingredient_full.text.split('\n')[0]
+          try:  
+            ingredient_note = ingredient_full.text.split('\n')[1]
+          except:
+            ingredient_note = None
+
+          #INSERT ingredient
+          ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
+          db.session.add(ingredient)
+          db.session.commit()
+    except:
+      print(f'ingredients not found for {recipe_name}')
+
+    update_AR_recipe(current_recipe_id, source_url)
+    
+    if 'https://www.allrecipes.com/' not in source_url:  
+      try:
+        instructions = driver.find_elements(By.XPATH, '//span[contains (@class, "s28 s32 s10139")]') #use the parent to the initial span. Use "Balsamic Benihana sauce will turn any vegetable into a scene-stealer" as an example
+        instruction_sequence = 0
+        for instruction in instructions:
+          instruction_sequence =+ 1
+          #INSERT instruction
+          instruction_to_db = Recipe_Ingredient(recipe_id=current_recipe_id, type=1, text_contents=instruction.text, sequence=instruction_sequence)
+          db.session.add(instruction_to_db)
+        db.session.commit()
+      except:
+        pass
+
+  return(whisk_urls)
+
+def update_AR_recipe(current_recipe_id, source_url):
     if 'https://www.allrecipes.com/' in source_url:  
-      all_instructions, notes = ScrapeAR.scrapeAR(source_url)
+      additional_time, all_instructions, notes = ScrapeAR.scrapeAR(source_url)
+      stmt = update(Recipe).where(Recipe.recipe_id == current_recipe_id).values(additional_time=additional_time)
+      db.session.execute(stmt)
+      db.session.commit()
+
       stmt = delete(Recipe_Instruction).where(Recipe_Instruction.recipe_id == current_recipe_id)
       db.session.execute(stmt)
       db.session.commit()
