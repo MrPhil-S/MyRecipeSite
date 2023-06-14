@@ -12,6 +12,14 @@ def scrapeAR(url):
     
     driver.get(url)
     sleep(1)
+
+    recipe_details = driver.find_elements(By.XPATH, '//div[ @class="mntl-recipe-details__item"]')
+    additional_time = None
+    for recipe_detail in recipe_details:
+        recipe_detail = recipe_detail.text
+        if 'Additional Time' in recipe_detail:
+            additional_time = recipe_detail.split('\n')[1]
+
     instrunction_group = driver.find_element('xpath', '//ol[ @class="comp mntl-sc-block-group--OL mntl-sc-block mntl-sc-block-startgroup"]')
 
                      #    driver.find_element('xpath', '//ol[ @class="comp mntl-sc-block-group--OL mntl-sc-block mntl-sc-block-startgroup"]/following::p[@class="comp mntl-sc-block mntl-sc-block-html"]')
@@ -34,4 +42,4 @@ def scrapeAR(url):
     #print(driver.find_element('xpath', '//div[ @class="comp mntl-recipe-intro__content mntl-sc-page mntl-block"]').text)
 
 
-    return all_instructions, notes
+    return additional_time, all_instructions, notes

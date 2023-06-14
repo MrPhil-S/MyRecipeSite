@@ -5,7 +5,7 @@ from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page
 from flask import request, render_template, redirect, url_for, flash
 import os
 from PIL import Image
-import secrets
+#import secrets
 from myrecipes import get_recipies
 
 @app.route('/setup')
@@ -38,7 +38,7 @@ def import_recipes():
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
-    #options: Onlyaddnew    Upsertall AROnly
+    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4
     if option in (1, 2):
         get_recipies.main(option)
         if option == 1:
@@ -46,9 +46,9 @@ def process_recipes(option):
         elif option == 2:
             flash(f'Updated all recipes', 'success')
     elif option == 3:
-        recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
+        recipes = Recipe.query.order_by(Recipe.recipe_id.asc()).all()
         for recipe in recipes:
-            get_recipies.update_AR_recipes(recipe.recipe_id, recipe.source_url)  
+            get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
         flash('AR recipes updated', 'success')     
     return redirect(url_for('import_recipes'))
 
