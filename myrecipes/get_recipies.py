@@ -118,7 +118,7 @@ def main(option):
     except:
       total_time = None
 
-    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4
+    # >>>>  options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4  <<<<
 
     #UPSERT INTO recipe 
     if option in (1, 2):
@@ -131,9 +131,8 @@ def main(option):
         db.session.rollback()
         # Handle the case when the whisk_url already exists in the Recipe table
         print(f'{name} already exists.')
-  ### End for loop over cards ###
-
-    
+     ### End for loop over cards ###
+   
   #del whisk_urls[0:248]             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   #provide option to upsert all urls or only add new ones
   if option == 1:
@@ -153,7 +152,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
   source_url_count = 0
   source_urls = []
   for whisk_url in whisk_urls:
-    random_sleep = random.uniform(4, 8) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    random_sleep = random.uniform(5, 15) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     sleep(random_sleep)
 
     driver.get(whisk_url)
@@ -164,7 +163,16 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     recipe_name = current_recipe.name if name else None
     
     #get source URL
-    find_href = driver.find_elements(By.XPATH, '//a[ @class="s11736 s190 wx-link-dark s12815 s320"]')  
+    source_url_path = '//a[ @class="s11736 s190 wx-link-dark s12815 s320"]'
+
+    try:
+      find_href = driver.find_elements(By.XPATH, source_url_path) 
+    except:
+      print(f'Could not find source URL for {recipe_name}. Waiting 10 seconds...')
+      sleep(5)
+      print('5s left...')
+      sleep(5)
+      find_href = driver.find_elements(By.XPATH, source_url_path) 
     if len(find_href) > 0:
       for source_url in find_href:
         source_url = source_url.get_attribute("href")
@@ -190,7 +198,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     try:
       prep_time = None
       cook_time = None
-      cook_prep_time = driver.find_element('xpath', '//div[ @class="s191 s1179"]')  #class="s191 s1179"
+      cook_prep_time = driver.find_element('xpath', '//div[ @class="s191 s1179"]')  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       cook_prep_time = cook_prep_time.text
       try:
         if cook_prep_time.split('\n')[0] == 'Prep:':
@@ -215,7 +223,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     #get serving count
     try:
       #if provided
-      servings_elment = driver.find_element(By.CLASS_NAME, "s11286") #old: s11293
+      servings_elment = driver.find_element(By.CLASS_NAME, "s11293") #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       servings = servings_elment.text.split(' ')[0]
     except:
       #when no serving count is provided
@@ -225,7 +233,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     #conn.execute('''UPDATE recipe SET servings = ? WHERE whisk_url = ?''', (servings, whisk_url))
 
     #get short URL
-    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11871")]') #s28 s30 s31 s11799
+    source_url_short = driver.find_element('xpath', '//span[ contains(@class, "s11890")]') #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     #get cuisine
     try:
@@ -241,14 +249,15 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     #If recipe image does not already exist, click on recipe image to expand and save to file
     if not os.path.exists (f'myrecipes//static//recipe_images//{current_recipe_id}.jpg'):
       save_image = 1
+      image_path = '//img[ contains(@class, "s320")]'  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
       try: 
-        image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+        image = driver.find_element("xpath", image_path)            #s68-146 s11706 s12502 s320  
         sleep(2)
         image.click()    
       except:
         sleep(5)
         try:
-          image = driver.find_element("xpath", '//img[ contains(@class, "s320")]')            #s68-146 s11706 s12502 s320  
+          image = driver.find_element("xpath", image_path)            #s68-146 s11706 s12502 s320  
           sleep(4)
           image.click()
         except:
@@ -261,12 +270,13 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
         with open(f'myrecipes//static//recipe_images//{current_recipe_id}.jpg', 'wb') as file:
           sleep(5)
           #get large image to be captured
+          large_image_path = '//img[ contains(@class, "s11791")]'
           try:
-            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
+            large_image = driver.find_element('xpath', large_image_path)  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
           except:
             print(f'Retrying save of large image in 10s for {recipe_name}')
             sleep(10)
-            large_image = driver.find_element('xpath', '//img[ contains(@class, "s11791")]')  #class="s68-148 s11744"
+            large_image = driver.find_element('xpath', large_image_path)  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
           #write file
           try:
             file.write(large_image.screenshot_as_png)
@@ -282,11 +292,12 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
 
     #get ingredients
     #element.scrollIntoView({ alignToTop: "True" });
+    ingredient_parents_path = '//a[contains (@class, "s13000")]'  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     try:
-      first_ingredient = driver.find_element('xpath', '//a[contains (@class, "s12953")]') #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
+      first_ingredient = driver.find_element('xpath', ingredient_parents_path ) #class="s11674 wx-link-dark s191 s257 s5731 s251 s12919"
       first_ingredient.location_once_scrolled_into_view
 
-      ingredient_parents = driver.find_elements(By.XPATH, '//a[contains (@class, "s12953")]')
+      ingredient_parents = driver.find_elements(By.XPATH, ingredient_parents_path)
 
       stmt = delete(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == current_recipe_id)
       db.session.execute(stmt)
@@ -307,7 +318,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
             
             try:
               #identify ingredient image to be captured
-              ingredient_image = ingredient_parent.find_element('xpath', './/img[ contains(@class, "s12892")]') #class="s68-145 s12808 s12806"
+              ingredient_image = ingredient_parent.find_element('xpath', './/img[ @class="s68-199 s12863 s12861"]') #<<<<<<<<<<<<<<<<<<<<<<<<<<
               #write file
               with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
                 sleep(.5)
@@ -335,7 +346,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     
     if 'https://www.allrecipes.com/' not in source_url:  
       try:
-        instructions = driver.find_elements(By.XPATH, '//span[contains (@class, "s28 s32 s10139")]') #use the parent to the initial span. Use "Balsamic Benihana sauce will turn any vegetable into a scene-stealer" as an example
+        instructions = driver.find_elements(By.XPATH, '//span[contains (@class, "s23 s27 s10139")]') #<<<<<<<use the parent to the initial span. Use "Balsamic Benihana sauce will turn any vegetable into a scene-stealer" as an example
         instruction_sequence = 0
         for instruction in instructions:
           instruction_sequence =+ 1
