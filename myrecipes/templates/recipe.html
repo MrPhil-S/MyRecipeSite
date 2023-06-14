@@ -15,8 +15,16 @@
       <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid max-width: 100%">
     </div>
     <div class="col">
-      <h1>{{ recipe.name }}</h1>
-      <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>
+      <div class="row">
+        <h1>{{ recipe.name }}</h1>
+      </div>
+
+      <div class="row">
+        <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
+      </div>
+      <div class="row align-items-end"> 
+        <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
+      </div>
     </div>
   </div>
 
