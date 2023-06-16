@@ -38,18 +38,23 @@ def import_recipes():
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
-    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4
-    if option in (1, 2):
+    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, 4-BAOnly
+    if option == 2:
         get_recipies.main(option)
-        if option == 1:
-            flash(f'Only added new recipes', 'success')
-        elif option == 2:
-            flash(f'Updated all recipes', 'success')
-    elif option == 3:
+        flash(f'Upserted all recipes.', 'success')
+    elif option == 1:
+        get_recipies.main(option)
+        flash(f'Added new recipes', 'success')
+    elif option in (3, 4):
         recipes = Recipe.query.order_by(Recipe.recipe_id.asc()).all()
-        for recipe in recipes:
-            get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
-        flash('AR recipes updated', 'success')     
+        if option == 3:
+            for recipe in recipes:
+                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
+            flash('AR recipes updated', 'success')
+        elif option == 4:
+            for recipe in recipes:
+                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
+            flash('BA recipes updated', 'success')     
     return redirect(url_for('import_recipes'))
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
@@ -70,25 +75,6 @@ def recipe(recipe_id):
     
     return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count)
 
-
-def save_image(form_image, recipe_id):
-    #Rename file
-    #random_hex = secrets.token_hex(8)
-    _, f_ext = os.path.splitext(form_image.filename)
-    image_fn = str(recipe_id) + f_ext
-    image_path = os.path.join(app.root_path, 'static/recipe_images', image_fn)
-    
-    output_size = (1000, 1000)
-    i = Image.open(form_image)
-    i.thumbnail(output_size)
-    
-    if i.mode in ("RGBA", "P"):
-        i = i.convert("RGB")
-
-    i.save(image_path) 
-    return image_fn
-
-
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
     form =  add_recipe_form()
@@ -99,8 +85,9 @@ def add_recipe():
         # Get populted form data
         name = request.form['name']
         source_url = request.form['url']
-        instructions = request.form['instructions']
         ingredients = request.form.getlist('ingredient[]')
+        instructions = request.form.getlist('instructions[]')
+        source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
         recipe = Recipe(name=name, source_url=source_url, instructions=instructions, image_file=image_file)
@@ -128,6 +115,22 @@ def add_recipe():
                 db.session.add(ingredient)
         db.session.commit()
 
+        sequence = 0
+        for instruction in instructions:
+            if len(instruction) > 0:  
+                sequence += 1
+                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
+                db.session.add(instruction)
+        db.session.commit()
+
+        sequence = 0
+        for source_note in source_notes:
+            if len(source_note) > 0:  
+                sequence += 1
+                source_note = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
+                db.session.add(source_note)
+        db.session.commit()
+
         #return redirect(url_for('recipes'))
         flash(f'{recipe.name} added!', 'success')
         #return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
@@ -140,16 +143,19 @@ def edit_recipe(recipe_id):
     #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
+    instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
+
     image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
     form = edit_recipe_form()
      
-
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
     form.url.data = recipe.source_url
-    form.instructions.data = recipe.instructions
+    form.user_note.data = recipe.note_from_user
     form.ingredient.data =  ingredients
-
+    form.instructions.data = instructions
+    form.source_notes.data = source_notes
 
     if form.validate_on_submit():
         if form.image.data is not None:
@@ -159,31 +165,48 @@ def edit_recipe(recipe_id):
             recipe.image_file = image_file
 
         recipe.name = request.form['name']
-        recipe.instructions = request.form['instructions']
         recipe.source_url = request.form['url']
-
-        #recipe.name = form.name.data
-        #recipe.url = form.url.data
-        #recipe.instructions = form.instructions.data
+        recipe.note_from_user = request.form['user_note']
         db.session.commit() 
 
         recipe_id= recipe.recipe_id
         # Delete existing ingredients first
         Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
-
-       # Get populated form data
+         # Get populated form data
         ingredients = request.form.getlist('ingredient')
-
          # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
-                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id)
+                ingredient = Recipe_Ingredient(text_contents=ingredient.strip(), recipe_id=recipe.recipe_id)
                 db.session.add(ingredient)
+        db.session.commit()
+
+        # Delete existing instrunctions first
+        Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
+         # Get populated form data
+        instructions = request.form.getlist('instructions')
+         # Add related ingredients to DB
+        sequence = 0
+        for instruction in instructions:
+            if len(instruction) > 0:  
+                sequence =+ 1
+                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
+                db.session.add(instruction)
+        db.session.commit()
+
+        notes = request.form.getlist('source_notes')
+         # Add related ingredients to DB
+        sequence = 0
+        for source_note in source_notes:
+            if len(source_note) > 0:  
+                sequence =+ 1
+                source_note = Recipe_Instruction(text_contents=source_note.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
+                db.session.add(source_note)
         db.session.commit()
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, form=form, image_file=image_file)
+    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file)
 
 
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
@@ -191,6 +214,7 @@ def delete_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     db.session.delete(recipe)
     Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
+    Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
 
     db.session.commit()
 
@@ -200,3 +224,20 @@ def delete_recipe(recipe_id):
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
     
+
+def save_image(form_image, recipe_id):
+    #Rename file
+    #random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_image.filename)
+    image_fn = str(recipe_id) + f_ext
+    image_path = os.path.join(app.root_path, 'static/recipe_images', image_fn)
+    
+    output_size = (1000, 1000)
+    i = Image.open(form_image)
+    i.thumbnail(output_size)
+    
+    if i.mode in ("RGBA", "P"):
+        i = i.convert("RGB")
+
+    i.save(image_path) 
+    return image_fn
