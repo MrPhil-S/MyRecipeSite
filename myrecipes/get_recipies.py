@@ -65,7 +65,6 @@ def main(option):
   #navigate to page
   driver.get("https://my.whisk.com/recipe-box")
 
-
   x = 4
   print(f'Search will start in {x} seconds')
   while x > 1:
@@ -78,6 +77,7 @@ def main(option):
   def scroll_to_bottom():
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
+        print("Scrolling...")
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         sleep(2)
         new_height = driver.execute_script("return document.body.scrollHeight")
@@ -86,42 +86,42 @@ def main(option):
         last_height = new_height
   scroll_to_bottom() #temporarly comment out to avoid extra calls to website
 
+    # >>>>  options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4  <<<<
+
   #get Whisk recipe page URLs
   whisk_urls = []
   new_whisk_urls = []
-  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s188")]')   #  s69-21 s188   
+  card_headers_objs = driver.find_elements(By.XPATH, '//a[ contains(@class, "s191")]')   #  s69-21 s188   
   for card_headers_obj in card_headers_objs:
     card_headers = card_headers_obj.text
     # print(f'HEADERS: {card_headers}')
 
-    name = card_headers.split('\n')[0]
     whisk_url = card_headers_obj.get_attribute("href")
     whisk_url =  whisk_url.split('?')[0]
     whisk_urls.append(whisk_url)
 
-    try:
-      ingredient_count = card_headers.split('\n')[1]
-      if "ingredients" in ingredient_count:
-        ingredient_count = ingredient_count.replace('ingredients','')
-      else:
+    if option == 2:
+      name = card_headers.split('\n')[0]
+      try:
+        ingredient_count = card_headers.split('\n')[1]
+        if "ingredients" in ingredient_count:
+          ingredient_count = ingredient_count.replace('ingredients','')
+        else:
+          ingredient_count = None
+      except:
         ingredient_count = None
-    except:
-      ingredient_count = None
-    
-    try:
-      total_time = card_headers.split('\n')[2]
-      matches = ['h ', 'h', 'min']
-      if any([x in total_time for x in matches]):
-        pass
-      else:
+      
+      try:
+        total_time = card_headers.split('\n')[2]
+        matches = ['h ', 'h', 'min']
+        if any([x in total_time for x in matches]):
+          pass
+        else:
+          total_time = None
+      except:
         total_time = None
-    except:
-      total_time = None
 
-    # >>>>  options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, BAOnly-4  <<<<
-
-    #UPSERT INTO recipe 
-    if option in (1, 2):
+      #UPSERT INTO recipe 
       recipe = Recipe(name=name, whisk_url=whisk_url, ingredient_count=ingredient_count, total_time=total_time)
       try:
         recipe = db.session.merge(recipe)
@@ -131,29 +131,36 @@ def main(option):
         db.session.rollback()
         # Handle the case when the whisk_url already exists in the Recipe table
         print(f'{name} already exists.')
+
+      scrape_recipe_pages(driver, whisk_urls, name, total_recipes)
+
      ### End for loop over cards ###
    
   #del whisk_urls[0:248]             #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   #provide option to upsert all urls or only add new ones
   if option == 1:
+    recipes = Recipe.query.order_by(Recipe.whisk_url.asc()).all()
+    new_whisk_urls = list(set(whisk_urls) - set(recipes))
     whisk_urls = new_whisk_urls
+
+
   total_recipes = len(whisk_urls)
   print(f'{total_recipes} URLs found ')
-
+  print(f'Option {option}')
+  
   #TESTING - limite the amount
   #whisk_urls = whisk_urls[:30]
-
-  ####for each W page, navigate within and scrape 
-  if option in (1, 2):
-    scrape_recipe_pages(driver, whisk_urls, name, total_recipes)
-
+ 
 
 def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
   source_url_count = 0
   source_urls = []
+  recipe_names = []
+  sleep = 2
   for whisk_url in whisk_urls:
-    random_sleep = random.uniform(5, 15) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    sleep(random_sleep)
+    if len(whisk_urls) > 5:
+      random_sleep = random.uniform(3, 13) #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+      sleep(random_sleep)
 
     driver.get(whisk_url)
     sleep(2)       
@@ -161,7 +168,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
     current_recipe = Recipe.query.filter_by(whisk_url=whisk_url).first()
     current_recipe_id = current_recipe.recipe_id if current_recipe else None
     recipe_name = current_recipe.name if name else None
-    
+    recipe_names = recipe_names.append(recipe_name)
     #get source URL
     source_url_path = '//a[ @class="s11736 s190 wx-link-dark s12815 s320"]'
 
@@ -189,7 +196,7 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
 
       #Prints progress status
       source_url_count += 1
-      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} processing... (Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )))')
+      print(f'{int((source_url_count/total_recipes)*100)}%. {recipe_name} processing... Remaining source urls obtained: {source_url_count} of {total_recipes} (Remaining: {total_recipes - source_url_count + 1} )')
     else:
       source_urls.append("Not Found")
       print(f'No source URL found for {recipe_name}')
@@ -304,41 +311,39 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
       db.session.commit()
       ingredient_number = 0
       for ingredient_parent in ingredient_parents:
-
-          #scroll browser down if 10 ingredients are hit - resolved issue with capturing ingredient image       
-          ingredient_number += 1
-          if ingredient_number % 10 == 0:
-            ingredient_parent.location_once_scrolled_into_view
-          
-          #get the official raw name and store image 
-          ingredient_name = ingredient_parent.get_attribute("href").replace('https://my.whisk.com/ingredients/','')
-          if os.path.exists (f'myrecipes//static//ingredient_images//{ingredient_name}.jpg'):
-            pass
-          else:
-            
-            try:
-              #identify ingredient image to be captured
-              ingredient_image = ingredient_parent.find_element('xpath', './/img[ @class="s68-199 s12863 s12861"]') #<<<<<<<<<<<<<<<<<<<<<<<<<<
-              #write file
-              with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
-                sleep(.5)
-                file.write(ingredient_image.screenshot_as_png)
-            except:
-              ingredient_name == '_unknown'
-                  
-          #get the ingredient, quantity and note from the UI
-          ingredient_full = ingredient_parent.find_element("xpath", './/span[ @data-testid="recipe-ingredient"]') 
-
-          name_written = ingredient_full.text.split('\n')[0]
-          try:  
-            ingredient_note = ingredient_full.text.split('\n')[1]
+        #scroll browser down if 10 ingredients are hit - resolved issue with capturing ingredient image       
+        ingredient_number += 1
+        if ingredient_number % 10 == 0:
+          ingredient_parent.location_once_scrolled_into_view
+        
+        #get the official raw name and store image 
+        ingredient_name = ingredient_parent.get_attribute("href").replace('https://my.whisk.com/ingredients/','')
+        if os.path.exists (f'myrecipes//static//ingredient_images//{ingredient_name}.jpg'):
+          pass
+        else:
+          try:
+            #identify ingredient image to be captured
+            ingredient_image = ingredient_parent.find_element('xpath', './/img[ @class="s68-199 s12863 s12861"]') #<<<<<<<<<<<<<<<<<<<<<<<<<<
+            #write file
+            with open(f'myrecipes//static//ingredient_images//{ingredient_name}.jpg', 'wb') as file:
+              sleep(.5)
+              file.write(ingredient_image.screenshot_as_png)
           except:
-            ingredient_note = None
+            ingredient_name == '_unknown'
+                
+        #get the ingredient, quantity and note from the UI
+        ingredient_full = ingredient_parent.find_element("xpath", './/span[ @data-testid="recipe-ingredient"]') 
 
-          #INSERT ingredient
-          ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
-          db.session.add(ingredient)
-          db.session.commit()
+        name_written = ingredient_full.text.split('\n')[0]
+        try:  
+          ingredient_note = ingredient_full.text.split('\n')[1]
+        except:
+          ingredient_note = None
+
+        #INSERT ingredient
+        ingredient = Recipe_Ingredient(recipe_id=current_recipe_id, name_written=name_written, note=ingredient_note, name_official=ingredient_name)
+        db.session.add(ingredient)
+        db.session.commit()
     except:
       print(f'ingredients not found for {recipe_name}')
 
@@ -356,8 +361,10 @@ def scrape_recipe_pages(driver, whisk_urls, name, total_recipes):
         db.session.commit()
       except:
         pass
-
-  return(whisk_urls)
+  
+  #recipe_names = recipe_names if recipe_names else None
+  #total_recipes = total_recipes if total_recipes else 0
+  return()
 
 def update_AR_recipe(current_recipe_id, source_url):
     if 'https://www.allrecipes.com/' in source_url:  
