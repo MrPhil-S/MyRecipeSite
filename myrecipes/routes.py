@@ -2,9 +2,11 @@ from myrecipes import app
 from myrecipes import db
 from myrecipes.forms import add_recipe_form, edit_recipe_form
 from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page_View
-from flask import request, render_template, redirect, url_for, flash
+from flask import request, render_template, redirect, url_for, flash, jsonify
 import os
 from PIL import Image
+from sqlalchemy import text
+
 #import secrets
 from myrecipes import get_recipies
 
@@ -90,7 +92,7 @@ def add_recipe():
         source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, instructions=instructions, image_file=image_file)
+        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
@@ -105,13 +107,21 @@ def add_recipe():
         recipe = Recipe.query.get_or_404(recipe_id)
         recipe.image_file = image_file
 
-        
-        #recipe = Recipe(name=name, url=url, instructions=instructions, image_file=image_file)
-
         # Add related ingredients to DB
         for ingredient in ingredients:
-            if len(ingredient) > 0:  
-                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id)
+            if len(ingredient) > 0: 
+
+                stmt = text('''SELECT  
+                    name_official
+                FROM `recipe__ingredient`
+                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
+                ORDER BY length(name_official) DESC
+                LIMIT 1''')
+                result  = db.engine.execute(stmt, ingredient_param=ingredient)
+                row = result.fetchone()
+                name_official = row[0] if row is not None else 'default_ingredient'
+
+                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
                 db.session.add(ingredient)
         db.session.commit()
 
@@ -136,7 +146,21 @@ def add_recipe():
         #return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
         return redirect(url_for('recipe', recipe_id=recipe_id))  #return redirect Per Corey
     return render_template('add_recipe.html', title='Add Recipe', form=form)
+
+@app.route('/add_recipe_api', methods=['POST'])
+def add_recipe_api():
+    data =  request.get_json()
     
+    name = data.get("name")
+
+    recipe = Recipe(name=name)
+
+    db.session.add(recipe)
+    #db.session.flush()
+   # db.session.refresh(recipe)
+    db.session.commit()
+    return jsonify(data), 201
+
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
