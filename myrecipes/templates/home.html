@@ -28,7 +28,7 @@
                         alt="{{ recipe.name }}" >
                         <div class="card-img-content">
                             <p class="card-text mt-auto">
-                                {% if recipe.source_url %}
+                                {% if recipe.source_url_short %}
                                   {{ recipe.source_url_short | truncate(30) }}
                                 {% else %}
                                   No source URL available

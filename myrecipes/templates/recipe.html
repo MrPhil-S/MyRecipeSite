@@ -20,10 +20,16 @@
       </div>
 
       <div class="row">
-        <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
+        {% if recipe.source_url_short %}
+          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
+        {% endif %}
+
       </div>
       <div class="row align-items-end"> 
-        <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
+        {% if recipe.whisk_url %}
+          <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
+        {% endif %}
+
       </div>
     </div>
   </div>
