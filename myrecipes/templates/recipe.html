@@ -34,14 +34,21 @@
     </div>
   </div>
 
-
-
   <h2>Ingredients</h2>
-  <ul>
+  <ul class="list-group">
     {% for ingredient in ingredients %}
-    <ul><img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">{{ ingredient.name_written }}</ul>
-    <ul>{{ ingredient.note|default('') }}</ul>
-
+    <li class="list-group-item">
+      <div class="row">
+        <div class="col-1">
+          <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
+        </div>
+        <div class="col-11">
+          {{ ingredient.name_written }}
+          <br>
+          <small class="text-muted">{{ ingredient.note or '' }}</small>
+        </div>
+      </div>
+    </li>
     {% endfor %}
   </ul>
 
