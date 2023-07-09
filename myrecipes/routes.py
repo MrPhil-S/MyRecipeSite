@@ -88,6 +88,8 @@ def add_recipe():
         name = request.form['name']
         source_url = request.form['url']
         ingredients = request.form.getlist('ingredient[]')
+        ingredient_notes = request.form.getlist('ingredient_note[]')
+
         instructions = request.form['instructions']
         source_notes = request.form.getlist('source_notes[]')
 
@@ -108,7 +110,7 @@ def add_recipe():
         recipe.image_file = image_file
 
         # Add related ingredients to DB
-        for ingredient in ingredients:
+        for index, ingredient in enumerate(ingredients):
             if len(ingredient) > 0: 
 
                 stmt = text('''
@@ -127,9 +129,12 @@ def add_recipe():
                 row = result.fetchone()
                 name_official = row[0] if row is not None else 'default_ingredient'
 
-                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
+                ingredient_note = ingredient_notes[index]
+
+                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
                 db.session.add(ingredient)
         db.session.commit()
+
 
         instructions_list = instructions.splitlines()   
         sequence = 0

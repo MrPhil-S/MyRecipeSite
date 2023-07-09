@@ -24,18 +24,7 @@
     <button type="submit" class="btn btn-primary">Add Recipe</button>
   </form> -->
  
- <!--<script>
-    function addIngredient() {
-        let additionalIngredients = document.getElementById("additional_ingredients");
-        let ingredientField = document.createElement("input");
-        ingredientField.setAttribute("type", "text");
-        ingredientField.setAttribute("name", "ingredient[]");
-        ingredientField.setAttribute("required", true);
-        ingredientField.setAttribute("class", "form-control");
-        additionalIngredients.appendChild(ingredientField);
-    </script>
-    }-->
-
+ <!--
     <script>
       window.onload = function() {
           let additionalIngredients = document.getElementById("additional_ingredients");
@@ -57,6 +46,78 @@
           additionalIngredients.appendChild(ingredientField);
       }
   </script>
+-->
+<script>
+  window.onload = function() {
+    let additionalIngredients = document.getElementById("additional_ingredients");
+    let latestIngredientField;
+
+    function addIngredientRow(initialLoad) {
+      let ingredientRow = document.createElement("div");
+      ingredientRow.setAttribute("class", "form-row mb-2");
+
+      let ingredientCol1 = document.createElement("div");
+      ingredientCol1.setAttribute("class", "col");
+      ingredientCol1.appendChild(createIngredientField(initialLoad));
+
+      let ingredientCol2 = document.createElement("div");
+      ingredientCol2.setAttribute("class", "col");
+      ingredientCol2.appendChild(createIngredientNoteField(initialLoad));
+
+      ingredientRow.appendChild(ingredientCol1);
+      ingredientRow.appendChild(ingredientCol2);
+
+      additionalIngredients.appendChild(ingredientRow);
+    }
+
+    function createIngredientField(initialLoad) {
+      let ingredientFieldContainer = document.createElement("div");
+      ingredientFieldContainer.setAttribute("class", "form-group");
+
+      if (initialLoad) {
+        let ingredientLabel = document.createElement("label");
+        ingredientLabel.textContent = "Ingredient";
+        ingredientFieldContainer.appendChild(ingredientLabel);
+      }
+
+      let ingredientField = document.createElement("input");
+      ingredientField.setAttribute("type", "text");
+      ingredientField.setAttribute("name", "ingredient[]");
+      ingredientField.setAttribute("class", "form-control form-control-lg");
+      ingredientField.addEventListener("input", function() {
+        if (ingredientField === latestIngredientField && ingredientField.value !== "" && !ingredientField.nextElementSibling) {
+          addIngredientRow(false); // Add a new ingredient row when the latest field is fully populated
+          latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
+        }
+      });
+
+      ingredientFieldContainer.appendChild(ingredientField);
+      return ingredientFieldContainer;
+    }
+
+    function createIngredientNoteField(initialLoad) {
+      let ingredientNoteFieldContainer = document.createElement("div");
+      ingredientNoteFieldContainer.setAttribute("class", "form-group");
+
+      if (initialLoad) {
+        let ingredientNoteLabel = document.createElement("label");
+        ingredientNoteLabel.textContent = "Ingredient Note";
+        ingredientNoteFieldContainer.appendChild(ingredientNoteLabel);
+      }
+
+      let ingredientNoteField = document.createElement("input");
+      ingredientNoteField.setAttribute("type", "text");
+      ingredientNoteField.setAttribute("name", "ingredient_note[]");
+      ingredientNoteField.setAttribute("class", "form-control form-control-lg");
+
+      ingredientNoteFieldContainer.appendChild(ingredientNoteField);
+      return ingredientNoteFieldContainer;
+    }
+
+    addIngredientRow(true); // Add the initial ingredient row with labels
+    latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
+  }
+</script>
 
   <form method="POST" enctype="multipart/form-data" action="">
     {{form.hidden_tag()}}
@@ -90,20 +151,9 @@
       </div>
 
       <div class="form-group">
-        {{ form.ingredient.label(class="form-control-label") }}
-        
-        {% if form.ingredient.errors %}
-          {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
-          <div class="invalid-feedback">
-              {% for error in form.ingredient.errors %}
-                <span>{{ error }}</span>
-              {% endfor %}
-          </div>
-        {% else %}
-          <div id="additional_ingredients" class="form-group"></div>
-          <button type="button" onclick="addIngredient()" class="btn btn-outline-info">+ Add more ingredients</button>
-        {% endif %}
+        <div id="additional_ingredients"></div>
       </div>
+
 
       <div class="form-group">
         {{ form.instructions.label(class="form-control-label") }}  
