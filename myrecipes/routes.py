@@ -88,7 +88,7 @@ def add_recipe():
         name = request.form['name']
         source_url = request.form['url']
         ingredients = request.form.getlist('ingredient[]')
-        instructions = request.form.getlist('instructions[]')
+        instructions = request.form['instructions']
         source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
@@ -111,9 +111,15 @@ def add_recipe():
         for ingredient in ingredients:
             if len(ingredient) > 0: 
 
-                stmt = text('''SELECT  
+                stmt = text('''
+                SELECT name_official 
+                FROM 
+                    (SELECT  
                     name_official
-                FROM `recipe__ingredient`
+                    FROM `recipe__ingredient`
+                    UNION
+                    SELECT 'soy_sauce'
+                    ) x
                 WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
                 ORDER BY length(name_official) DESC
                 LIMIT 1''')
@@ -125,21 +131,22 @@ def add_recipe():
                 db.session.add(ingredient)
         db.session.commit()
 
+        instructions_list = instructions.splitlines()   
         sequence = 0
-        for instruction in instructions:
+        for instruction in instructions_list:
             if len(instruction) > 0:  
                 sequence += 1
                 instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
                 db.session.add(instruction)
         db.session.commit()
 
-        sequence = 0
-        for source_note in source_notes:
-            if len(source_note) > 0:  
-                sequence += 1
-                source_note = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
-                db.session.add(source_note)
-        db.session.commit()
+      #  sequence = 0
+      #  for source_note in source_notes:
+      #      if len(source_note) > 0:  
+      #          sequence += 1
+      #          source_note = Recipe_Instruction(text_contents=#.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
+       #         db.session.add(source_note)
+      #  db.session.commit()
 
         #return redirect(url_for('recipes'))
         flash(f'{recipe.name} added!', 'success')
