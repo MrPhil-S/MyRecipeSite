@@ -40,6 +40,8 @@
   <ul>
     {% for ingredient in ingredients %}
     <ul><img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">{{ ingredient.name_written }}</ul>
+    <ul>{{ ingredient.note|default('') }}</ul>
+
     {% endfor %}
   </ul>
 
