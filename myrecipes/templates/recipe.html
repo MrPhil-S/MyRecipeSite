@@ -22,7 +22,11 @@
       <div class="row">
         {% if recipe.source_url_short %}
           <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
+        {% elif recipe.source_url %}
+          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>
         {% endif %}
+
+
 
       </div>
       <div class="row align-items-end"> 

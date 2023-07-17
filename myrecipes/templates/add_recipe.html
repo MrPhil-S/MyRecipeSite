@@ -2,51 +2,7 @@
 
 {% block content %}
 <div class="content-section">
-  <!--
-  <form method="POST">
-    <div class="form-group">
-      <label for="name">Name</label>
-      <input type="text" class="form-control" id="name" name="name">
-    </div>
-    <div class="form-group">
-      <label for="instructions">Instructions</label>
-      <textarea class="form-control" id="instructions" name="instructions" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-      <label for="ingredients">Ingredients</label>
-      <input type="text" class="form-control" id="ingredients" name="ingredients"
-        placeholder="Enter ingredients separated by commas">
-    </div>
-    <div class="mb-3">
-      <label for="formFile" class="form-label">Default file input example</label>
-      <input class="form-control" type="file" id="formFile">
-    </div>
-    <button type="submit" class="btn btn-primary">Add Recipe</button>
-  </form> -->
- 
- <!--
-    <script>
-      window.onload = function() {
-          let additionalIngredients = document.getElementById("additional_ingredients");
-          for (let i = 0; i < 5; i++) {
-              let ingredientField = document.createElement("input");
-              ingredientField.setAttribute("type", "text");
-              ingredientField.setAttribute("name", "ingredient[]");
-              ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
-              additionalIngredients.appendChild(ingredientField);
-          }
-      }
-  
-      function addIngredient() {
-          let additionalIngredients = document.getElementById("additional_ingredients");
-          let ingredientField = document.createElement("input");
-          ingredientField.setAttribute("type", "text");
-          ingredientField.setAttribute("name", "ingredient[]");
-          ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
-          additionalIngredients.appendChild(ingredientField);
-      }
-  </script>
--->
+
 <script>
   window.onload = function() {
     let additionalIngredients = document.getElementById("additional_ingredients");
@@ -54,10 +10,10 @@
 
     function addIngredientRow(initialLoad) {
       let ingredientRow = document.createElement("div");
-      ingredientRow.setAttribute("class", "form-row mb-2");
+      ingredientRow.setAttribute("class", "form-row ml-3");
 
       let ingredientCol1 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col");
+      ingredientCol1.setAttribute("class", "col-md-4");
       ingredientCol1.appendChild(createIngredientField(initialLoad));
 
       let ingredientCol2 = document.createElement("div");
@@ -83,7 +39,7 @@
       let ingredientField = document.createElement("input");
       ingredientField.setAttribute("type", "text");
       ingredientField.setAttribute("name", "ingredient[]");
-      ingredientField.setAttribute("class", "form-control form-control-lg");
+      ingredientField.setAttribute("class", "form-control form-control-md ");
       ingredientField.addEventListener("input", function() {
         if (ingredientField === latestIngredientField && ingredientField.value !== "" && !ingredientField.nextElementSibling) {
           addIngredientRow(false); // Add a new ingredient row when the latest field is fully populated
@@ -108,7 +64,7 @@
       let ingredientNoteField = document.createElement("input");
       ingredientNoteField.setAttribute("type", "text");
       ingredientNoteField.setAttribute("name", "ingredient_note[]");
-      ingredientNoteField.setAttribute("class", "form-control form-control-lg");
+      ingredientNoteField.setAttribute("class", "form-control form-control-md ");
 
       ingredientNoteFieldContainer.appendChild(ingredientNoteField);
       return ingredientNoteFieldContainer;
@@ -122,11 +78,11 @@
   <form method="POST" enctype="multipart/form-data" action="">
     {{form.hidden_tag()}}
     <fieldset class="form-group">
-      <legend class="border-bottom mb-4">Add Recipe</legend>
+      <legend class="border-bottom mb-4 ">Add Recipe</legend>
       <div class="form-group">
         {{ form.name.label(class="form-control-label") }}        
         {% if form.name.errors %}
-          {{ form.name(class="form-control form-control-lg is-invalid") }}
+          {{ form.name(class="form-control form-control-lg is-invalid ") }}
           <div class="invalid-feedback">
             {% for error in form.name.errors %}
               <span>{{ error }}</span>
@@ -154,6 +110,58 @@
         <div id="additional_ingredients"></div>
       </div>
 
+      <div class="form-row">
+
+        <div class="form-group col-md-3">
+          {{ form.prep_time.label(class="form-control-label") }}  
+          {% if form.prep_time.errors %}
+            {{ form.prep_time(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.prep_time.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+          {% else %}
+            {{ form.prep_time(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+        <div class="form-group col-md-3">
+          {{ form.cook_time.label(class="form-control-label") }}  
+          {% if form.cook_time.errors %}
+            {{ form.cook_time(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.cook_time.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+          {% else %}
+            {{ form.cook_time(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+        <div class="form-group col-md-3">
+          {{ form.additional_time.label(class="form-control-label") }}  
+          {% if form.additional_time.errors %}
+            {{ form.additional_time(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.additional_time.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+          {% else %}
+            {{ form.additional_time(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+      </div>
+      
+
+
+      <div class="form-group">
+        {{ form.cuisinelist.label(class="form-control-label") }}  
+        {{ form.cuisinelist(class="form-control form-control-lg") }}
+      </div>
+
+
+
 
       <div class="form-group">
         {{ form.instructions.label(class="form-control-label") }}  
@@ -169,6 +177,19 @@
         {% endif %}
       </div>
 
+      <div class="form-group">
+        {{ form.note_from_user.label(class="form-control-label") }}  
+        {% if form.note_from_user.errors %}
+          {{ form.note_from_user(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.note_from_user.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.note_from_user(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
 
 
       <div class="form-group">
@@ -183,5 +204,41 @@
     </fieldset>
     {{form.submit(class="btn btn-outline-info")}}
   </form>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="AddCuisineModalLabel" tabindex="-1" role="dialog" aria-labelledby="AddCuisineModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="DeleteModalLabel">Add new cuisine</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+     <!-- <div class="modal-body">
+        New cuisine
+      </div>-->
+      <div class="form-group col-md-3">
+        {{ form.cuisine.label(class="form-control-label") }}  
+        {% if form.cuisine.errors %}
+          {{ form.cuisine(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.cuisine.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.cuisine(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        <form action="" method="POST">
+          <input type="submit" class="btn btn-outline-info" value="Add">
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

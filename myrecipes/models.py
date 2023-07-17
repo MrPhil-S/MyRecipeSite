@@ -14,6 +14,7 @@ class Recipe(db.Model):
     cook_time = db.Column(db.String(20), nullable=True)
     additional_time = db.Column(db.String(20), nullable=True)
     cuisine = db.Column(db.String(50), nullable=True)
+    collection_id = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     servings = db.Column(db.Integer, nullable=True)
     note_from_user = db.Column(db.String(1000), nullable=True)
@@ -56,3 +57,23 @@ class Page_View(db.Model):
 
     def __repr__(self):
         return f"Page_View('{self.page_name}')"
+    
+
+class Collection(db.Model):
+    collection_id = db.Column(db.Integer, primary_key=True)
+    collection_name = db.Column(db.String(30), nullable=False)
+    create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+
+
+    def __repr__(self):
+        return f"('{self.collection_name}')"
+    
+
+class Cuisine(db.Model):
+    cuisine_id = db.Column(db.Integer, primary_key=True)
+    cuisine_name = db.Column(db.String(30), nullable=False)
+    create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+
+
+    def __repr__(self):
+        return f"('{self.cuisine_name}')"

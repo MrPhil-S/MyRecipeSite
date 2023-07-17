@@ -30,6 +30,8 @@
                             <p class="card-text mt-auto">
                                 {% if recipe.source_url_short %}
                                   {{ recipe.source_url_short | truncate(30) }}
+                                {% elif recipe.source_url %}
+                                    {{recipe.source_url | truncate(30) }}
                                 {% else %}
                                   No source URL available
                                 {% endif %}
