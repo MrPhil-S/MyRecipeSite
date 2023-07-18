@@ -18,7 +18,7 @@ class add_recipe_form(FlaskForm):
     Servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
     rating = TextAreaField('Rating')#, validators=[Length(min=2, max=9000)])
     cuisine = StringField('Cuisine')#, validators=[Length(min=2, max=9000)])
-    cuisinelist = SelectField('Cuisine', coerce=int, validators=[DataRequired()])
+    cuisinelist = SelectField('Cuisine')#, coerce=int, validators=[DataRequired()])
     collection = StringField('Collection')#, validators=[Length(min=2, max=9000)])
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     source_notes = TextAreaField('Source_notes')#, validators=[Length(min=2, max=9000)])

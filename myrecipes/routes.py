@@ -1,7 +1,7 @@
 from myrecipes import app
 from myrecipes import db
 from myrecipes.forms import add_recipe_form, edit_recipe_form
-from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page_View
+from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page_View, Collection, Cuisine
 from flask import request, render_template, redirect, url_for, flash, jsonify
 import os
 from PIL import Image
@@ -81,8 +81,13 @@ def recipe(recipe_id):
 def add_recipe():
     form =  add_recipe_form()
     image_file = None
+    
+    # Populate the dropdown field with data from the database
+    form.cuisinelist.choices = [(cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
 
     if form.validate_on_submit():
+
+        cuisinelist = Cuisine.query.get(form.dropdown.data)
 
         # Get populted form data
         name = request.form['name']
@@ -94,7 +99,7 @@ def add_recipe():
         source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file)
+        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file, cuisinelist=cuisinelist )
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
