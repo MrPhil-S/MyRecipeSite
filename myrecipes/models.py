@@ -13,7 +13,7 @@ class Recipe(db.Model):
     prep_time = db.Column(db.String(20), nullable=True)
     cook_time = db.Column(db.String(20), nullable=True)
     additional_time = db.Column(db.String(20), nullable=True)
-    cuisine = db.Column(db.String(50), nullable=True)
+    cuisine_id = db.Column(db.Integer, nullable=True)
     collection_id = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     servings = db.Column(db.Integer, nullable=True)
