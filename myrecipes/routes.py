@@ -82,24 +82,33 @@ def add_recipe():
     form =  add_recipe_form()
     image_file = None
     
-    # Populate the dropdown field with data from the database
-    form.cuisinelist.choices = [(cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
+    # Populate the dropdown fields with data from the database
+    blank_default_dropdown = (0, '')
+    form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
+    form.collectionlist.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
+    
+    form.cuisinelist.choices.insert(0, (0, ''))
+    form.collectionlist.choices.insert(0, (0, ''))
+
 
     if form.validate_on_submit():
-
-        cuisinelist = Cuisine.query.get(form.dropdown.data)
+        selected_cuisine_id = int(form.cuisinelist.data)
+        selected_collection_id = int(form.collectionlist.data)
 
         # Get populted form data
         name = request.form['name']
         source_url = request.form['url']
         ingredients = request.form.getlist('ingredient[]')
         ingredient_notes = request.form.getlist('ingredient_note[]')
-
+        
+        collection_id = selected_collection_id if selected_collection_id != 0 else None
+        cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
+     
         instructions = request.form['instructions']
         source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file, cuisinelist=cuisinelist )
+        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file, cuisine_id=cuisine_id, collection_id=collection_id )
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
