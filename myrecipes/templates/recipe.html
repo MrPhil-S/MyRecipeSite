@@ -14,7 +14,7 @@
     <div class="col-5">
       <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
     </div>
-    <div class="col">
+    <div class="col  d-flex flex-column">
 
       <div class="row">
         <small class="text-muted">{{ collection.collection_name }}</small>
@@ -24,23 +24,38 @@
         <h1>{{ recipe.name }}</h1>
       </div>
 
+      
+      {% if recipe.source_url_short %}
       <div class="row">
-        {% if recipe.source_url_short %}
           <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
         {% elif recipe.source_url %}
-          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>
-        {% endif %}
+          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>  
       </div>
+      {% endif %}
+
+      {% if recipe.whisk_url %}
       <div class="row align-items-end"> 
-        {% if recipe.whisk_url %}
           <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
-        {% endif %}
       </div>
+      {% endif %}
+
       <div>
         {% for note_from_user in note_from_user_list %}
           <p>{{note_from_user}}</p>
         {% endfor %}
       </div>
+
+      <div class="row align-bottom" >
+        {% if recipe.prep_time %}
+          {{ recipe.prep_time }}
+        {% endif %}
+
+      </div>
+
+      <div class="align-bottom">
+        This text will be aligned to the bottom.</div>
+      </div> 
+      
     </div>
   </div>
 
@@ -69,7 +84,7 @@
     {% endfor %}
   </ol>
 
-  {% if recipe.source_notes %}
+  {% if source_notes %}
     <h2>Source Notes</h2>
     <ul>
       {% for source_note in source_notes %}

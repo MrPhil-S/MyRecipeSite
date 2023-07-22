@@ -106,12 +106,17 @@ def add_recipe():
         ingredient_notes = request.form.getlist('ingredient_note[]')    
         instructions = request.form['instructions']
         note_from_user = request.form['note_from_user']
-        source_notes = request.form.getlist('source_notes[]')
+        source_notes = request.form['source_notes']
+        prep_time = request.form['prep_time']
+        cook_time = request.form['cook_time']
+        additional_time = request.form['additional_time']
+
         collection_id = selected_collection_id if selected_collection_id != 0 else None
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
+
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, cuisine_id=cuisine_id, collection_id=collection_id )
+        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id, collection_id=collection_id )
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
