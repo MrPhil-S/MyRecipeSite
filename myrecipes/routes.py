@@ -64,18 +64,22 @@ def recipe(recipe_id):
 
     recipe = Recipe.query.get_or_404(recipe_id)
 
+
     page_view = Page_View(page_name=recipe.name)
     db.session.add(page_view)
     db.session.commit()
     view_count = Page_View.query.filter_by(page_name=recipe.name).count()
 
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
-
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
-    
-    return render_template('recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count)
+    cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
+    collection = Collection.query.filter_by(collection_id=recipe.collection_id).first()
+    note_from_user_list = recipe.note_from_user.split('\n')
+
+
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collection=collection)
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
@@ -99,16 +103,15 @@ def add_recipe():
         name = request.form['name']
         source_url = request.form['url']
         ingredients = request.form.getlist('ingredient[]')
-        ingredient_notes = request.form.getlist('ingredient_note[]')
-        
+        ingredient_notes = request.form.getlist('ingredient_note[]')    
+        instructions = request.form['instructions']
+        note_from_user = request.form['note_from_user']
+        source_notes = request.form.getlist('source_notes[]')
         collection_id = selected_collection_id if selected_collection_id != 0 else None
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
-     
-        instructions = request.form['instructions']
-        source_notes = request.form.getlist('source_notes[]')
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url,  image_file=image_file, cuisine_id=cuisine_id, collection_id=collection_id )
+        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, cuisine_id=cuisine_id, collection_id=collection_id )
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
@@ -159,13 +162,14 @@ def add_recipe():
                 db.session.add(instruction)
         db.session.commit()
 
-      #  sequence = 0
-      #  for source_note in source_notes:
-      #      if len(source_note) > 0:  
-      #          sequence += 1
-      #          source_note = Recipe_Instruction(text_contents=#.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
-       #         db.session.add(source_note)
-      #  db.session.commit()
+        source_notes_list = source_notes.splitlines()   
+        sequence = 0
+        for source_note in source_notes_list:
+            if len(source_note) > 0:  
+                sequence += 1
+                source_note = Recipe_Instruction(text_contents=source_note.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
+                db.session.add(source_note)
+        db.session.commit()
 
         #return redirect(url_for('recipes'))
         flash(f'{recipe.name} added!', 'success')

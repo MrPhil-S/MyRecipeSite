@@ -15,6 +15,11 @@
       <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
     </div>
     <div class="col">
+
+      <div class="row">
+        <small class="text-muted">{{ collection.collection_name }}</small>
+      </div>
+
       <div class="row">
         <h1>{{ recipe.name }}</h1>
       </div>
@@ -25,15 +30,16 @@
         {% elif recipe.source_url %}
           <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>
         {% endif %}
-
-
-
       </div>
       <div class="row align-items-end"> 
         {% if recipe.whisk_url %}
           <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
         {% endif %}
-
+      </div>
+      <div>
+        {% for note_from_user in note_from_user_list %}
+          <p>{{note_from_user}}</p>
+        {% endfor %}
       </div>
     </div>
   </div>
@@ -72,12 +78,7 @@
     </ul>
   {% endif %}
 
-  {% if recipe.note_from_user %}
-  <h2>My Notes</h2>
-  <ul>
-    <li>{{recipe.note_from_user}}</li>
-  </ul>
-  {% endif %}
+
 
 
   <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
