@@ -83,7 +83,6 @@
       
       <div class="form-row">
         <div class="form-group col-md-6">
-
           {{ form.name.label(class="form-control-label") }}        
           {% if form.name.errors %}
             {{ form.name(class="form-control form-control-lg is-invalid ") }}
@@ -115,13 +114,8 @@
         </div>
 
       </div>
-      
-      
-      
-      
-      <div class="form-group">
+     
 
-      </div>
       <div class="form-group">
         {{ form.url.label(class="form-control-label") }}
         {% if form.url.errors %}
@@ -141,7 +135,6 @@
       </div>
 
       <div class="form-row">
-
         <div class="form-group col-md-3">
           {{ form.prep_time.label(class="form-control-label") }}  
           {% if form.prep_time.errors %}
@@ -183,15 +176,12 @@
         </div>
       </div>
       
-
-
-      <div class="form-group">
-        {{ form.cuisinelist.label(class="form-control-label") }}  
-        {{ form.cuisinelist(class="form-control form-control-lg") }}
+      <div class="form-row">
+        <div class="form-group col-md-3">
+          {{ form.cuisinelist.label(class="form-control-label") }}  
+          {{ form.cuisinelist(class="form-control form-control-lg") }}
+        </div>
       </div>
-
-
-
 
       <div class="form-group">
         {{ form.instructions.label(class="form-control-label") }}  
@@ -206,6 +196,21 @@
           {{ form.instructions(class="form-control form-control-lg") }}
         {% endif %}
       </div>
+
+      <div class="form-group">
+        {{ form.source_notes.label(class="form-control-label") }}  
+        {% if form.source_notes.errors %}
+          {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.source_notes.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.source_notes(class="form-control form-control-lg") }}
+        {% endif %}
+      </div>
+
 
       <div class="form-group">
         {{ form.note_from_user.label(class="form-control-label") }}  
