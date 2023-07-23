@@ -28,8 +28,11 @@
       {% if recipe.source_url_short %}
       <div class="row">
           <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
-        {% elif recipe.source_url %}
-          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url }}</a></p>  
+      </div>  
+      {% elif recipe.source_url %}
+
+      <div class="row">
+          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url | truncate(30)}}</a></p>  
       </div>
       {% endif %}
 
@@ -38,23 +41,34 @@
           <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
       </div>
       {% endif %}
-
+      
+      {% if note_from_user_list %}
       <div>
         {% for note_from_user in note_from_user_list %}
           <p>{{note_from_user}}</p>
         {% endfor %}
       </div>
+      {% endif %}
 
-      <div class="row align-bottom" >
-        {% if recipe.prep_time %}
-          {{ recipe.prep_time }}
-        {% endif %}
-
+      <div class="row mt-auto" >
+        <div class="col-3">
+          {% if recipe.prep_time %}
+            Prep: <br> {{ recipe.prep_time }}
+          {% endif %}
+        </div>
+        <div class="col-3">
+          {% if recipe.cook_time %}
+            Cook: <br>{{ recipe.cook_time }}
+          {% endif %}
+        </div>
+        <div class="col-3">
+          {% if recipe.additional_time %}
+            Additional: <br>{{ recipe.additional_time }}
+          {% endif %}
+          </div>  
       </div>
 
-      <div class="align-bottom">
-        This text will be aligned to the bottom.</div>
-      </div> 
+
       
     </div>
   </div>

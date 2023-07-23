@@ -76,8 +76,10 @@ def recipe(recipe_id):
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collection = Collection.query.filter_by(collection_id=recipe.collection_id).first()
-    note_from_user_list = recipe.note_from_user.split('\n')
-
+    if recipe.note_from_user is not None:
+        note_from_user_list = recipe.note_from_user.split('\n')
+    else:
+        note_from_user_list = None
 
     return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collection=collection)
 
