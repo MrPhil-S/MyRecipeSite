@@ -45,7 +45,6 @@ class Recipe_Instruction(db.Model):
     type = db.Column(db.Integer, nullable=True)
     sequence = db.Column(db.Integer, nullable=True)
 
-
     def __repr__(self):
         return f"Recipe_Instructions('{self.text_contents}','{self.type}','{self.sequence}')"
     
@@ -53,7 +52,6 @@ class Page_View(db.Model):
     page_view_id = db.Column(db.Integer, primary_key=True)
     page_name = db.Column(db.String(30), nullable=False)
     page_view_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
-
 
     def __repr__(self):
         return f"Page_View('{self.page_name}')"

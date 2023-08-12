@@ -1,12 +1,15 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from time import sleep
-from webdriver_manager.chrome import ChromeDriverManager
+#from selenium.webdriver.chrome.service import Service  # Selenium Manager was added in selenium 4.10.0
 
-driver = webdriver.Chrome(ChromeDriverManager().install())
+#service = Service()
+#options = webdriver.ChromeOptions()
+#driver = webdriver.Chrome(service=service, options=options)
 
-#PATH = "C:\\projects\\chromedriver.exe"
-driver = webdriver.Chrome()
+PATH = r""
+driver = webdriver.Chrome()  # Optional argument, if not specified will search path.
+
 
 def scrapeAR(url):
     
