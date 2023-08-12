@@ -1,6 +1,20 @@
 {% extends "layout.html" %}
 
 {% block content %}
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.6.2/css/bootstrap.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap Multiselect Plugin CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-multiselect/0.9.16/css/bootstrap-multiselect.min.css">
+
+    <style>
+        .multiselect-container {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+
 <div class="content-section">
 
 <script>
@@ -115,6 +129,20 @@
 
       </div>
      
+
+ 
+      <div class="form-group">
+        <!-- Assign an 'id' attribute to the select element -->
+        <label for="{{ form.multiselect_field.id }}">Select Multiple Options:</label>
+        <select multiple class="form-control" id="{{ form.multiselect_field.id }}">
+          {% for value, label in form.multiselect_field.choices %}
+                <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+
+
 
       <div class="form-group">
         {{ form.url.label(class="form-control-label") }}
@@ -276,4 +304,18 @@
     </div>
   </div>
 </div>
+
+    <!-- Multiselect Dropdown Initialization -->
+    <script>
+      $(document).ready(function () {
+          // Initialize the multiselect dropdown using the 'id' attribute of the select element
+          $("#{{ form.multiselect_field.id }}").multiselect({
+              buttonClass: "btn btn-secondary",
+              nonSelectedText: "Select Options",
+              enableFiltering: true,
+              maxHeight: 200
+          });
+      });
+  </script>
+
 {% endblock %}

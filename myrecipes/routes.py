@@ -96,6 +96,9 @@ def add_recipe():
     form.cuisinelist.choices.insert(0, (0, ''))
     form.collectionlist.choices.insert(0, (0, ''))
 
+    collections = Collection.query.order_by(Collection.collection_name).all()
+
+
 
     if form.validate_on_submit():
         selected_cuisine_id = int(form.cuisinelist.data)

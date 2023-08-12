@@ -396,6 +396,6 @@ def update_AR_recipe(current_recipe_id, source_url):
 
 
   #driver.quit()
-if __name__ == "__main__":
+#if __name__ == "__main__":
   # stuff only to run when not called via 'import' here
-  main()
+#  main()
