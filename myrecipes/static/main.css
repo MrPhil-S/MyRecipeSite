@@ -119,3 +119,12 @@ body {
   height: 50px
 
 }
+
+
+.custom-select {
+  height: calc(1.5em + 1.4rem + 2px)
+} 
+
+.dropdown-menu-custom {
+  padding: 0rem .5rem;
+  }

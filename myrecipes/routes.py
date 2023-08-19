@@ -91,18 +91,18 @@ def add_recipe():
     # Populate the dropdown fields with data from the database
     blank_default_dropdown = (0, '')
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
-    form.collectionlist.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
+    #form.collectionlist.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
     
     form.cuisinelist.choices.insert(0, (0, ''))
-    form.collectionlist.choices.insert(0, (0, ''))
+    #form.collectionlist.choices.insert(0, (0, ''))
 
-    collections = Collection.query.order_by(Collection.collection_name).all()
+    #collections = Collection.query.order_by(Collection.collection_name).all()
 
 
 
     if form.validate_on_submit():
         selected_cuisine_id = int(form.cuisinelist.data)
-        selected_collection_id = int(form.collectionlist.data)
+        selected_options = form.multiselect_field.data
 
         # Get populted form data
         name = request.form['name']
@@ -116,12 +116,12 @@ def add_recipe():
         cook_time = request.form['cook_time']
         additional_time = request.form['additional_time']
 
-        collection_id = selected_collection_id if selected_collection_id != 0 else None
+
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id, collection_id=collection_id )
+        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
