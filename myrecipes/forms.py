@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, SelectField, SelectMultipleField
+from wtforms import StringField, TextAreaField, SelectField, SelectMultipleField, validators
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SubmitField, widgets
 from wtforms.validators import DataRequired, Length
+
 
 # Define a custom widget for the multiselect dropdown with checkboxes
 class MultiCheckboxField(SelectMultipleField):
@@ -24,10 +25,9 @@ class add_recipe_form(FlaskForm):
     rating = TextAreaField('Rating')#, validators=[Length(min=2, max=9000)])
     cuisine = StringField('Cuisine')#, validators=[Length(min=2, max=9000)])
     cuisinelist = SelectField('Cuisine')
-    collectionlist = SelectField('Collection')#, coerce=int, default=None)
     
     choices = [('option1', 'Option 1'), ('option2', 'Option 2'), ('option3', 'Option 3')]
-    multiselect_field = SelectMultipleField('Select Options', choices=choices, validators=[DataRequired()])
+    multiselect_field = SelectMultipleField('Select Options', choices=choices, validators=[validators.DataRequired()])
 
 
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
