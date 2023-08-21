@@ -1,5 +1,11 @@
-from myrecipes import db
 from sqlalchemy.sql import func
+
+from myrecipes import db
+
+recipe_collection = db.Table('recipe_collection',
+                    db.Column('recipe_id', db.Integer, db.ForeignKey('recipe.recipe_id')),
+                    db.Column('collection_id', db.Integer, db.ForeignKey('collection.collection_id'))
+                    )
 
 class Recipe(db.Model):
     recipe_id = db.Column(db.Integer, primary_key=True)
@@ -14,14 +20,13 @@ class Recipe(db.Model):
     cook_time = db.Column(db.String(20), nullable=True)
     additional_time = db.Column(db.String(20), nullable=True)
     cuisine_id = db.Column(db.Integer, nullable=True)
-    collection_id = db.Column(db.Integer, nullable=True)
     rating = db.Column(db.Integer, nullable=True)
     servings = db.Column(db.Integer, nullable=True)
     note_from_user = db.Column(db.String(1000), nullable=True)
     cooked_count = db.Column(db.Integer, nullable=True)
-#    notes = db.Column(db.String(200), nullable=True)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
     update_dt = db.Column(db.DateTime, nullable=True, onupdate=func.now())
+    collections = db.relationship('Collection', secondary='recipe_collection', back_populates='recipes')
 
     def __repr__(self):
         return f"Recipe('{self.name}','{self.source_url}','{self.instructions}','{self.image_file}')"
@@ -33,7 +38,6 @@ class Recipe_Ingredient(db.Model):
     name_written = db.Column(db.String(100), nullable=False)
     note = db.Column(db.String(100), nullable=True)
     name_official = db.Column(db.String(100), nullable=True)
-    #icon_file = db.Column(db.String(100), nullable=True)
 
     def __repr__(self):
         return f"Recipe_Ingredient('{self.name_written}','{self.name_official}')"
@@ -61,11 +65,12 @@ class Collection(db.Model):
     collection_id = db.Column(db.Integer, primary_key=True)
     collection_name = db.Column(db.String(30), nullable=False)
     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
-
+    recipes = db.relationship('Recipe', secondary='recipe_collection', back_populates='collections')
 
     def __repr__(self):
         return f"('{self.collection_name}')"
     
+
 
 class Cuisine(db.Model):
     cuisine_id = db.Column(db.Integer, primary_key=True)

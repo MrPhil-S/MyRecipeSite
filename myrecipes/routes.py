@@ -1,14 +1,15 @@
-from myrecipes import app
-from myrecipes import db
-from myrecipes.forms import add_recipe_form, edit_recipe_form
-from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction, Page_View, Collection, Cuisine
-from flask import request, render_template, redirect, url_for, flash, jsonify
 import os
+
+from flask import flash, jsonify, redirect, render_template, request, url_for
 from PIL import Image
 from sqlalchemy import text
 
 #import secrets
-from myrecipes import get_recipies
+from myrecipes import app, db, get_recipies
+from myrecipes.forms import add_recipe_form, edit_recipe_form
+from myrecipes.models import (Collection, Cuisine, Page_View, Recipe,
+                              Recipe_Ingredient, Recipe_Instruction)
+
 
 @app.route('/setup')
 def setup():
@@ -75,7 +76,8 @@ def recipe(recipe_id):
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
-    collection = Collection.query.filter_by(collection_id=recipe.collection_id).first()
+    #collection = Recipe_Collection.query.filter_by(recipe_id=recipe_id).all()
+    collection = recipe.collections
     if recipe.note_from_user is not None:
         note_from_user_list = recipe.note_from_user.split('\n')
     else:
@@ -91,19 +93,16 @@ def add_recipe():
     # Populate the dropdown fields with data from the database
     blank_default_dropdown = (0, '')
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
-    #form.collectionlist.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
-    
     form.cuisinelist.choices.insert(0, (0, ''))
-    #form.collectionlist.choices.insert(0, (0, ''))
 
+    #form.collectionlist.choices.insert(0, (0, ''))
     #collections = Collection.query.order_by(Collection.collection_name).all()
 
-
+    #populate form with all collection choices
+    form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
+    #collection_list = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
 
     if form.validate_on_submit():
-        selected_cuisine_id = int(form.cuisinelist.data)
-        selected_options = form.multiselect_field.data
-
         # Get populted form data
         name = request.form['name']
         source_url = request.form['url']
@@ -116,6 +115,9 @@ def add_recipe():
         cook_time = request.form['cook_time']
         additional_time = request.form['additional_time']
 
+        selected_cuisine_id = form.cuisinelist.data
+        #selected_options = form.multiselect_field.data
+        selected_collections = form.collection_list.data
 
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
@@ -135,6 +137,12 @@ def add_recipe():
         #Get the newly inserted recipe to be used to UPDATE with the image_file
         recipe = Recipe.query.get_or_404(recipe_id)
         recipe.image_file = image_file
+
+        #add the collections to collection table
+        for collection_id in selected_collections:
+            recipe_collection = Recipe_Collection(recipe_id=recipe.recipe_id, collection_id=int(collection_id))
+            db.session.add(recipe_collection)
+        db.session.commit() 
 
         # Add related ingredients to DB
         for index, ingredient in enumerate(ingredients):
