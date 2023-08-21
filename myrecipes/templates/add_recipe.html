@@ -112,15 +112,11 @@
 
 
         <div class="form-group dropdown-menu-custom">
-          {{ form.multiselect_field.label(class="form-control-label") }}
-                <div>
-                  <select multiple  id="{{ form.multiselect_field.id }}">
-                      {% for value, label in form.multiselect_field.choices %}
-                          <option value="{{ value }}">{{ label }}</option>
-                      {% endfor %}
-                  </select>
-                </div>    
-            </div>
+          {{ form.collection_list.label(class="form-control-label") }}
+          <div>
+          {{ form.collection_list(id="collection_list", class="form-control", multiple="multiple") }}
+          </div>
+        </div>
 
 
       </div>
@@ -250,56 +246,14 @@
   </form>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="AddCuisineModalLabel" tabindex="-1" role="dialog" aria-labelledby="AddCuisineModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="DeleteModalLabel">Add new cuisine</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-     <!-- <div class="modal-body">
-        New cuisine
-      </div>-->
-      <div class="form-group col-md-3">
-        {{ form.cuisine.label(class="form-control-label") }}  
-        {% if form.cuisine.errors %}
-          {{ form.cuisine(class="form-control form-control-lg is-invalid") }}
-          <div class="invalid-feedback">
-              {% for error in form.cuisine.errors %}
-                <span>{{ error }}</span>
-              {% endfor %}
-          </div>
-        {% else %}
-          {{ form.cuisine(class="form-control form-control-lg") }}
-        {% endif %}
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <form action="" method="POST">
-          <input type="submit" class="btn btn-outline-info" value="Add">
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
     <!-- Multiselect Dropdown Initialization -->
-    
     <script>
       $(document).ready(function () {
           // Initialize the multiselect dropdown using the 'id' attribute of the select element
-          $("#{{ form.multiselect_field.id }}").multiselect({
-
+          $('#collection_list').multiselect({
             buttonWidth: '300px',
             buttonTextAlignment: 'left',
             nonSelectedText: ''
-          
-
           });
       });
   </script>
