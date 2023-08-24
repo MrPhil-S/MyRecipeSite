@@ -29,7 +29,7 @@ class add_recipe_form(FlaskForm):
     #collection_list = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
 
     #choices = [('option1', 'Option 1'), ('option2', 'Option 2'), ('option3', 'Option 3')]
-    collection_list = SelectMultipleField('Collection(s)', choices=[])#, validators=[validators.DataRequired()])
+    collection_list = SelectMultipleField('Collection(s)', choices=[], validate_choice=False)#, validators=[validators.DataRequired()])
 
 
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])

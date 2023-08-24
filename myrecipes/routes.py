@@ -8,7 +8,8 @@ from sqlalchemy import text
 from myrecipes import app, db, get_recipies
 from myrecipes.forms import add_recipe_form, edit_recipe_form
 from myrecipes.models import (Collection, Cuisine, Page_View, Recipe,
-                              Recipe_Ingredient, Recipe_Instruction)
+                              Recipe_Ingredient, Recipe_Instruction,
+                              recipe_collection)
 
 
 @app.route('/setup')
@@ -89,7 +90,7 @@ def recipe(recipe_id):
 def add_recipe():
     form =  add_recipe_form()
     image_file = None
-    
+  
     # Populate the dropdown fields with data from the database
     blank_default_dropdown = (0, '')
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
@@ -140,9 +141,14 @@ def add_recipe():
 
         #add the collections to collection table
         for collection_id in selected_collections:
-            recipe_collection = Recipe_Collection(recipe_id=recipe.recipe_id, collection_id=int(collection_id))
-            db.session.add(recipe_collection)
-        db.session.commit() 
+
+            insert_recipe_collection = recipe_collection.insert().values(
+                collection_id=int(collection_id),
+                recipe_id=recipe_id )
+
+        
+            db.session.execute(insert_recipe_collection)
+        db.session.commit()
 
         # Add related ingredients to DB
         for index, ingredient in enumerate(ingredients):
