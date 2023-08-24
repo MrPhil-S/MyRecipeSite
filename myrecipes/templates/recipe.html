@@ -7,6 +7,11 @@
     <small class="text-muted">
       <a class="ml-4 link-secondary" href="{{ url_for('home') }}">Back to all recipies</a>
     </small>
+    <div class="float-right">
+      
+      <small class="text-muted">{{collections|join(' | ')}} </small>
+    
+    </div>
   </div>
 
 
@@ -15,10 +20,6 @@
       <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
     </div>
     <div class="col  d-flex flex-column">
-
-      <div class="row">
-        <small class="text-muted">{{ collection.collection_name }}</small>
-      </div>
 
       <div class="row">
         <h1>{{ recipe.name }}</h1>

@@ -68,7 +68,7 @@ class Collection(db.Model):
     recipes = db.relationship('Recipe', secondary='recipe_collection', back_populates='collections')
 
     def __repr__(self):
-        return f"('{self.collection_name}')"
+        return f'{self.collection_name}'
     
 
 
