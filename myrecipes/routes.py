@@ -78,13 +78,15 @@ def recipe(recipe_id):
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     #collection = Recipe_Collection.query.filter_by(recipe_id=recipe_id).all()
-    collection = recipe.collections
+    collections = recipe.collections
+
+    
     if recipe.note_from_user is not None:
         note_from_user_list = recipe.note_from_user.split('\n')
     else:
         note_from_user_list = None
 
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collection=collection)
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections)
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
@@ -118,7 +120,9 @@ def add_recipe():
 
         selected_cuisine_id = form.cuisinelist.data
         #selected_options = form.multiselect_field.data
-        selected_collections = form.collection_list.data
+        #selected_collections = form.collection_list.data
+        selected_collections = request.form.getlist('collection_list')
+
 
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
