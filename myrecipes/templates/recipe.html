@@ -8,38 +8,33 @@
       <a class="ml-4 link-secondary" href="{{ url_for('home') }}">Back to all recipies</a>
     </small>
     <div class="float-right">
-      
-      <small class="text-muted">{{collections|join(' | ')}} </small>
-    
+      {%if collections %}
+        <small class="text-muted"><b>Collection(s):   </b>{{collections|join(' | ')}} </small>
+      {% endif %}
     </div>
   </div>
 
 
-  <div class="row">
-    <div class="col-5">
-      <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
-    </div>
+  <div class="row mb-4">
     <div class="col  d-flex flex-column">
-
-      <div class="row">
+      <div>
         <h1>{{ recipe.name }}</h1>
       </div>
-
       
       {% if recipe.source_url_short %}
-      <div class="row">
-          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a></p>
+      <div>
+          <a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a>
       </div>  
       {% elif recipe.source_url %}
 
-      <div class="row">
-          <p><a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url | truncate(30)}}</a></p>  
+      <div class="">
+          <a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url | truncate(30)}}</a>
       </div>
       {% endif %}
 
       {% if recipe.whisk_url %}
-      <div class="row align-items-end"> 
-          <p><a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a></p>
+      <div class=" align-items-end"> 
+          <a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a>
       </div>
       {% endif %}
       
@@ -51,53 +46,65 @@
       </div>
       {% endif %}
 
-      <div class="row mt-auto" >
-        <div class="col-3">
-          {% if recipe.prep_time %}
-            Prep time: <br> {{ recipe.prep_time }}
-          {% endif %}
-        </div>
-        <div class="col-3">
-          {% if recipe.cook_time %}
-            Cook time: <br>{{ recipe.cook_time }}
-          {% endif %}
-        </div>
-        <div class="col-3">
-          {% if recipe.additional_time %}
-            Additional time: <br>{{ recipe.additional_time }}
-          {% endif %}
+
+      {% if recipe.prep_time or recipe.cook_time or recipe.additional_time or recipe.servings %}
+        <div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >
+          <div class="col-3">
+            {% if recipe.prep_time %}
+            <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ recipe.prep_time }}
+            {% endif %}
+          </div>
+          <div class="col-3">
+            {% if recipe.cook_time %}
+            <b><i class="fa-regular fa-clock mr-1"></i>Cook time: </b><br>{{ recipe.cook_time }}
+            {% endif %}
+          </div>
+          <div class="col-3">
+            {% if recipe.additional_time %}
+            <b><i class="fa-regular fa-clock mr-1"></i>Additional time:</b> {{ recipe.additional_time }}
+            {% endif %}
           </div>  
-      </div>
+          <div class="col-3">
+            {% if recipe.servings %}
+            <b><i class="fa-solid fa-people-group ml-2 mr-1"></i>Servings:</b> <br>{{ recipe.servings }}
+            {% endif %}
+          </div>  
+        </div>
+      {% endif %}
+    </div>
 
-
-      
+    <div class="col-5">
+      <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
     </div>
   </div>
-
-  <h2>Ingredients</h2>
-  <ul class="list-group">
-    {% for ingredient in ingredients %}
-    <li class="list-group-item">
-      <div class="row">
-        <div class="col-1">
-          <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
+  
+  <div class="mb-4">
+    <h2>Ingredients</h2>
+    <ul class="list-group">
+      {% for ingredient in ingredients %}
+      <li class="list-group-item">
+        <div class="row">
+          <div class="col-1">
+            <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
+          </div>
+          <div class="col-11">
+            {{ ingredient.name_written }}
+            <br>
+            <small class="text-muted">{{ ingredient.note or '' }}</small>
+          </div>
         </div>
-        <div class="col-11">
-          {{ ingredient.name_written }}
-          <br>
-          <small class="text-muted">{{ ingredient.note or '' }}</small>
-        </div>
-      </div>
-    </li>
-    {% endfor %}
-  </ul>
-
-  <h2>Instructions</h2>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+<div class="mb-4">
+  <h2 >Instructions</h2>
   <ol>
     {% for instruction in instructions %}
     <li>{{ instruction.text_contents }}</li>
     {% endfor %}
   </ol>
+</div>
 
   {% if source_notes %}
     <h2>Source Notes</h2>
