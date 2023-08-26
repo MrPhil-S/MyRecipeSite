@@ -21,7 +21,7 @@ class add_recipe_form(FlaskForm):
     cook_time = StringField('Cook Time')#, validators=[Length(min=2, max=9000)])
     additional_time = StringField('Additional Time')#, validators=[Length(min=2, max=9000)])
     note_from_user = TextAreaField('My notes')#, validators=[Length(min=2, max=9000)])
-    Servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
+    servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
     rating = TextAreaField('Rating')#, validators=[Length(min=2, max=9000)])
     #cuisine = StringField('Cuisine')#, validators=[Length(min=2, max=9000)])
     cuisinelist = SelectField('Cuisine')
@@ -33,7 +33,7 @@ class add_recipe_form(FlaskForm):
 
 
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
-    source_notes = TextAreaField('Source_notes')#, validators=[Length(min=2, max=9000)])
+    source_notes = TextAreaField('Source notes')#, validators=[Length(min=2, max=9000)])
     image = FileField('Upload image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     submit = SubmitField("Add Recipe")
 
