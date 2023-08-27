@@ -9,4 +9,5 @@ pi backup 2-2/
 myrecipes/whisk_secrets.py
 myrecipes/static/recipe_images
 myrecipes/static/ingredient_images
+myrecipes/static/custom_prints
 *.db
