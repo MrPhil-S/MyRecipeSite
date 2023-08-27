@@ -46,9 +46,16 @@
       </div>
       {% endif %}
 
+    <div class="float-right mt-auto">
+      <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>
+      <button type="button" class="btn btn-outline-info float-right ">{{ cook_count }}  +1 cooked</button>
+
+    </div>
 
       {% if recipe.prep_time or recipe.cook_time or recipe.additional_time or recipe.servings %}
-        <div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >
+        <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
+        <div class="row mt-3 ml-1 p-2 bg-light-gray shadow-sm" >
+
           <div class="col-3">
             {% if recipe.prep_time %}
             <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ recipe.prep_time }}

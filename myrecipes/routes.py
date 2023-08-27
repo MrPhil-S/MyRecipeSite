@@ -8,8 +8,8 @@ from sqlalchemy import text
 from myrecipes import app, db, get_recipies
 from myrecipes.forms import add_recipe_form, edit_recipe_form
 from myrecipes.models import (Collection, Cuisine, Page_View, Recipe,
-                              Recipe_Ingredient, Recipe_Instruction,
-                              recipe_collection)
+                              Recipe_Cooked_Date, Recipe_Ingredient,
+                              Recipe_Instruction, recipe_collection)
 
 
 @app.route('/setup')
@@ -61,7 +61,7 @@ def process_recipes(option):
             flash('BA recipes updated', 'success')     
     return redirect(url_for('import_recipes'))
 
-@app.route('/recipes/<int:recipe_id>', methods=['GET'])
+@app.route('/recipes/<int:recipe_id>', methods=['GET', 'POST'])
 def recipe(recipe_id):
 
     recipe = Recipe.query.get_or_404(recipe_id)
@@ -71,13 +71,14 @@ def recipe(recipe_id):
     db.session.add(page_view)
     db.session.commit()
     view_count = Page_View.query.filter_by(page_name=recipe.name).count()
+    cook_count = Recipe_Cooked_Date.query.filter_by(recipe_id=recipe.recipe_id).count()
+
 
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
-    #collection = Recipe_Collection.query.filter_by(recipe_id=recipe_id).all()
     collections = recipe.collections
 
     
@@ -86,7 +87,7 @@ def recipe(recipe_id):
     else:
         note_from_user_list = None
 
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections)
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count)
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
@@ -111,6 +112,7 @@ def add_recipe():
         source_url = request.form['url']
         ingredients = request.form.getlist('ingredient[]')
         ingredient_notes = request.form.getlist('ingredient_note[]')    
+        ingredient_bulk = request.form['ingredient_bulk']
         instructions = request.form['instructions']
         note_from_user = request.form['note_from_user']
         source_notes = request.form['source_notes']
@@ -158,7 +160,7 @@ def add_recipe():
         for index, ingredient in enumerate(ingredients):
             if len(ingredient) > 0: 
 
-                stmt = text('''
+                stmt = text(''' #TODO: fix hardcoded ingredient lookup values
                 SELECT name_official 
                 FROM 
                     (SELECT  
@@ -178,6 +180,33 @@ def add_recipe():
 
                 ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
                 db.session.add(ingredient)
+        db.session.commit()
+
+
+        ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
+        sequence = 0
+        for ingredient_bulk_item in ingredient_bulk_list:
+            if len(ingredient_bulk_item) > 0:  
+                stmt = text(''' 
+                SELECT name_official 
+                FROM 
+                    (SELECT  
+                    name_official
+                    FROM `recipe__ingredient`
+                    UNION
+                    SELECT 'soy_sauce'
+                    ) x
+                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
+                ORDER BY length(name_official) DESC
+                LIMIT 1''')
+                result  = db.engine.execute(stmt, ingredient_param=ingredient_bulk_item)
+                row = result.fetchone()
+                name_official = row[0] if row is not None else 'default_ingredient'
+
+
+
+                instruction =  Recipe_Ingredient(name_written=ingredient_bulk_item.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
+                db.session.add(instruction)
         db.session.commit()
 
 

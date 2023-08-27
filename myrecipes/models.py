@@ -60,6 +60,11 @@ class Page_View(db.Model):
     def __repr__(self):
         return f"Page_View('{self.page_name}')"
     
+class Recipe_Cooked_Date(db.Model):
+    recipe_cook_count_id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, nullable=False)
+    cooked_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
 
 class Collection(db.Model):
     collection_id = db.Column(db.Integer, primary_key=True)

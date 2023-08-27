@@ -15,7 +15,9 @@ class add_recipe_form(FlaskForm):
     url = StringField('URL', validators=[Length(max=500)])
     user_note = TextAreaField('Notes')    
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
-    ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)])    
+    ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
+    ingredient_bulk = TextAreaField('Ingredients (Add each on a new line)')#, validators=[Length(min=1, max=100)])
+   
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     prep_time = StringField('Prep Time')#, validators=[Length(min=2, max=9000)])
     cook_time = StringField('Cook Time')#, validators=[Length(min=2, max=9000)])

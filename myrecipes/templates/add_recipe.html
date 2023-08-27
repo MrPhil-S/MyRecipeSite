@@ -219,17 +219,26 @@
           {{ form.image(class="form-control-file drop-zone__input") }} 
         </div>
       </div>
-
-
-
     </div><!--endrow-->
 
 
-    
-      <div class="form-group">
-        <div id="additional_ingredients"></div>
-      </div>
 
+
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+          <div id="additional_ingredients"></div>
+      </div>
+      <div class="form-group col-md-1 pt-5 pl-3">
+        --OR--
+
+    </div>
+      <div class="form-group col">
+        {{ form.ingredient_bulk.label(class="form-control-label") }}  
+        {{ form.ingredient_bulk(class="form-control form-control-lg") }}
+
+    </div>
+    </div>
 
 
       <div class="form-group">
