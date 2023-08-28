@@ -9,7 +9,8 @@ from myrecipes import app, db, get_recipies
 from myrecipes.forms import add_recipe_form, edit_recipe_form
 from myrecipes.models import (Collection, Cuisine, Page_View, Recipe,
                               Recipe_Cooked_Date, Recipe_Ingredient,
-                              Recipe_Instruction, recipe_collection)
+                              Recipe_Instruction, Recipe_Plan_Date,
+                              recipe_collection)
 
 
 @app.route('/setup')
@@ -66,26 +67,36 @@ def recipe(recipe_id):
 
     recipe = Recipe.query.get_or_404(recipe_id)
 
-
     page_view = Page_View(page_name=recipe.name)
     db.session.add(page_view)
     db.session.commit()
     view_count = Page_View.query.filter_by(page_name=recipe.name).count()
     cook_count = Recipe_Cooked_Date.query.filter_by(recipe_id=recipe.recipe_id).count()
-
-
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collections = recipe.collections
-
-    
     if recipe.note_from_user is not None:
         note_from_user_list = recipe.note_from_user.split('\n')
     else:
         note_from_user_list = None
+
+    if request.method == 'POST':
+        button_action = request.form.get('button_action')
+        if button_action == 'plan':
+            add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
+            print('planned recipe')
+        elif button_action == 'cooked':
+            add_date = Recipe_Cooked_Date(recipe_id=recipe.recipe_id)
+            print('cooked recipe')
+        else:
+            print('invleid')
+            return "Invalid action"
+        db.session.add(add_date)
+        db.session.commit()
+        return redirect(url_for('recipe', recipe_id=recipe_id))
 
     return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count)
 
