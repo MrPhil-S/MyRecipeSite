@@ -46,9 +46,16 @@
       </div>
       {% endif %}
 
+ 
     <div class="float-right mt-auto">
-      <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>
-      <button type="button" class="btn btn-outline-info float-right ">{{ cook_count }}  +1 cooked</button>
+      <form action="/" method="post">
+          <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>
+        
+        <button  class="btn btn-outline-info float-left" type="submit" name="button_action" value="plan">Add to plan</button>
+        <button  class="btn btn-outline-info float-left" type="submit" name="button_action" value="plan2">Added to plan</button>
+
+        <button  class="btn btn-outline-info float-right" type="submit" name="button_action" value="cooked">{{ cook_count }}  +1 cooked</button>
+      </form>
 
     </div>
 

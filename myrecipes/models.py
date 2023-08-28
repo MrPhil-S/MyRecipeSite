@@ -66,6 +66,13 @@ class Recipe_Cooked_Date(db.Model):
     cooked_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
 
+class Recipe_Plan_Date(db.Model):
+    recipe_plan_date_id = db.Column(db.Integer, primary_key=True)
+    recipe_id = db.Column(db.Integer, nullable=False)
+    added_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+
+
 class Collection(db.Model):
     collection_id = db.Column(db.Integer, primary_key=True)
     collection_name = db.Column(db.String(30), nullable=False)
