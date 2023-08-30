@@ -70,7 +70,7 @@ class Recipe_Plan_Date(db.Model):
     recipe_plan_date_id = db.Column(db.Integer, primary_key=True)
     recipe_id = db.Column(db.Integer, nullable=False)
     added_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-
+    removed_dt = db.Column(db.DateTime, nullable=True)
 
 
 class Collection(db.Model):

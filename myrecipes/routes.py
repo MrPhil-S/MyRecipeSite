@@ -83,22 +83,39 @@ def recipe(recipe_id):
     else:
         note_from_user_list = None
 
+    # Query to check if a record exists with the given recipe_id and removed_dt is NULL
+    is_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe_id, removed_dt=None).first() is not None
+    #planned = planned is not None
+
     if request.method == 'POST':
         button_action = request.form.get('button_action')
-        if button_action == 'plan':
+        if button_action == 'add_to_plan':
             add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
-            print('planned recipe')
-        elif button_action == 'cooked':
-            add_date = Recipe_Cooked_Date(recipe_id=recipe.recipe_id)
-            print('cooked recipe')
-        else:
-            print('invleid')
-            return "Invalid action"
-        db.session.add(add_date)
-        db.session.commit()
-        return redirect(url_for('recipe', recipe_id=recipe_id))
+            db.session.add(add_date)
+            is_planned = True
+            flash(f'Added to plan', 'success')
 
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count)
+        elif button_action == 'remove_from_plan':
+            #  user = User.query.filter_by(username=username).first_or_404()
+
+            recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe.recipe_id, removed_dt=None).first_or_404()
+            recipe_planned.removed_dt = db.func.current_timestamp()
+            is_planned = False
+            flash(f'Removed from plan', 'success')
+
+        elif button_action == 'mark_cooked':
+            add_date = Recipe_Cooked_Date(recipe_id=recipe.recipe_id)
+            db.session.add(add_date)
+            flash(f'Marked as cooked', 'success')
+
+        else:
+            return "Invalid action"
+        db.session.commit()
+        return redirect(url_for('recipe', recipe_id=recipe_id, is_planned=is_planned))
+
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count, is_planned=is_planned)
+
+
 
 @app.route('/recipes/add_recipe', methods=['GET', 'POST'])
 def add_recipe():
