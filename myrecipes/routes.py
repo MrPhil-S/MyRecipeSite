@@ -84,7 +84,7 @@ def recipe(recipe_id):
         note_from_user_list = None
 
     # Query to check if a record exists with the given recipe_id and removed_dt is NULL
-    is_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe_id, removed_dt=None).first() is not None
+    is_planned = Recipe_Plan_Date.query .filter_by(recipe_id=recipe_id, removed_dt=None).first() is not None
     #planned = planned is not None
 
     if request.method == 'POST':
@@ -214,7 +214,13 @@ def add_recipe():
         ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
         sequence = 0
         for ingredient_bulk_item in ingredient_bulk_list:
-            if len(ingredient_bulk_item) > 0:  
+            if len(ingredient_bulk_item) > 0:
+                ingredient_parsed = ingredient_bulk_item.split(',', maxsplit=1)      
+                ingredient = ingredient_parsed[0]
+                try: 
+                    ingredient_note = ingredient_parsed[1]
+                except:
+                    ingredient_note = None
                 stmt = text(''' 
                 SELECT name_official 
                 FROM 
@@ -227,14 +233,12 @@ def add_recipe():
                 WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
                 ORDER BY length(name_official) DESC
                 LIMIT 1''')
-                result  = db.engine.execute(stmt, ingredient_param=ingredient_bulk_item)
+                result  = db.engine.execute(stmt, ingredient_param=ingredient)
                 row = result.fetchone()
                 name_official = row[0] if row is not None else 'default_ingredient'
 
-
-
-                instruction =  Recipe_Ingredient(name_written=ingredient_bulk_item.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
-                db.session.add(instruction)
+                ingredient =  Recipe_Ingredient(name_written=ingredient_bulk_item.strip(), recipe_id=recipe.recipe_id, name_official=name_official, note=ingredient_note)
+                db.session.add(ingredient)
         db.session.commit()
 
 
