@@ -86,9 +86,19 @@ def recipe(recipe_id):
     # Query to check if a record exists with the given recipe_id and removed_dt is NULL
     is_planned = Recipe_Plan_Date.query .filter_by(recipe_id=recipe_id, removed_dt=None).first() is not None
     #planned = planned is not None
+    
+    recipe_pdf = None
+    for file in os.listdir(r'myrecipes/static/custom_prints/'):
+        if file == f'{recipe_id}.pdf':
+            recipe_pdf = file
+            break
+            
+
+
 
     if request.method == 'POST':
         button_action = request.form.get('button_action')
+     
         if button_action == 'add_to_plan':
             add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
             db.session.add(add_date)
@@ -113,7 +123,7 @@ def recipe(recipe_id):
         db.session.commit()
         return redirect(url_for('recipe', recipe_id=recipe_id, is_planned=is_planned))
 
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count, is_planned=is_planned)
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count, is_planned=is_planned, recipe_pdf=recipe_pdf)
 
 
 
