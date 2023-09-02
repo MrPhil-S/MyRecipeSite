@@ -54,11 +54,13 @@ class Recipe_Instruction(db.Model):
     
 class Page_View(db.Model):
     page_view_id = db.Column(db.Integer, primary_key=True)
-    page_name = db.Column(db.String(30), nullable=False)
+    recipe_id = db.Column(db.Integer, nullable=False)
     page_view_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
 
     def __repr__(self):
-        return f"Page_View('{self.page_name}')"
+        count = db.session.query(func.count(Page_View.page_view_id)).filter_by(recipe_id=self.recipe_id).scalar()
+        return count
+
     
 class Recipe_Cooked_Date(db.Model):
     recipe_cook_count_id = db.Column(db.Integer, primary_key=True)
