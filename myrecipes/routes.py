@@ -67,10 +67,10 @@ def recipe(recipe_id):
 
     recipe = Recipe.query.get_or_404(recipe_id)
 
-    page_view = Page_View(page_name=recipe.name)
+    page_view = Page_View(recipe_id=recipe_id)
     db.session.add(page_view)
     db.session.commit()
-    view_count = Page_View.query.filter_by(page_name=recipe.name).count()
+    view_count = Page_View.query.filter_by(recipe_id=recipe_id).count()
     cook_count = Recipe_Cooked_Date.query.filter_by(recipe_id=recipe.recipe_id).count()
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
