@@ -60,10 +60,9 @@
 
         
         <button class="btn btn-outline-info float-right" type="submit" name="button_action" value="mark_cooked">{{ cook_count }}  +1 cooked</button>
-
-        <a href="{{ url_for('static', filename='custom_prints/' + recipe_pdf) }}" class="btn btn-outline-info float-right mr-3" target="_blank">Print Enhanced</a>
-
-        <button class="btn btn-outline-info float-right mr-1" type="submit" name="button_action" value="mark_cooked">Print</button>
+        {% if recipe_pdf %}
+          <a href="{{ url_for('static', filename='custom_prints/' + recipe_pdf) }}" class="btn btn-outline-info float-right mr-3" target="_blank">Source Recipe PDF</a>
+        {% endif %}
 
       </form>
 
