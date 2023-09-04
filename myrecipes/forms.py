@@ -37,6 +37,8 @@ class add_recipe_form(FlaskForm):
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     source_notes = TextAreaField('Source notes')#, validators=[Length(min=2, max=9000)])
     image = FileField('Upload image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
+    pdf = FileField('Upload recipe PDF', validators=[FileAllowed(['pdf'])])
+
     submit = SubmitField("Add Recipe")
 
 class edit_recipe_form(FlaskForm):

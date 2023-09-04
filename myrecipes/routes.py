@@ -3,6 +3,7 @@ import os
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from PIL import Image
 from sqlalchemy import text
+from werkzeug.utils import secure_filename
 
 #import secrets
 from myrecipes import app, db, get_recipies
@@ -137,9 +138,6 @@ def add_recipe():
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
     form.cuisinelist.choices.insert(0, (0, ''))
 
-    #form.collectionlist.choices.insert(0, (0, ''))
-    #collections = Collection.query.order_by(Collection.collection_name).all()
-
     #populate form with all collection choices
     form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
     #collection_list = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
@@ -157,15 +155,11 @@ def add_recipe():
         prep_time = request.form['prep_time']
         cook_time = request.form['cook_time']
         additional_time = request.form['additional_time']
-
         selected_cuisine_id = form.cuisinelist.data
-        #selected_options = form.multiselect_field.data
-        #selected_collections = form.collection_list.data
         selected_collections = request.form.getlist('collection_list')
-
-
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
+  
 
         # Add new recipe to DB
         recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id)
@@ -182,6 +176,17 @@ def add_recipe():
         #Get the newly inserted recipe to be used to UPDATE with the image_file
         recipe = Recipe.query.get_or_404(recipe_id)
         recipe.image_file = image_file
+
+        if form.pdf.data:
+            pdf_file = save_file(form.pdf.data, recipe_id)
+            
+
+            
+            #pdf_file = save_file(form_pdf_file,recipe_id)
+            #print(pdf_file)
+        #Get the newly inserted recipe to be used to UPDATE with the pdf_file
+        recipe = Recipe.query.get_or_404(recipe_id)
+        recipe.pdf_file = pdf_file
 
         #add the collections to collection table
         for collection_id in selected_collections:
@@ -394,3 +399,16 @@ def save_image(form_image, recipe_id):
 
     i.save(image_path) 
     return image_fn
+
+def save_file(form_file, recipe_id):
+    filename = secure_filename(form_file.filename)
+    
+    #Build the filename to be recipe_id.extension
+    _, f_ext = os.path.splitext(filename)
+    recipe_filename = str(recipe_id) + f_ext
+
+    form_file.save(os.path.join(
+        app.root_path, 'static/custom_prints/', recipe_filename
+    ))
+
+    return filename 
