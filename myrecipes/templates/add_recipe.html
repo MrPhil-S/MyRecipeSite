@@ -96,20 +96,19 @@
       <div class="row mb-4">
         <div class="col d-flex flex-column">
           
-            <div class="form-group ">
-              {{ form.name.label(class="form-control-label") }}        
-              {% if form.name.errors %}
-                {{ form.name(class="form-control form-control-lg is-invalid ") }}
-                <div class="invalid-feedback">
-                  {% for error in form.name.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-                </div>
-              {% else %}
-                {{ form.name(class="form-control form-control-lg") }}
-              {% endif %}
-            </div>
-          
+          <div class="form-group ">
+            {{ form.name.label(class="form-control-label") }}        
+            {% if form.name.errors %}
+              {{ form.name(class="form-control form-control-lg is-invalid ") }}
+              <div class="invalid-feedback">
+                {% for error in form.name.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              {{ form.name(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
 
           <div class="form-group">
             {{ form.url.label(class="form-control-label") }}
@@ -124,7 +123,6 @@
               {{ form.url(class="form-control form-control-lg") }}
             {% endif %}
           </div>
-
 
           <div class="form-group">
             {{ form.note_from_user.label(class="form-control-label") }}  
@@ -198,14 +196,14 @@
           
           <div class="form-row">
 
-            <div class="form-group dropdown-menu-custom">
+            <div class="form-group dropdown-menu-custom col-sm">
               {{ form.collection_list.label(class="form-control-label") }}
               <div>
               {{ form.collection_list(id="collection_list", class="form-control", multiple="multiple") }}
               </div>
             </div>
 
-            <div class="form-group col-lg-5">
+            <div class="form-group col-sm">
               {{ form.cuisinelist.label(class="form-control-label") }}  
               {{ form.cuisinelist(class="form-control form-control-lg") }}
             </div>
@@ -213,7 +211,7 @@
 
 
       </div><!--end col-->
-      <div class="col-5">
+      <div class="mr-3">
         <div class="drop-zone">
           <span class="drop-zone__prompt">Drop file here or click to upload</span>
           {{ form.image(class="form-control-file drop-zone__input") }} 
@@ -298,9 +296,11 @@
       $(document).ready(function () {
           // Initialize the multiselect dropdown using the 'id' attribute of the select element
           $('#collection_list').multiselect({
-            buttonWidth: '300px',
+            buttonWidth: '100%',
             buttonTextAlignment: 'left',
-            nonSelectedText: ''
+            nonSelectedText: '',
+            numberDisplayed: 0,
+
           });
       });
   </script>
