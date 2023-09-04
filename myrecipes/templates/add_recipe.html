@@ -210,28 +210,28 @@
           </div>
 
 
-      </div><!--end col-->
-      <div class="mr-3">
-        <div class="drop-zone">
-          <span class="drop-zone__prompt">Drop file here or click to upload</span>
-          {{ form.image(class="form-control-file drop-zone__input") }} 
+        </div><!--end col-->
+      
+        <div class="mr-3">
+          <div class="drop-zone">
+            <span class="drop-zone__prompt">Drop file here or click to upload</span>
+            {{ form.image(class="form-control-file drop-zone__input") }} 
+          </div>
+
+
+          <div class="form-group mt-3">
+            {{ form.pdf.label(class="form-control-label") }}
+            {{ form.pdf(class="form-control-file") }}
+            {% if form.pdf.errors %}
+              {% for error in form.pdf.errors %}
+                <span class="text-danger">{{ error }}</span></br>
+              {% endfor %}
+            {% endif %}
+          </div>
         </div>
 
 
-        <div class="form-group mt-3">
-          {{ form.pdf.label(class="form-control-label") }}
-          {{ form.pdf(class="form-control-file") }}
-          {% if form.pdf.errors %}
-            {% for error in form.pdf.errors %}
-              <span class="text-danger">{{ error }}</span></br>
-            {% endfor %}
-          {% endif %}
-        </div>
-
-      </div>
-
-
-    </div><!--endrow-->
+      </div><!--endrow-->
 
 
 
@@ -243,13 +243,11 @@
       </div>
       <div class="form-group col-md-1 pt-5 pl-3">
         --OR--
-
-    </div>
+      </div>
       <div class="form-group col">
         {{ form.ingredient_bulk.label(class="form-control-label") }}  
         {{ form.ingredient_bulk(class="form-control form-control-lg") }}
-
-    </div>
+      </div>
     </div>
 
 
@@ -280,12 +278,6 @@
           {{ form.source_notes(class="form-control form-control-lg") }}
         {% endif %}
       </div>
-
-
-
-
-
-
     </fieldset>
     {{form.submit(class="btn btn-outline-info")}}
   </form>

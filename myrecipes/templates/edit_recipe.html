@@ -1,54 +1,236 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<style>
+  .multiselect-container {
+      max-height: 200px;
+      overflow-y: auto;
+  }
+</style>
+
 <div class="content-section">
 
 
   <script>
-
-    function addIngredient() {
-        let additionalIngredients = document.getElementById("additional_ingredients");
+    window.onload = function() {
+      let additionalIngredients = document.getElementById("additional_ingredients");
+      let latestIngredientField;
+  
+      function addIngredientRow(initialLoad) {
+        let ingredientRow = document.createElement("div");
+        ingredientRow.setAttribute("class", "form-row ml-3");
+  
+        let ingredientCol1 = document.createElement("div");
+        ingredientCol1.setAttribute("class", "col-md-4");
+        ingredientCol1.appendChild(createIngredientField(initialLoad));
+  
+        let ingredientCol2 = document.createElement("div");
+        ingredientCol2.setAttribute("class", "col");
+        ingredientCol2.appendChild(createIngredientNoteField(initialLoad));
+  
+        ingredientRow.appendChild(ingredientCol1);
+        ingredientRow.appendChild(ingredientCol2);
+  
+        additionalIngredients.appendChild(ingredientRow);
+      }
+  
+      function createIngredientField(initialLoad) {
+        let ingredientFieldContainer = document.createElement("div");
+        ingredientFieldContainer.setAttribute("class", "form-group");
+  
+        if (initialLoad) {
+          let ingredientLabel = document.createElement("label");
+          ingredientLabel.textContent = "Ingredient";
+          ingredientFieldContainer.appendChild(ingredientLabel);
+        }
+  
         let ingredientField = document.createElement("input");
         ingredientField.setAttribute("type", "text");
-        ingredientField.setAttribute("name", "ingredient");
-        ingredientField.setAttribute("class", "form-control form-control-lg mb-2");
-        additionalIngredients.appendChild(ingredientField);
+        ingredientField.setAttribute("name", "ingredient[]");
+        ingredientField.setAttribute("class", "form-control form-control-md ");
+        ingredientField.addEventListener("input", function() {
+          if (ingredientField === latestIngredientField && ingredientField.value !== "" && !ingredientField.nextElementSibling) {
+            addIngredientRow(false); // Add a new ingredient row when the latest field is fully populated
+            latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
+          }
+        });
+  
+        ingredientFieldContainer.appendChild(ingredientField);
+        return ingredientFieldContainer;
+      }
+  
+      function createIngredientNoteField(initialLoad) {
+        let ingredientNoteFieldContainer = document.createElement("div");
+        ingredientNoteFieldContainer.setAttribute("class", "form-group");
+  
+        if (initialLoad) {
+          let ingredientNoteLabel = document.createElement("label");
+          ingredientNoteLabel.textContent = "Ingredient Note";
+          ingredientNoteFieldContainer.appendChild(ingredientNoteLabel);
+        }
+  
+        let ingredientNoteField = document.createElement("input");
+        ingredientNoteField.setAttribute("type", "text");
+        ingredientNoteField.setAttribute("name", "ingredient_note[]");
+        ingredientNoteField.setAttribute("class", "form-control form-control-md ");
+  
+        ingredientNoteFieldContainer.appendChild(ingredientNoteField);
+        return ingredientNoteFieldContainer;
+      }
+  
+      addIngredientRow(true); // Add the initial ingredient row with labels
+      latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
     }
-</script>
+  </script>
+
+
 <form method="POST" enctype="multipart/form-data" action="">
   {{form.hidden_tag()}}
   <fieldset class="form-group">
     <legend class="border-bottom mb-4">Edit Recipe - {{ recipe.name }}</legend>
     <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}"  class="rounded img-fluid max-width: 100%">
 
-    <div class="form-group">
-      {{ form.name.label(class="form-control-label") }}
-      {% if form.name.errors %}
-        {{ form.name(class="form-control form-control-lg is-invalid") }}
-        <div class="invalid-feedback">
-          {% for error in form.name.errors %}
-            <span>{{ error }}</span>
-          {% endfor %}
+
+    <div class="row mb-4">
+      <div class="col d-flex flex-column">
+
+        <div class="form-group">
+          {{ form.name.label(class="form-control-label") }}
+          {% if form.name.errors %}
+            {{ form.name(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.name.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% else %}
+            {{ form.name(class="form-control form-control-lg") }}
+          {% endif %}
         </div>
-      {% else %}
-        {{ form.name(class="form-control form-control-lg") }}
-      {% endif %}
-    </div>
 
-    <div class="form-group">
-      {{ form.url.label(class="form-control-label") }}
+        <div class="form-group">
+          {{ form.url.label(class="form-control-label") }}
 
-      {% if form.url.errors %}
-        {{ form.url(class="form-control form-control-lg is-invalid") }}
-          <div class="invalid-feedback">
-            {% for error in form.url.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
+          {% if form.url.errors %}
+            {{ form.url(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                {% for error in form.url.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+              </div>
+          {% else %}
+            {{ form.url(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+
+
+        <div class="form-group">
+          {{ form.note_from_user.label(class="form-control-label") }}  
+          {% if form.note_from_user.errors %}
+            {{ form.note_from_user(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+                {% for error in form.note_from_user.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+          {% else %}
+            {{ form.note_from_user(class="form-control form-control-lg") }}
+          {% endif %}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-3">
+            <i class="fa-regular fa-clock mr-1"></i>{{ form.prep_time.label(class="form-control-label") }}  
+            {% if form.prep_time.errors %}
+              {{ form.prep_time(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                  {% for error in form.prep_time.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+              </div>
+            {% else %}
+              {{ form.prep_time(class="form-control form-control-lg") }}
+            {% endif %}
           </div>
-      {% else %}
-        {{ form.url(class="form-control form-control-lg") }}
-      {% endif %}
-    </div>
+          <div class="form-group col-md-3">
+            <i class="fa-regular fa-clock mr-1"></i>{{ form.cook_time.label(class="form-control-label") }}  
+            {% if form.cook_time.errors %}
+              {{ form.cook_time(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                  {% for error in form.cook_time.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+              </div>
+            {% else %}
+              {{ form.cook_time(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+          <div class="form-group col-md-3">
+            <i class="fa-regular fa-clock mr-1"></i>{{ form.additional_time.label(class="form-control-label") }}  
+            {% if form.additional_time.errors %}
+              {{ form.additional_time(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                  {% for error in form.additional_time.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+              </div>
+            {% else %}
+              {{ form.additional_time(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+
+          <div class="form-group col-md-3">
+            <i class="fa-solid fa-people-group ml-2 mr-1"></i>{{ form.servings.label(class="form-control-label") }}  
+            {% if form.servings.errors %}
+              {{ form.servings(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                  {% for error in form.servings.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+              </div>
+            {% else %}
+              {{ form.servings(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="form-row">
+
+          <div class="form-group dropdown-menu-custom col-sm">
+            {{ form.collection_list.label(class="form-control-label") }}
+            <div>
+            {{ form.collection_list(id="collection_list", class="form-control", multiple="multiple") }}
+            </div>
+          </div>
+
+          <div class="form-group col-sm">
+            {{ form.cuisinelist.label(class="form-control-label") }}  
+            {{ form.cuisinelist(class="form-control form-control-lg") }}
+          </div>
+        </div>
+
+      </div> <!--endcol -->
+
+      <div class="mr-3">
+        <div class="drop-zone">
+          <span class="drop-zone__prompt">Drop file here or click to upload</span>
+          {{ form.image(class="form-control-file drop-zone__input") }} 
+        </div>
+
+
+        <div class="form-group mt-3">
+          {{ form.pdf.label(class="form-control-label") }}
+          {{ form.pdf(class="form-control-file") }}
+          {% if form.pdf.errors %}
+            {% for error in form.pdf.errors %}
+              <span class="text-danger">{{ error }}</span></br>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+
+
+    </div> <!--end row -->
 
     <div class="form-group">
       {{ form.ingredient.label(class="form-control-label") }}
@@ -86,14 +268,19 @@
     </div>
 
     <div class="form-group">
-      {{ form.image.label(class="form-control-label") }}
-      {{ form.image(class="form-control-file") }}
-      {% if form.image.errors %}
-        {% for error in form.image.errors %}
-          <span class="text-danger">{{ error }}</span></br>
-        {% endfor %}
+      {{ form.source_notes.label(class="form-control-label") }}  
+      {% if form.source_notes.errors %}
+        {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
+        <div class="invalid-feedback">
+            {% for error in form.source_notes.errors %}
+              <span>{{ error }}</span>
+            {% endfor %}
+        </div>
+      {% else %}
+        {{ form.source_notes(class="form-control form-control-lg") }}
       {% endif %}
     </div>
+
 
   </fieldset>
   {{form.submit(class="btn btn-outline-info")}}
@@ -127,5 +314,19 @@
   </div>
 </div>
 
+
+    <!-- Multiselect Dropdown Initialization -->
+    <script>
+      $(document).ready(function () {
+          // Initialize the multiselect dropdown using the 'id' attribute of the select element
+          $('#collection_list').multiselect({
+            buttonWidth: '100%',
+            buttonTextAlignment: 'left',
+            nonSelectedText: '',
+            numberDisplayed: 0,
+
+          });
+      });
+  </script>
 
 {% endblock %}
