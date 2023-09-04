@@ -159,8 +159,6 @@ def add_recipe():
         selected_collections = request.form.getlist('collection_list')
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
-  
-
         # Add new recipe to DB
         recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id)
         db.session.add(recipe)
@@ -179,14 +177,9 @@ def add_recipe():
 
         if form.pdf.data:
             pdf_file = save_file(form.pdf.data, recipe_id)
-            
-
-            
-            #pdf_file = save_file(form_pdf_file,recipe_id)
-            #print(pdf_file)
-        #Get the newly inserted recipe to be used to UPDATE with the pdf_file
-        recipe = Recipe.query.get_or_404(recipe_id)
-        recipe.pdf_file = pdf_file
+            #Get the newly inserted recipe to be used to UPDATE with the pdf_file
+            recipe = Recipe.query.get_or_404(recipe_id)
+            recipe.pdf_file = pdf_file
 
         #add the collections to collection table
         for collection_id in selected_collections:
@@ -301,8 +294,9 @@ def edit_recipe(recipe_id):
     #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
-    source_notes = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
+    instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
+    #collections = recipe_collection.query.order_by(recipe_collection.collecton_id).filter_by(recipe_id=recipe_id).all()
 
     image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
     form = edit_recipe_form()
@@ -310,10 +304,25 @@ def edit_recipe(recipe_id):
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
     form.url.data = recipe.source_url
-    form.user_note.data = recipe.note_from_user
+    form.prep_time.data = recipe.prep_time
+    form.cook_time.data = recipe.cook_time
+    form.additional_time.data = recipe.additional_time
+    form.servings.data = recipe.servings
+    #cuisine
+    #collection
+    form.note_from_user.data = recipe.note_from_user
     form.ingredient.data =  ingredients
-    form.instructions.data = instructions
-    form.source_notes.data = source_notes
+
+    #values = '/n'.join(str(v) for v in instructions)
+
+# Extract the text_contents values and join them with newlines
+    instructions_list = [item[0] for item in instructions]
+    instructions_string = "\n".join(instructions_list)
+    form.instructions.data = instructions_string
+
+    source_notes_list = [item[0] for item in source_notes]
+    source_notes_string = "\n".join(source_notes_list)
+    form.source_notes.data = source_notes_string
 
     if form.validate_on_submit():
         if form.image.data is not None:
@@ -325,6 +334,11 @@ def edit_recipe(recipe_id):
         recipe.name = request.form['name']
         recipe.source_url = request.form['url']
         recipe.note_from_user = request.form['user_note']
+        recipe.prep_time = request.form['prep_time']
+        recipe.source_cook_time = request.form['url']
+        recipe.source_additional_time = request.form['url']
+        recipe.source_servings = request.form['servings']
+        
         db.session.commit() 
 
         recipe_id= recipe.recipe_id

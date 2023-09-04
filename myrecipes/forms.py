@@ -17,28 +17,17 @@ class add_recipe_form(FlaskForm):
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
     ingredient_bulk = TextAreaField('Ingredients (Add each on a new line)')#, validators=[Length(min=1, max=100)])
-   
     instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     prep_time = StringField('Prep Time')#, validators=[Length(min=2, max=9000)])
     cook_time = StringField('Cook Time')#, validators=[Length(min=2, max=9000)])
     additional_time = StringField('Additional Time')#, validators=[Length(min=2, max=9000)])
     note_from_user = TextAreaField('My notes')#, validators=[Length(min=2, max=9000)])
     servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
-    rating = TextAreaField('Rating')#, validators=[Length(min=2, max=9000)])
-    #cuisine = StringField('Cuisine')#, validators=[Length(min=2, max=9000)])
     cuisinelist = SelectField('Cuisine')
-    
-    #collection_list = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
-
-    #choices = [('option1', 'Option 1'), ('option2', 'Option 2'), ('option3', 'Option 3')]
     collection_list = SelectMultipleField('Collection(s)', choices=[], validate_choice=False)#, validators=[validators.DataRequired()])
-
-
-    instructions = TextAreaField('Instructions')#, validators=[Length(min=2, max=9000)])
     source_notes = TextAreaField('Source notes')#, validators=[Length(min=2, max=9000)])
     image = FileField('Upload image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])
     pdf = FileField('Upload recipe PDF', validators=[FileAllowed(['pdf'])])
-
     submit = SubmitField("Add Recipe")
 
 class edit_recipe_form(FlaskForm):
@@ -46,7 +35,19 @@ class edit_recipe_form(FlaskForm):
     url = StringField('URL', validators=[Length(max=500)])
     user_note = TextAreaField('Notes')
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
+    ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
+    ingredient_bulk = TextAreaField('Ingredients (Add each on a new line)')#, validators=[Length(min=1, max=100)])
+ 
     instructions = TextAreaField('Instructions')#, validators=[Length(min=1, max=9000)])
+    
+    prep_time = StringField('Prep Time')#, validators=[Length(min=2, max=9000)])
+    cook_time = StringField('Cook Time')#, validators=[Length(min=2, max=9000)])
+    additional_time = StringField('Additional Time')#, validators=[Length(min=2, max=9000)])
+    note_from_user = TextAreaField('My notes')#, validators=[Length(min=2, max=9000)])
+    servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
+    cuisinelist = SelectField('Cuisine')
+    collection_list = SelectMultipleField('Collection(s)', choices=[], validate_choice=False)#, validators=[validators.DataRequired()])
     source_notes = TextAreaField('Source_notes')#, validators=[Length(min=2, max=9000)])
     image = FileField('Change Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
+    pdf = FileField('Upload recipe PDF', validators=[FileAllowed(['pdf'])])
     submit = SubmitField("Save Changes")
