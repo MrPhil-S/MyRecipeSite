@@ -291,6 +291,8 @@ def add_recipe_api():
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
+    form = edit_recipe_form()
+
     #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
@@ -298,8 +300,25 @@ def edit_recipe(recipe_id):
     source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
     #collections = recipe_collection.query.order_by(recipe_collection.collecton_id).filter_by(recipe_id=recipe_id).all()
 
+    #populate form with all collection choices
+    form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
+   
+       # Fetch the collections associated with the current recipe_id
+    collections = db.session.query(Collection.collection_name).all()
+
+    # Convert the collections result into a list of collection names
+    collection_names = [collection[0] for collection in collections]
+
+    # Fetch the selected collection names for the current recipe
+    selected_collection_names = [collection.collection_name for collection in recipe.collections]
+   
+
+    # Populate the dropdown fields with data from the database
+    blank_default_dropdown = (0, '')
+    form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
+    form.cuisinelist.choices.insert(0, (0, ''))
+    
     image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
-    form = edit_recipe_form()
      
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
@@ -378,7 +397,7 @@ def edit_recipe(recipe_id):
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file)
+    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collection_names=collection_names, selected_collection_names=selected_collection_names)
 
 
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
