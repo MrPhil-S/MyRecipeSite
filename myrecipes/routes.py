@@ -181,14 +181,11 @@ def add_recipe():
             recipe = Recipe.query.get_or_404(recipe_id)
             recipe.pdf_file = pdf_file
 
-        #add the collections to collection table
+        #add the collections to recipe_collection table
         for collection_id in selected_collections:
-
             insert_recipe_collection = recipe_collection.insert().values(
                 collection_id=int(collection_id),
                 recipe_id=recipe_id )
-
-        
             db.session.execute(insert_recipe_collection)
         db.session.commit()
 
@@ -304,14 +301,22 @@ def edit_recipe(recipe_id):
     form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
    
        # Fetch the collections associated with the current recipe_id
-    collections = db.session.query(Collection.collection_name).all()
+    collections = Collection.query.all()
+
 
     # Convert the collections result into a list of collection names
-    collection_names = [collection[0] for collection in collections]
+    #collection_names = [collection[0] for collection in collections]
+
+    # Retrieve selected collection_ids for the current recipe
+    selected_collection_ids = [collection.collection_id for collection in recipe.collections]
+
 
     # Fetch the selected collection names for the current recipe
-    selected_collection_names = [collection.collection_name for collection in recipe.collections]
-   
+    #selected_collection_names = [collection.collection_name for collection in recipe.collections]
+    
+    # Define collections_data as a list of dictionaries
+    collections_data = [{'collection_id': collection.collection_id, 'collection_name': collection.collection_name} for collection in collections]
+
 
     # Populate the dropdown fields with data from the database
     blank_default_dropdown = (0, '')
@@ -334,7 +339,7 @@ def edit_recipe(recipe_id):
 
     #values = '/n'.join(str(v) for v in instructions)
 
-# Extract the text_contents values and join them with newlines
+    # Extract the text_contents values and join them with newlines
     instructions_list = [item[0] for item in instructions]
     instructions_string = "\n".join(instructions_list)
     form.instructions.data = instructions_string
@@ -352,19 +357,42 @@ def edit_recipe(recipe_id):
 
         recipe.name = request.form['name']
         recipe.source_url = request.form['url']
-        recipe.note_from_user = request.form['user_note']
+        recipe.note_from_user = request.form['note_from_user']
         recipe.prep_time = request.form['prep_time']
-        recipe.source_cook_time = request.form['url']
-        recipe.source_additional_time = request.form['url']
+        recipe.source_cook_time = request.form['cook_time']
+        recipe.source_additional_time = request.form['additional_time']
         recipe.source_servings = request.form['servings']
         
+        selected_cuisine_id = form.cuisinelist.data
+        recipe.cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
+
+        recipe.cuisine = form.cuisinelist.data
         db.session.commit() 
 
+
+        #Get new form values for child tables
+        ingredients = request.form.getlist('ingredient')
+        instructions = request.form['instructions']
+        source_notes = request.form['source_notes']
+        selected_collections = request.form.getlist('collection_list')
+
         recipe_id= recipe.recipe_id
+
+        #add the collections to collection table
+       # recipe_collection.query.filter_by(recipe_id=recipe_id).delete()
+        db.session.query(recipe_collection).filter_by(recipe_id=recipe_id).delete()
+        db.session.commit() 
+
+        for collection_id in selected_collections:
+            insert_recipe_collection = recipe_collection.insert().values(
+                collection_id=int(collection_id),
+                recipe_id=recipe_id )
+            db.session.execute(insert_recipe_collection)
+        db.session.commit()
+
         # Delete existing ingredients first
         Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
          # Get populated form data
-        ingredients = request.form.getlist('ingredient')
          # Add related ingredients to DB
         for ingredient in ingredients:
             if len(ingredient) > 0:  
@@ -372,23 +400,23 @@ def edit_recipe(recipe_id):
                 db.session.add(ingredient)
         db.session.commit()
 
-        # Delete existing instrunctions first
+        # Delete existing instructions first
         Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
-         # Get populated form data
-        instructions = request.form.getlist('instructions')
+         
          # Add related ingredients to DB
+        instructions_list = instructions.splitlines()   
         sequence = 0
-        for instruction in instructions:
+        for instruction in instructions_list:
             if len(instruction) > 0:  
                 sequence =+ 1
                 instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
                 db.session.add(instruction)
         db.session.commit()
 
-        notes = request.form.getlist('source_notes')
+        source_notes_list = source_notes.splitlines()   
          # Add related ingredients to DB
         sequence = 0
-        for source_note in source_notes:
+        for source_note in source_notes_list:
             if len(source_note) > 0:  
                 sequence =+ 1
                 source_note = Recipe_Instruction(text_contents=source_note.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
@@ -397,7 +425,7 @@ def edit_recipe(recipe_id):
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collection_names=collection_names, selected_collection_names=selected_collection_names)
+    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collections_data=collections_data, selected_collection_ids=selected_collection_ids)
 
 
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
