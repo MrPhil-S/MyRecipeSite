@@ -47,7 +47,7 @@ class edit_recipe_form(FlaskForm):
     servings = StringField('Servings')#, validators=[Length(min=2, max=9000)])
     cuisinelist = SelectField('Cuisine')
     collection_list = SelectMultipleField('Collection(s)', choices=[], validate_choice=False)#, validators=[validators.DataRequired()])
-    source_notes = TextAreaField('Source_notes')#, validators=[Length(min=2, max=9000)])
+    source_notes = TextAreaField('Source Notes')#, validators=[Length(min=2, max=9000)])
     image = FileField('Change Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
     pdf = FileField('Upload recipe PDF', validators=[FileAllowed(['pdf'])])
     submit = SubmitField("Save Changes")
