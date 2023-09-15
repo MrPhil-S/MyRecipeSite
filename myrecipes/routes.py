@@ -155,12 +155,14 @@ def add_recipe():
         prep_time = request.form['prep_time']
         cook_time = request.form['cook_time']
         additional_time = request.form['additional_time']
-        selected_cuisine_id = form.cuisinelist.data
+        servings = request.form['servings']
         selected_collections = request.form.getlist('collection_list')
+
+        selected_cuisine_id = form.cuisinelist.data
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, cuisine_id=cuisine_id)
+        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, servings=servings, cuisine_id=cuisine_id)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
@@ -359,19 +361,22 @@ def edit_recipe(recipe_id):
         recipe.source_url = request.form['url']
         recipe.note_from_user = request.form['note_from_user']
         recipe.prep_time = request.form['prep_time']
-        recipe.source_cook_time = request.form['cook_time']
-        recipe.source_additional_time = request.form['additional_time']
-        recipe.source_servings = request.form['servings']
+        recipe.cook_time = request.form['cook_time']
+        recipe.additional_time = request.form['additional_time']
+        recipe.servings = request.form['servings']
         
         selected_cuisine_id = form.cuisinelist.data
-        recipe.cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
+        cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
-        recipe.cuisine = form.cuisinelist.data
+        recipe.cuisine = cuisine_id
         db.session.commit() 
 
 
         #Get new form values for child tables
-        ingredients = request.form.getlist('ingredient')
+        #ingredients = request.form.getlist('ingredient')
+        ingredients = request.form.getlist('ingredient[]')
+        ingredient_notes = request.form.getlist('ingredient_note[]')    
+        
         instructions = request.form['instructions']
         source_notes = request.form['source_notes']
         selected_collections = request.form.getlist('collection_list')
@@ -392,11 +397,31 @@ def edit_recipe(recipe_id):
 
         # Delete existing ingredients first
         Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
-         # Get populated form data
-         # Add related ingredients to DB
-        for ingredient in ingredients:
-            if len(ingredient) > 0:  
-                ingredient = Recipe_Ingredient(text_contents=ingredient.strip(), recipe_id=recipe.recipe_id)
+
+
+        # Add related ingredients to DB
+        for index, ingredient in enumerate(ingredients):
+            if len(ingredient) > 0: 
+
+                stmt = text(''' #TODO: fix hardcoded ingredient lookup values
+                SELECT name_official 
+                FROM 
+                    (SELECT  
+                    name_official
+                    FROM `recipe__ingredient`
+                    UNION
+                    SELECT 'soy_sauce'
+                    ) x
+                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
+                ORDER BY length(name_official) DESC
+                LIMIT 1''')
+                result  = db.engine.execute(stmt, ingredient_param=ingredient)
+                row = result.fetchone()
+                name_official = row[0] if row is not None else 'default_ingredient'
+
+                ingredient_note = ingredient_notes[index]
+
+                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
                 db.session.add(ingredient)
         db.session.commit()
 
