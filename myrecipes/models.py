@@ -92,4 +92,4 @@ class Cuisine(db.Model):
 
 
     def __repr__(self):
-        return f"('{self.cuisine_name}')"
+        return f"({self.cuisine_name})"

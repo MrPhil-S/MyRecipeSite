@@ -18,7 +18,12 @@
   <div class="row mb-4">
     <div class="col  d-flex flex-column">
       <div>
-        <h1>{{ recipe.name }}</h1>
+        <h1 style="display: inline;">{{ recipe.name }}</h1> 
+        <small class="text-muted ml-3" >
+          {% if cuisine_name %}
+            {{ cuisine_name }}
+          {% endif %}  
+        </small>
       </div>
       
       {% if recipe.source_url_short %}

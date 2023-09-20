@@ -7,90 +7,88 @@
       overflow-y: auto;
   }
 </style>
+<script>
+  window.onload = function() {
+    let additionalIngredients = document.getElementById("additional_ingredients");
+    let latestIngredientField;
+
+    function addIngredientRow(initialLoad, name = "", note = "") {
+      let ingredientRow = document.createElement("div");
+      ingredientRow.setAttribute("class", "form-row ml-3");
+
+      let ingredientCol1 = document.createElement("div");
+      ingredientCol1.setAttribute("class", "col-md-4");
+      let ingredientFieldContainer1 = createIngredientField(initialLoad, name);
+
+      let ingredientCol2 = document.createElement("div");
+      ingredientCol2.setAttribute("class", "col");
+      let ingredientFieldContainer2 = createIngredientNoteField(initialLoad, note);
+
+      ingredientRow.appendChild(ingredientCol1);
+      ingredientRow.appendChild(ingredientCol2);
+
+      ingredientCol1.appendChild(ingredientFieldContainer1);
+      ingredientCol2.appendChild(ingredientFieldContainer2);
+
+      additionalIngredients.appendChild(ingredientRow);
+    }
+
+    function createIngredientField(initialLoad, name = "") {
+      let ingredientFieldContainer = document.createElement("div");
+      ingredientFieldContainer.setAttribute("class", "form-group");
+
+
+
+      let ingredientField = document.createElement("input");
+      ingredientField.setAttribute("type", "text");
+      ingredientField.setAttribute("name", "ingredient[]");
+      ingredientField.setAttribute("class", "form-control form-control-md ");
+      ingredientField.value = name; // Prepopulate the field with data
+
+      ingredientField.addEventListener("input", function() {
+        if (ingredientField === latestIngredientField && ingredientField.value !== "" && !ingredientField.nextElementSibling) {
+          addIngredientRow(false);
+          latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
+        }
+      });
+
+      ingredientFieldContainer.appendChild(ingredientField);
+      return ingredientFieldContainer;
+    }
+
+    function createIngredientNoteField(initialLoad, note = "") {
+      let ingredientNoteFieldContainer = document.createElement("div");
+      ingredientNoteFieldContainer.setAttribute("class", "form-group");
+
+
+      let ingredientNoteField = document.createElement("input");
+      ingredientNoteField.setAttribute("type", "text");
+      ingredientNoteField.setAttribute("name", "ingredient_note[]");
+      ingredientNoteField.setAttribute("class", "form-control form-control-md ");
+      ingredientNoteField.value = note; // Prepopulate the field with data
+
+      ingredientNoteFieldContainer.appendChild(ingredientNoteField);
+      return ingredientNoteFieldContainer;
+    }
+
+  // Loop through existing ingredients and notes to prepopulate fields
+  {% for ingredient in ingredients %}
+    addIngredientRow(true, "{{ ingredient.name_written }}", "{% if ingredient.note %}{{ ingredient.note }}{% endif %}");
+  {% endfor %}
+    // Add an initial ingredient row with labels
+    addIngredientRow(true);
+    latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
+  }
+</script>
+
 
 <div class="content-section">
 
-
-
-
-  <script>
-    window.onload = function() {
-      let additionalIngredients = document.getElementById("additional_ingredients");
-      let latestIngredientField;
-  
-      function addIngredientRow(initialLoad, name = "", note = "") {
-        let ingredientRow = document.createElement("div");
-        ingredientRow.setAttribute("class", "form-row ml-3");
-  
-        let ingredientCol1 = document.createElement("div");
-        ingredientCol1.setAttribute("class", "col-md-4");
-        let ingredientFieldContainer1 = createIngredientField(initialLoad, name);
-  
-        let ingredientCol2 = document.createElement("div");
-        ingredientCol2.setAttribute("class", "col");
-        let ingredientFieldContainer2 = createIngredientNoteField(initialLoad, note);
-  
-        ingredientRow.appendChild(ingredientCol1);
-        ingredientRow.appendChild(ingredientCol2);
-  
-        ingredientCol1.appendChild(ingredientFieldContainer1);
-        ingredientCol2.appendChild(ingredientFieldContainer2);
-  
-        additionalIngredients.appendChild(ingredientRow);
-      }
-  
-      function createIngredientField(initialLoad, name = "") {
-        let ingredientFieldContainer = document.createElement("div");
-        ingredientFieldContainer.setAttribute("class", "form-group");
-  
- 
-  
-        let ingredientField = document.createElement("input");
-        ingredientField.setAttribute("type", "text");
-        ingredientField.setAttribute("name", "ingredient[]");
-        ingredientField.setAttribute("class", "form-control form-control-md ");
-        ingredientField.value = name; // Prepopulate the field with data
-  
-        ingredientField.addEventListener("input", function() {
-          if (ingredientField === latestIngredientField && ingredientField.value !== "" && !ingredientField.nextElementSibling) {
-            addIngredientRow(false);
-            latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
-          }
-        });
-  
-        ingredientFieldContainer.appendChild(ingredientField);
-        return ingredientFieldContainer;
-      }
-  
-      function createIngredientNoteField(initialLoad, note = "") {
-        let ingredientNoteFieldContainer = document.createElement("div");
-        ingredientNoteFieldContainer.setAttribute("class", "form-group");
-  
-
-        let ingredientNoteField = document.createElement("input");
-        ingredientNoteField.setAttribute("type", "text");
-        ingredientNoteField.setAttribute("name", "ingredient_note[]");
-        ingredientNoteField.setAttribute("class", "form-control form-control-md ");
-        ingredientNoteField.value = note; // Prepopulate the field with data
-  
-        ingredientNoteFieldContainer.appendChild(ingredientNoteField);
-        return ingredientNoteFieldContainer;
-      }
-  
-    // Loop through existing ingredients and notes to prepopulate fields
-    {% for ingredient in ingredients %}
-      addIngredientRow(true, "{{ ingredient.name_written }}", "{% if ingredient.note %}{{ ingredient.note }}{% endif %}");
-    {% endfor %}
-      // Add an initial ingredient row with labels
-      addIngredientRow(true);
-      latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
-    }
-  </script>
-  
-  
-  
-  
-
+  <div class="pt-3 mb-4">
+    <small class="text-muted">
+      <a class="ml-4 link-secondary" href="/recipes/{{ recipe.recipe_id }}">Back</a>
+    </small>
+  </div>
 
 <form method="POST" enctype="multipart/form-data" action="">
   {{form.hidden_tag()}}
@@ -295,6 +293,8 @@
 
   </fieldset>
   {{form.submit(class="btn btn-outline-info")}}
+  <a href="/recipes/{{ recipe.recipe_id }}" class="btn btn-outline-info ml-3">Cancel</a>
+
   <button type="button" class="btn btn-danger m-1 float-right" data-toggle="modal" data-target="#DeleteModalLabel">Delete...</button>
   
 </form>
