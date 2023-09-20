@@ -77,7 +77,7 @@ def recipe(recipe_id):
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
-    cuisine = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
+    cuisine_name = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collections = recipe.collections
     if recipe.note_from_user is not None:
         note_from_user_list = recipe.note_from_user.split('\n')
@@ -124,7 +124,7 @@ def recipe(recipe_id):
         db.session.commit()
         return redirect(url_for('recipe', recipe_id=recipe_id, is_planned=is_planned))
 
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine=cuisine, collections=collections, cook_count=cook_count, is_planned=is_planned, recipe_pdf=recipe_pdf)
+    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine_name=cuisine_name, collections=collections, cook_count=cook_count, is_planned=is_planned, recipe_pdf=recipe_pdf)
 
 
 
@@ -338,7 +338,7 @@ def edit_recipe(recipe_id):
     #collection
     form.note_from_user.data = recipe.note_from_user
     form.ingredient.data =  ingredients
-
+   # form.cuisinelist.data = recipe.cuisine_id
     #values = '/n'.join(str(v) for v in instructions)
 
     # Extract the text_contents values and join them with newlines
@@ -368,7 +368,7 @@ def edit_recipe(recipe_id):
         selected_cuisine_id = form.cuisinelist.data
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
-        recipe.cuisine = cuisine_id
+        recipe.cuisine_id = cuisine_id
         db.session.commit() 
 
 
