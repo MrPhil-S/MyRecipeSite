@@ -226,6 +226,11 @@
 
         <div class="form-group mt-3">
           {{ form.pdf.label(class="form-control-label") }}
+          {% if pdf_file %}
+            <div>
+              <span class="text-muted">{{ pdf_file }}</span>
+            </div>
+          {% endif %}
           {{ form.pdf(class="form-control-file") }}
           {% if form.pdf.errors %}
             {% for error in form.pdf.errors %}
