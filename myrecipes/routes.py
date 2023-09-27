@@ -290,10 +290,9 @@ def add_recipe_api():
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
-    form = edit_recipe_form()
-
-    #retrieve the existing recipe from DB
     recipe = Recipe.query.get_or_404(recipe_id)
+    form = edit_recipe_form(cuisinelist = recipe.cuisine_id)
+
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
@@ -321,10 +320,10 @@ def edit_recipe(recipe_id):
 
 
     # Populate the dropdown fields with data from the database
-    blank_default_dropdown = (0, '')
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
     form.cuisinelist.choices.insert(0, (0, ''))
     
+
     image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
      
     #populate the retrieved (above) recipe into form
@@ -338,7 +337,8 @@ def edit_recipe(recipe_id):
     #collection
     form.note_from_user.data = recipe.note_from_user
     form.ingredient.data =  ingredients
-   # form.cuisinelist.data = recipe.cuisine_id
+
+
     #values = '/n'.join(str(v) for v in instructions)
 
     # Extract the text_contents values and join them with newlines
@@ -365,10 +365,11 @@ def edit_recipe(recipe_id):
         recipe.additional_time = request.form['additional_time']
         recipe.servings = request.form['servings']
         
-        selected_cuisine_id = form.cuisinelist.data
-        cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
-
-        recipe.cuisine_id = cuisine_id
+        #selected_cuisine_id = form.cuisinelist.data
+        #cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
+        #recipe.cuisine_id = cuisine_id
+        print(form.cuisinelist.data)
+        recipe.cuisine_id = form.cuisinelist.data
         db.session.commit() 
 
 
