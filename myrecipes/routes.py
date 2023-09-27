@@ -178,10 +178,10 @@ def add_recipe():
         recipe.image_file = image_file
 
         if form.pdf.data:
-            pdf_file = save_file(form.pdf.data, recipe_id)
+            save_file(form.pdf.data, recipe_id)
             #Get the newly inserted recipe to be used to UPDATE with the pdf_file
-            recipe = Recipe.query.get_or_404(recipe_id)
-            recipe.pdf_file = pdf_file
+            #recipe = Recipe.query.get_or_404(recipe_id)
+            #recipe.pdf_file = pdf_file
 
         #add the collections to recipe_collection table
         for collection_id in selected_collections:
@@ -323,8 +323,7 @@ def edit_recipe(recipe_id):
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
     form.cuisinelist.choices.insert(0, (0, ''))
     
-
-    image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
+    image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
      
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
@@ -338,8 +337,11 @@ def edit_recipe(recipe_id):
     form.note_from_user.data = recipe.note_from_user
     form.ingredient.data =  ingredients
 
-
-    #values = '/n'.join(str(v) for v in instructions)
+    pdf_file = None
+    #TODO:Should this os.path.join be a url_for instead? If using url_for, there may be a need to include the root directory. 
+    pdf_file_path = os.path.join(app.root_path, 'static/custom_prints', str(recipe_id) + '.pdf')
+    if os.path.exists(pdf_file_path):
+        pdf_file = os.path.basename(pdf_file_path)
 
     # Extract the text_contents values and join them with newlines
     instructions_list = [item[0] for item in instructions]
@@ -365,16 +367,16 @@ def edit_recipe(recipe_id):
         recipe.additional_time = request.form['additional_time']
         recipe.servings = request.form['servings']
         
-        #selected_cuisine_id = form.cuisinelist.data
-        #cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
-        #recipe.cuisine_id = cuisine_id
-        print(form.cuisinelist.data)
         recipe.cuisine_id = form.cuisinelist.data
         db.session.commit() 
 
+        if form.pdf.data:
+            save_file(form.pdf.data, recipe_id)
+            #Get the newly inserted recipe to be used to UPDATE with the pdf_file
+            #recipe = Recipe.query.get_or_404(recipe_id)
+            #recipe.pdf_file = pdf_file
 
         #Get new form values for child tables
-        #ingredients = request.form.getlist('ingredient')
         ingredients = request.form.getlist('ingredient[]')
         ingredient_notes = request.form.getlist('ingredient_note[]')    
         
@@ -385,7 +387,6 @@ def edit_recipe(recipe_id):
         recipe_id= recipe.recipe_id
 
         #add the collections to collection table
-       # recipe_collection.query.filter_by(recipe_id=recipe_id).delete()
         db.session.query(recipe_collection).filter_by(recipe_id=recipe_id).delete()
         db.session.commit() 
 
@@ -451,7 +452,7 @@ def edit_recipe(recipe_id):
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collections_data=collections_data, selected_collection_ids=selected_collection_ids)
+    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collections_data=collections_data, selected_collection_ids=selected_collection_ids, pdf_file=pdf_file)
 
 
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
