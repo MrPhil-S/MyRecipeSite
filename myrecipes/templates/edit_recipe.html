@@ -6,7 +6,18 @@
       max-height: 200px;
       overflow-y: auto;
   }
+
+  {% if recipe.image_file != 'default.jpg' %}
+  .drop-zone {
+      background-image: url("{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}"); /* Adjust the filename as needed */
+      background-size: cover;
+      background-position: center;
+      box-shadow: inset 0 0 0 1000px rgba(0,0,0,.6);
+  }
+  {% endif %}
+
 </style>
+
 <script>
   window.onload = function() {
     let additionalIngredients = document.getElementById("additional_ingredients");
@@ -94,7 +105,6 @@
   {{form.hidden_tag()}}
   <fieldset class="form-group">
     <legend class="border-bottom mb-4">Edit Recipe - {{ recipe.name }}</legend>
-    <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}"  class="rounded img-fluid max-width: 100%">
 
 
     <div class="row mb-4">
@@ -223,7 +233,6 @@
           {{ form.image(class="form-control-file drop-zone__input") }} 
         </div>
 
-
         <div class="form-group mt-3">
           {{ form.pdf.label(class="form-control-label") }}
           {% if pdf_file %}
@@ -239,10 +248,7 @@
           {% endif %}
         </div>
       </div>
-
-
     </div> <!--end row -->
-
 
     <div class="form-row ml-3">
       <div class="col-md-4">
@@ -295,7 +301,6 @@
       {% endif %}
     </div>
 
-
   </fieldset>
   {{form.submit(class="btn btn-outline-info")}}
   <a href="/recipes/{{ recipe.recipe_id }}" class="btn btn-outline-info ml-3">Cancel</a>
@@ -305,7 +310,6 @@
 </form>
 
 </div>
-
 
 <!-- Modal -->
 <div class="modal fade" id="DeleteModalLabel" tabindex="-1" role="dialog" aria-labelledby="DeleteModalLabel" aria-hidden="true">
@@ -329,7 +333,6 @@
     </div>
   </div>
 </div>
-
 
     <!-- Multiselect Dropdown Initialization -->
 
