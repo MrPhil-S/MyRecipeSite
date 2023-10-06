@@ -51,20 +51,20 @@ class Recipe_Instruction(db.Model):
     def __repr__(self):
         return f"Recipe_Instructions('{self.text_contents}','{self.type}','{self.sequence}')"
     
-class Page_View(db.Model):
-    page_view_id = db.Column(db.Integer, primary_key=True)
+class recipe_view_date(db.Model):
+    recipe_view_date_id = db.Column(db.Integer, primary_key=True)
     recipe_id = db.Column(db.Integer, nullable=False)
-    page_view_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+    recipe_view_dt= db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
 
     def __repr__(self):
-        count = db.session.query(func.count(Page_View.page_view_id)).filter_by(recipe_id=self.recipe_id).scalar()
+        count = db.session.query(func.count(recipe_view_date.recipe_view_date_id)).filter_by(recipe_id=self.recipe_id).scalar()
         return count
 
     
-class Recipe_Cooked_Date(db.Model):
-    recipe_cook_count_id = db.Column(db.Integer, primary_key=True)
+class recipe_cooked_date(db.Model):
+    recipe_cooked_date_id = db.Column(db.Integer, primary_key=True)
     recipe_id = db.Column(db.Integer, nullable=False)
-    cooked_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    recipe_cooked_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
 
 class Recipe_Plan_Date(db.Model):
@@ -81,8 +81,7 @@ class Collection(db.Model):
     recipes = db.relationship('Recipe', secondary='recipe_collection', back_populates='collections')
 
     def __repr__(self):
-        return f'{self.collection_name}'
-    
+        return f"Collection('{self.collection_id}','{self.collection_name}','{self.create_dt}')"
 
 
 class Cuisine(db.Model):

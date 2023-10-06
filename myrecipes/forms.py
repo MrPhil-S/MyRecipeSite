@@ -37,9 +37,7 @@ class edit_recipe_form(FlaskForm):
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
     ingredient_bulk = TextAreaField('Ingredients (Add each on a new line)')#, validators=[Length(min=1, max=100)])
- 
     instructions = TextAreaField('Instructions')#, validators=[Length(min=1, max=9000)])
-    
     prep_time = StringField('Prep Time')#, validators=[Length(min=2, max=9000)])
     cook_time = StringField('Cook Time')#, validators=[Length(min=2, max=9000)])
     additional_time = StringField('Additional Time')#, validators=[Length(min=2, max=9000)])
@@ -51,3 +49,7 @@ class edit_recipe_form(FlaskForm):
     image = FileField('Change Image', validators=[FileAllowed(['jpg', 'png', 'jpeg'])])  #Validator issue: upon render_template, the ingredient values will not re-load into the ajax fields
     pdf = FileField('Upload recipe PDF', validators=[FileAllowed(['pdf'])])
     submit = SubmitField("Save Changes")
+
+class add_collection_form(FlaskForm):
+    collection_name = StringField('Name')#, validators=[DataRequired(), Length(min=2, max=200)])
+    

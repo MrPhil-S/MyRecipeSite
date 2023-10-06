@@ -7,11 +7,12 @@ from werkzeug.utils import secure_filename
 
 #import secrets
 from myrecipes import app, db, get_recipies
-from myrecipes.forms import add_recipe_form, edit_recipe_form
-from myrecipes.models import (Collection, Cuisine, Page_View, Recipe,
-                              Recipe_Cooked_Date, Recipe_Ingredient,
+from myrecipes.forms import (add_collection_form, add_recipe_form,
+                             edit_recipe_form)
+from myrecipes.models import (Collection, Cuisine, Recipe, Recipe_Ingredient,
                               Recipe_Instruction, Recipe_Plan_Date,
-                              recipe_collection)
+                              recipe_collection, recipe_cooked_date,
+                              recipe_view_date)
 
 
 @app.route('/setup')
@@ -32,15 +33,37 @@ def home():
     if request.method == 'POST':
         search_for = request.form['search_for']
         recipes = Recipe.query.join(Recipe_Ingredient).\
-            filter((Recipe_Ingredient.name_written == search_for )|( Recipe.name.contains(search_for))).all()
+            filter((Recipe_Ingredient.name_written == search_for )|
+                   ( Recipe.name.contains(search_for))
+                   ).all()
         return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
 
 
 @app.route('/import_recipes')
 def import_recipes():
-    #return get_recipies.main()  
     return render_template('import_recipes.html')
+
+@app.route('/collections', methods=['GET', 'POST'])
+def collections():
+    form = add_collection_form()
+    collections = Collection.query.order_by(Collection.collection_name.asc()).all()
+
+    if form.validate_on_submit():
+        # Get populted form data
+        collection_name = request.form['collection_name']
+        
+        # Add new collection to DB
+        collection = Collection(collection_name=collection_name)
+        db.session.add(collection)
+        db.session.flush()
+        db.session.refresh(collection)
+        db.session.commit()
+        flash(f'___ added', 'success')
+
+
+        return redirect(url_for('collections', collections=collections))  
+    return render_template('collections.html', collections=collections, title='Collections', form=form)
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
@@ -68,11 +91,12 @@ def recipe(recipe_id):
 
     recipe = Recipe.query.get_or_404(recipe_id)
 
-    page_view = Page_View(recipe_id=recipe_id)
-    db.session.add(page_view)
+    recipe_view_dt = recipe_view_date(recipe_id=recipe_id)
+    db.session.add(recipe_view_dt)
     db.session.commit()
-    view_count = Page_View.query.filter_by(recipe_id=recipe_id).count()
-    cook_count = Recipe_Cooked_Date.query.filter_by(recipe_id=recipe.recipe_id).count()
+
+    view_count = recipe_view_date.query.filter_by(recipe_id=recipe_id).count()
+    cook_count = recipe_cooked_date.query.filter_by(recipe_id=recipe.recipe_id).count()
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
@@ -95,8 +119,6 @@ def recipe(recipe_id):
             break
             
 
-
-
     if request.method == 'POST':
         button_action = request.form.get('button_action')
      
@@ -115,7 +137,7 @@ def recipe(recipe_id):
             flash(f'Removed from plan', 'success')
 
         elif button_action == 'mark_cooked':
-            add_date = Recipe_Cooked_Date(recipe_id=recipe.recipe_id)
+            add_date = recipe_cooked_date(recipe_id=recipe.recipe_id)
             db.session.add(add_date)
             flash(f'Marked as cooked', 'success')
 
@@ -123,7 +145,6 @@ def recipe(recipe_id):
             return "Invalid action"
         db.session.commit()
         return redirect(url_for('recipe', recipe_id=recipe_id, is_planned=is_planned))
-
     return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine_name=cuisine_name, collections=collections, cook_count=cook_count, is_planned=is_planned, recipe_pdf=recipe_pdf)
 
 
@@ -461,6 +482,7 @@ def delete_recipe(recipe_id):
     db.session.delete(recipe)
     Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
     Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
+    #TODO: add additional child table records to delete (ex recipe_collection)
 
     db.session.commit()
 

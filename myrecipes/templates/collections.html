@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<script>
+$(document).ready( function () {
+    $('#myTable').DataTable();
+} );
+</script>
+
+<div class="content-section">
+
+    <h1>Collections</h1>
+    <button class="btn btn-primary float-right mb-3" data-toggle="modal" data-target="#AddCollection">New Collection</button>
+
+    {% if collections %}
+      <table id="myTable" class="display">
+        <thead>
+            <tr>
+                <th>Collection Name</th>
+                <th>Create Date</th>
+            </tr>
+        </thead>
+        <tbody>
+          {% for collection in collections %}
+            <tr>
+                <td>{{ collection.collection_name }}</td>
+                <td>{{ collection.create_dt }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="AddCollection" tabindex="-1" role="dialog" aria-labelledby="AddCollection" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="AddCollection">New collection</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form action="" method="POST" enctype="multipart/form-data">
+        {{form.hidden_tag()}}
+        <div class="modal-body">
+          <div class="form-group ">
+            {{ form.collection_name.label(class="form-control-label") }}        
+            {% if form.collection_name.errors %}
+              {{ form.collection_name(class="form-control form-control-lg is-invalid ") }}
+              <div class="invalid-feedback">
+                {% for error in form.collection_name.errors %}
+                  <span>{{ error }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              {{ form.collection_name(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-info" data-dismiss="modal">Cancel</button>
+            <input type="submit" class="btn btn-outline-info" value="Save">
+        </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
