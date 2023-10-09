@@ -1,8 +1,9 @@
 import os
+import re
 
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from PIL import Image
-from sqlalchemy import text
+from sqlalchemy import and_, or_, text
 from werkzeug.utils import secure_filename
 
 #import secrets
@@ -31,12 +32,34 @@ def frontlights():
 def home():
     recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
     if request.method == 'POST':
-        search_for = request.form['search_for']
-        recipes = Recipe.query.join(Recipe_Ingredient).\
-            filter((Recipe_Ingredient.name_written == search_for )|
-                   ( Recipe.name.contains(search_for))
-                   ).all()
-        return render_template('home.html', recipes=recipes)
+
+        # If the form is submitted via POST, retrieve the query from the form data
+        query = request.form.get('search_for', '')
+    else:
+        # If it's a GET request, retrieve the query from the query parameters
+        query = request.args.get('search_for', '')
+
+    tokens = parse_search_query(query)
+     
+    # Build a dynamic SQLAlchemy query with an OR condition between fields
+    search_query = db.session.query(Recipe).join(Recipe_Ingredient)
+    
+    # Create a list to hold individual AND conditions
+    and_conditions = []
+    
+    for token in tokens:
+        and_conditions.append(or_(Recipe.name.ilike(f"%{token}%"), Recipe_Ingredient.name_written.ilike(f"%{token}%")))
+    
+    # Combine all AND conditions with an AND clause
+    combined_condition = and_(*and_conditions)
+    
+    # Apply the combined condition to the query
+    search_query = search_query.filter(combined_condition)
+    
+    # Execute the query and retrieve the results
+    recipes = search_query.order_by(Recipe.recipe_id.desc()).all()
+
+    #    return render_template('home.html', recipes=recipes)
     return render_template('home.html', recipes=recipes, title='Recipes')
 
 
@@ -522,3 +545,21 @@ def save_file(form_file, recipe_id):
     ))
 
     return filename 
+
+
+def parse_search_query(query):
+    # Use regular expressions to identify quoted strings
+    quoted_strings = re.findall(r'"(.*?)"', query)
+    
+    for quoted_string in quoted_strings:
+        query = query.replace(f'"{quoted_string}"', '')
+
+    # Tokenize the query, splitting on spaces
+   # query = query.
+    query = query.strip()
+    tokens = re.split(r'\s+', query)
+    
+    # Combine quoted strings into the tokens list
+    tokens.extend(quoted_strings)
+    
+    return tokens

@@ -1,14 +1,23 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
 from time import sleep
+
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+
+PATH = r""
+service = Service()
+options = webdriver.ChromeOptions()
+
+driver = webdriver.Chrome(service=service, options=options)
+# Selenium Manager is now fully included with selenium 4.10.0
 #from selenium.webdriver.chrome.service import Service  # Selenium Manager was added in selenium 4.10.0
 
 #service = Service()
 #options = webdriver.ChromeOptions()
 #driver = webdriver.Chrome(service=service, options=options)
 
-PATH = r""
-driver = webdriver.Chrome()  # Optional argument, if not specified will search path.
+
+#driver = webdriver.Chrome()  # Optional argument, if not specified will search path.
 
 
 def scrapeAR(url):
