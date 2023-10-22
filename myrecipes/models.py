@@ -7,6 +7,7 @@ recipe_collection = db.Table('recipe_collection',
                     db.Column('collection_id', db.Integer, db.ForeignKey('collection.collection_id'))
                     )
 
+
 class Recipe(db.Model):
     recipe_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -81,7 +82,7 @@ class Collection(db.Model):
     recipes = db.relationship('Recipe', secondary='recipe_collection', back_populates='collections')
 
     def __repr__(self):
-        return f"Collection('{self.collection_id}','{self.collection_name}','{self.create_dt}')"
+        return self.collection_name
 
 
 class Cuisine(db.Model):
