@@ -30,9 +30,7 @@ def frontlights():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
-    recipes = Recipe.query.order_by(Recipe.recipe_id.desc()).all()
     if request.method == 'POST':
-
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
     else:
@@ -40,27 +38,53 @@ def home():
         query = request.args.get('search_for', '')
 
     tokens = parse_search_query(query)
-     
-    # Build a dynamic SQLAlchemy query with an OR condition between fields
-    search_query = db.session.query(Recipe).join(Recipe_Ingredient)
-    
-    # Create a list to hold individual AND conditions
-    and_conditions = []
-    
-    for token in tokens:
-        and_conditions.append(or_(Recipe.name.ilike(f"%{token}%"), Recipe_Ingredient.name_written.ilike(f"%{token}%")))
-    
-    # Combine all AND conditions with an AND clause
-    combined_condition = and_(*and_conditions)
-    
-    # Apply the combined condition to the query
-    search_query = search_query.filter(combined_condition)
-    
-    # Execute the query and retrieve the results
-    recipes = search_query.order_by(Recipe.recipe_id.desc()).all()
 
-    #    return render_template('home.html', recipes=recipes)
-    return render_template('home.html', recipes=recipes, title='Recipes')
+    # Initialize a set to store distinct recipe IDs that match all tokens
+    all_recipe_ids = set()
+
+    # Find the distinct recipe IDs for each token
+    for token in tokens:
+        token_recipe_ids = search_recipe(token)
+        token_ingredient_ids = search_recipe_ingredient(token)
+        
+        # If this is the first token, initialize the all_recipe_ids set
+        if not all_recipe_ids:
+            all_recipe_ids = set(token_recipe_ids + token_ingredient_ids)
+        else:
+            # Update the set with the common recipe IDs among all tokens
+            all_recipe_ids.intersection_update(token_recipe_ids + token_ingredient_ids)
+
+    # Retrieve recipes based on the common recipe IDs
+    all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
+    #TODO: Repopulate the search field with the query
+    return render_template('home.html', recipes=all_results, title='Recipes')
+
+def search_recipe(token):
+    # Build a dynamic SQLAlchemy query for the Recipe table
+    search_query = db.session.query(Recipe.recipe_id)
+
+    # Create an OR condition for the token
+    or_condition = Recipe.name.ilike(f"%{token}%")
+
+    # Apply the condition to the query
+    search_query = search_query.filter(or_condition)
+
+    # Execute the query and retrieve the distinct recipe IDs
+    return [result[0] for result in search_query.distinct().all()]
+
+def search_recipe_ingredient(token):
+    # Build a dynamic SQLAlchemy query for the Recipe_Ingredient table
+    search_query = db.session.query(Recipe_Ingredient.recipe_id)
+
+    # Create an OR condition for the token
+    or_condition = Recipe_Ingredient.name_written.ilike(f"%{token}%")
+
+    # Apply the condition to the query
+    search_query = search_query.filter(or_condition)
+
+    # Execute the query and retrieve the distinct recipe IDs
+    return [result[0] for result in search_query.distinct().all()]
+
 
 
 @app.route('/import_recipes')
