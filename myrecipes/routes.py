@@ -150,6 +150,7 @@ def recipe(recipe_id):
     source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
     cuisine_name = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collections = recipe.collections
+    
     if recipe.note_from_user is not None:
         note_from_user_list = recipe.note_from_user.split('\n')
     else:
@@ -539,6 +540,15 @@ def delete_recipe(recipe_id):
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
     
+@app.route('/collections/<int:collection_id>/delete', methods=['POST'])
+def delete_collection(collection_id):
+    collection = Collection.query.get_or_404(collection_id)
+    db.session.delete(collection)
+   # recipe_collection.filter_by(collection_id=collection_id).delete()
+    db.session.commit()
+
+    flash(f'{collection.collection_name} deleted!', 'success')
+    return redirect(url_for('collections', collections=collections))  
 
 def save_image(form_image, recipe_id):
     #Rename file
