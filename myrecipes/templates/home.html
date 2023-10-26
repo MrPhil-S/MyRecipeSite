@@ -7,11 +7,13 @@
 
 <form method="post">
     <div class="form-group">
-        <input type="text" class="form-control" id="search_for" name="search_for"
-            placeholder="Search by recipe name or ingredient">
-    </div>
+        <input type="search" class="form-control" id="search_for" name="search_for" autocomplete="off"
+            placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
+        </div>
     <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
-    <input type="reset" value="Clear" class="btn mb-4">
+    <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
+
+    
     <div class="float-right">{{ recipes|length }} recipes found</div>
 </form>
 

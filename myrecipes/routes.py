@@ -10,7 +10,8 @@ from werkzeug.utils import secure_filename
 from myrecipes import app, db, get_recipies
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
-from myrecipes.models import (Collection, Cuisine, Recipe, Recipe_Ingredient,
+from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
+                              Query_History, Recipe, Recipe_Ingredient,
                               Recipe_Instruction, Recipe_Plan_Date,
                               recipe_collection, recipe_cooked_date,
                               recipe_view_date)
@@ -30,14 +31,24 @@ def frontlights():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
+    # Initialize the 'query' variable
+    query = ''
+
     if request.method == 'POST':
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
+        
+        # Add search term DB
+        saved_query = Query_History(query=query)
+        db.session.add(saved_query)
+        db.session.flush()
+        db.session.refresh(saved_query)
+        db.session.commit()
     else:
         # If it's a GET request, retrieve the query from the query parameters
         query = request.args.get('search_for', '')
 
-    tokens = parse_search_query(query)
+    tokens, excluded_tokens = parse_search_query(query)
 
     # Initialize a set to store distinct recipe IDs that match all tokens
     all_recipe_ids = set()
@@ -54,17 +65,48 @@ def home():
             # Update the set with the common recipe IDs among all tokens
             all_recipe_ids.intersection_update(token_recipe_ids + token_ingredient_ids)
 
+    # Exclude recipes or ingredients containing excluded words
+    for excluded_token in excluded_tokens:
+        excluded_recipe_ids = search_recipe(excluded_token)
+        excluded_ingredient_ids = search_recipe_ingredient(excluded_token)
+        all_recipe_ids.difference_update(excluded_recipe_ids + excluded_ingredient_ids)
+
     # Retrieve recipes based on the common recipe IDs
     all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
-    #TODO: Repopulate the search field with the query
-    return render_template('home.html', recipes=all_results, title='Recipes')
+   
+    return render_template('home.html', recipes=all_results, title='Recipes', query=query)
+
+# Function to parse the search query and identify excluded words after "NOT"
+def parse_search_query(query):
+    # Use regular expressions to identify quoted strings
+    quoted_strings = re.findall(r'"(.*?)"', query)
+    
+    for quoted_string in quoted_strings:
+        query = query.replace(f'"{quoted_string}"', '')
+
+    # Tokenize the query, splitting on spaces
+    query = query.strip()
+    tokens = re.split(r'\s+', query)
+    
+    # Combine quoted strings into the tokens list
+    tokens.extend(quoted_strings)
+    
+    # Find the "NOT" keyword and words following it
+    excluded_tokens = []
+    if 'NOT' in tokens:
+        not_index = tokens.index('NOT')
+        excluded_tokens = tokens[not_index + 1:]
+        tokens = tokens[:not_index]
+    
+    return tokens, excluded_tokens
 
 def search_recipe(token):
     # Build a dynamic SQLAlchemy query for the Recipe table
     search_query = db.session.query(Recipe.recipe_id)
 
-    # Create an OR condition for the token
-    or_condition = Recipe.name.ilike(f"%{token}%")
+    # Create an OR condition for the case-insensitive exact word match with MariaDB word boundaries
+    token_upper = token.upper()
+    or_condition = db.func.upper(Recipe.name).like(f"%{token_upper}%")
 
     # Apply the condition to the query
     search_query = search_query.filter(or_condition)
@@ -76,14 +118,16 @@ def search_recipe_ingredient(token):
     # Build a dynamic SQLAlchemy query for the Recipe_Ingredient table
     search_query = db.session.query(Recipe_Ingredient.recipe_id)
 
-    # Create an OR condition for the token
-    or_condition = Recipe_Ingredient.name_written.ilike(f"%{token}%")
+    # Create an OR condition for the case-insensitive exact word match with MariaDB word boundaries
+    token_upper = token.upper()
+    or_condition = db.func.upper(Recipe_Ingredient.name_written).like(f"%{token_upper}%")
 
     # Apply the condition to the query
     search_query = search_query.filter(or_condition)
 
     # Execute the query and retrieve the distinct recipe IDs
     return [result[0] for result in search_query.distinct().all()]
+
 
 
 
@@ -581,19 +625,3 @@ def save_file(form_file, recipe_id):
     return filename 
 
 
-def parse_search_query(query):
-    # Use regular expressions to identify quoted strings
-    quoted_strings = re.findall(r'"(.*?)"', query)
-    
-    for quoted_string in quoted_strings:
-        query = query.replace(f'"{quoted_string}"', '')
-
-    # Tokenize the query, splitting on spaces
-   # query = query.
-    query = query.strip()
-    tokens = re.split(r'\s+', query)
-    
-    # Combine quoted strings into the tokens list
-    tokens.extend(quoted_strings)
-    
-    return tokens
