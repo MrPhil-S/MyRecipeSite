@@ -9,7 +9,11 @@
     </small>
     <div class="float-right">
       {%if collections %}
-        <small class="text-muted"><b>Collection(s):   </b>{{collections|join(' | ')}} </small>
+        <small class="text-muted ">Collection(s):   
+          {% for collection in collections%}
+          <a href="#" class="badge badge-secondary">{{ collection }}</a>
+          {% endfor %}
+          </small>
       {% endif %}
     </div>
   </div>

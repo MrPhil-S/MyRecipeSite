@@ -93,3 +93,21 @@ class Cuisine(db.Model):
 
     def __repr__(self):
         return f"({self.cuisine_name})"
+    
+class Ingredient_Synonym(db.Model):
+    ingredient_synonym_id = db.Column(db.Integer, primary_key=True)
+    primary_term = db.Column(db.String(100), nullable=False)
+    secondary_term = db.Column(db.String(100), nullable=False)
+
+    def __repr__(self):
+        return f"({self.primary_term})"
+
+
+class Query_History(db.Model):
+    query_history_id = db.Column(db.Integer, primary_key=True)
+    query = db.Column(db.String(100), nullable=False)
+    query_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+
+
+    def __repr__(self):
+        return f"({self.query})"
