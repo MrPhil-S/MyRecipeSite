@@ -31,22 +31,26 @@ def frontlights():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
+    old_query_history = Query_History.query.order_by(Query_History.query_dt.desc()).limit(5).all()
+    sortorder = 'create_dt'
     # Initialize the 'query' variable
     query = ''
+
 
     if request.method == 'POST':
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
-        
+        if len(query.strip()) > 0:
         # Add search term DB
-        saved_query = Query_History(query=query)
-        db.session.add(saved_query)
-        db.session.flush()
-        db.session.refresh(saved_query)
-        db.session.commit()
+            saved_query = Query_History(query_text=query)
+            db.session.add(saved_query)
+            db.session.flush()
+            db.session.refresh(saved_query)
+            db.session.commit()
     else:
         # If it's a GET request, retrieve the query from the query parameters
         query = request.args.get('search_for', '')
+
 
     tokens, excluded_tokens = parse_search_query(query)
 
@@ -74,7 +78,11 @@ def home():
     # Retrieve recipes based on the common recipe IDs
     all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
    
-    return render_template('home.html', recipes=all_results, title='Recipes', query=query)
+    return render_template('home.html', recipes=all_results, 
+                           title='Recipes', 
+                           query=query, 
+                           old_query_history=old_query_history,
+                           sortorder=sortorder)
 
 # Function to parse the search query and identify excluded words after "NOT"
 def parse_search_query(query):
@@ -155,6 +163,14 @@ def collections():
 
         return redirect(url_for('collections', collections=collections))  
     return render_template('collections.html', collections=collections, title='Collections', form=form)
+
+@app.route('/plan', methods=['GET', 'POST'])
+def plan():
+
+    plan = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
+
+    return render_template('plan.html', plan=plan)
+
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
