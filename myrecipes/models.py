@@ -105,7 +105,7 @@ class Ingredient_Synonym(db.Model):
 
 class Query_History(db.Model):
     query_history_id = db.Column(db.Integer, primary_key=True)
-    query = db.Column(db.String(100), nullable=False)
+    query_text = db.Column(db.String(100), nullable=False)
     query_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
 
 

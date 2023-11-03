@@ -7,28 +7,54 @@
 
 <form method="post">
     <div class="form-group">
-        <input type="search" class="form-control" id="search_for" name="search_for" autocomplete="off"
+        <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
             placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
-        </div>
+            
+        <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
+        {% if old_query_history %}
+        <datalist id="browsers" >
+            {% for query in old_query_history %}
+                <option value="{{ query.query_text }}">
+            {% endfor %}
+        </datalist>
+
+        {% endif %}
+
+    </div>
+        
     <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
     <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
 
-    
-    <div class="float-right">{{ recipes|length }} recipes found</div>
+    <div class="float-right ml-3">Sort...</div>
+    <div class="float-right ml-3">Collection...</div>
+    <div class="float-right ml-3">Cuisine...</div>
+    <div class="float-right">{{ recipes|length }} recipes found</div>    
+
 </form>
+
+
+
 
 {% if recipe_results %}
     <h2>Results</h2>for {{ recipe_results }} 
 {% elif recipes %}
 
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
-        {% for recipe in recipes %}
+        {% for recipe in recipes|sort(attribute=sortorder, reverse = True) %}
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class=" card  mb-3 ">
                 <div class="card-img-container">
                     <a href="/recipes/{{ recipe.recipe_id }}">
                         <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
                         alt="{{ recipe.name }}" >
+                        
+                        <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight mb-3">
+                            <button class="btn btn-secondary p-2">
+                                <i class="fa-solid fa-plus" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
+                            </button>  
+                        </div>
+
+
                         <div class="card-img-content">
                             <p class="card-text mt-auto">
                                 {% if recipe.source_url_short %}

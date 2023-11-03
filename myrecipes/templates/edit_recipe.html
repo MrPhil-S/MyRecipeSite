@@ -240,6 +240,7 @@
               <span class="text-muted">{{ pdf_file }}</span>
             </div>
           {% endif %}
+     
           {{ form.pdf(class="form-control-file") }}
           {% if form.pdf.errors %}
             {% for error in form.pdf.errors %}
