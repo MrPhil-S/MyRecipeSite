@@ -40,44 +40,43 @@
 {% elif recipes %}
 
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
+
         {% for recipe in recipes|sort(attribute=sortorder, reverse = True) %}
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
-            <div class=" card  mb-3 ">
-                <div class="card-img-container">
-                    <a href="/recipes/{{ recipe.recipe_id }}">
-                        <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
-                        alt="{{ recipe.name }}" >
-                        
-                        <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight mb-3">
-                            <button class="btn btn-secondary p-2">
-                                <i class="fa-solid fa-plus" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
-                            </button>  
+                <div class="card">
+                    <a href="/recipes/{{ recipe.recipe_id }}">    
+                        <div class="card-img-container">
+                            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
+                            alt="{{ recipe.name }}" >
+                            
+                            <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
+                                <button class="btn btn-add-to-plan p1-2">
+                                    <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
+                                </button>  
+                            </div>
+                            <div class="card-img-title">
+                                <p class="card-text mt-auto">
+                                    {{ recipe.name }}
+                                </p>
+                            </div>              
+                        </div>                  
+                        <div class="card-footer text-secondary text-right">
+                            <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
+                            <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
+                            <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
                         </div>
-
-
-                        <div class="card-img-content">
-                            <p class="card-text mt-auto">
-                                {% if recipe.source_url_short %}
-                                  {{ recipe.source_url_short | truncate(30) }}
-                                {% elif recipe.source_url %}
-                                    {{recipe.source_url | truncate(30) }}
-                                {% else %}
-                                  No source URL available
-                                {% endif %}
-                              </p>
-                        </div>              
+                    </a>
                 </div>
-                    <div class="card-body">
-                        <h5 class="card-title  recipe-card-title">{{ recipe.name }}</a></h5>
-                        <div class="text-secondary">
-                            <i class="fa-regular fa-clock mr-1" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
-                            <i class="fa-solid fa-people-group ml-2 mr-1" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
-                            <i class="fa-solid fa-lemon ml-2 mr-1" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
-                        </div>
-                    </div>
-            </a>
-                </div>
-
+            <small class="recipe-card-source text-muted ">
+                <i class="fa-solid fa-link mr-2"></i>
+                {% if recipe.source_url_short %}
+                    <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{ recipe.source_url_short | truncate(30) }}</a>
+                {% elif recipe.source_url %}
+                    <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{recipe.source_url | truncate(30) }}</a>
+                {% else %}
+                    No source URL available
+                {% endif %}
+            </small>
         </div>
         {% endfor %}
     </div>
