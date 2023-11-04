@@ -7,7 +7,15 @@
 
     <h1>Plan</h1>
 
-</div>
+    {% if plans %}
+    plans found!
+        {% for plan in plans %}
+          
+              {{ plan.recipe_id }}
+
+        {% endfor %}
+    {% endif %}
+      </div>
 
 
 

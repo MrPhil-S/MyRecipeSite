@@ -167,9 +167,24 @@ def collections():
 @app.route('/plan', methods=['GET', 'POST'])
 def plan():
 
-    plan = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
+    plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
 
-    return render_template('plan.html', plan=plan)
+    return render_template('plan.html', plans=plans)
+
+@app.route('/plan/<int:recipe_id>', methods=['POST'])
+def add_to_plan(recipe_id):
+
+    recipe = Recipe.query.get_or_404(recipe_id)
+    plan = Recipe_Plan_Date(recipe_id=recipe_id)#, planned_dt=planned_dt)
+
+    db.session.add(plan)
+    db.session.flush()
+    db.session.refresh(plan)
+    db.session.commit()
+
+    
+    flash(f'{recipe.name} added to plan!', 'success')
+    return redirect(url_for('home'))
 
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
