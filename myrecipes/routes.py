@@ -158,7 +158,7 @@ def collections():
         db.session.flush()
         db.session.refresh(collection)
         db.session.commit()
-        flash(f'___ added', 'success')
+        flash(f'{collection_name} added', 'success')
 
 
         return redirect(url_for('collections', collections=collections))  
@@ -183,7 +183,8 @@ def add_to_plan(recipe_id):
     db.session.commit()
 
     
-    flash(f'{recipe.name} added to plan!', 'success')
+    flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
+
     return redirect(url_for('home'))
 
 
@@ -249,7 +250,7 @@ def recipe(recipe_id):
             add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
             db.session.add(add_date)
             is_planned = True
-            flash(f'Added to plan', 'success')
+            flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
 
         elif button_action == 'remove_from_plan':
             #  user = User.query.filter_by(username=username).first_or_404()

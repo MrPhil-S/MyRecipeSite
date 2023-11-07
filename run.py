@@ -7,4 +7,3 @@ if __name__ == "__main__":
 
 #to start dubug in cmd:
 #set FLASK_DEBUG=1
-
