@@ -4,6 +4,7 @@ import re
 from flask import flash, jsonify, redirect, render_template, request, url_for
 from PIL import Image
 from sqlalchemy import and_, or_, text
+from sqlalchemy.orm import aliased
 from werkzeug.utils import secure_filename
 
 #import secrets
@@ -76,9 +77,17 @@ def home():
         all_recipe_ids.difference_update(excluded_recipe_ids + excluded_ingredient_ids)
 
     # Retrieve recipes based on the common recipe IDs
-    all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
-   
-    return render_template('home.html', recipes=all_results, 
+    #all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
+    rp = aliased(Recipe_Plan_Date)
+
+    all_results = db.session.query(Recipe, rp).\
+        outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
+        filter(Recipe.recipe_id.in_(all_recipe_ids)).\
+        order_by(Recipe.recipe_id.desc()).\
+        all()
+
+    return render_template('home.html', 
+                           all_results=all_results, 
                            title='Recipes', 
                            query=query, 
                            old_query_history=old_query_history,
@@ -231,9 +240,9 @@ def recipe(recipe_id):
         note_from_user_list = recipe.note_from_user.split('\n')
     else:
         note_from_user_list = None
-
+    recipe_planned = None
     # Query to check if a record exists with the given recipe_id and removed_dt is NULL
-    is_planned = Recipe_Plan_Date.query .filter_by(recipe_id=recipe_id, removed_dt=None).first() is not None
+    recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe_id, removed_dt=None).first()
     #planned = planned is not None
     
     recipe_pdf = None
@@ -249,7 +258,7 @@ def recipe(recipe_id):
         if button_action == 'add_to_plan':
             add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
             db.session.add(add_date)
-            is_planned = True
+            #is_planned = True
             flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
 
         elif button_action == 'remove_from_plan':
@@ -268,8 +277,20 @@ def recipe(recipe_id):
         else:
             return "Invalid action"
         db.session.commit()
-        return redirect(url_for('recipe', recipe_id=recipe_id, is_planned=is_planned))
-    return render_template('recipe.html', recipe=recipe, note_from_user_list=note_from_user_list, ingredients=ingredients, instructions=instructions, source_notes=source_notes, title=recipe.name, image_file=image_file, view_count=view_count, cuisine_name=cuisine_name, collections=collections, cook_count=cook_count, is_planned=is_planned, recipe_pdf=recipe_pdf)
+        return redirect(url_for('recipe', recipe_id=recipe_id, recipe_planned=recipe_planned))#is_planned=is_planned))
+    return render_template('recipe.html', recipe=recipe, 
+                           note_from_user_list=note_from_user_list, 
+                           ingredients=ingredients, 
+                           instructions=instructions, 
+                           source_notes=source_notes, 
+                           title=recipe.name, 
+                           image_file=image_file, 
+                           view_count=view_count, 
+                           cuisine_name=cuisine_name, 
+                           collections=collections, 
+                           cook_count=cook_count, 
+                           recipe_planned=recipe_planned, 
+                           recipe_pdf=recipe_pdf)
 
 
 

@@ -126,8 +126,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   height: 50px
-
 }
+
+.card a {text-decoration:none;}
 
 
 .custom-select {
@@ -204,3 +205,11 @@ body {
     border-radius: .25rem  ;
 
   }
+
+  .btn-add-to-plan-added{
+    background: rgba(19, 146, 0, 0.5);
+    border-radius: .25rem  ;
+    border: 1px solid rgb(0, 169, 31);
+  
+  }
+

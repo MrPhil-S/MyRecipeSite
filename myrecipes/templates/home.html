@@ -28,37 +28,50 @@
         <div class="float-right ml-3">Sort...</div>
         <div class="float-right ml-3">Collection...</div>
         <div class="float-right ml-3">Cuisine...</div>
-        <div class="float-right">{{ recipes|length }} recipes found</div>    
+        <div class="float-right">{{ all_results|length }} recipes found</div>    
 
     </form>
 
 
 
 
-    {% if recipes %}
+    {% if all_results %}
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
-        {% for recipe in recipes|sort(attribute=sortorder, reverse = True) %}
+        {% for result in all_results|sort(attribute=sortorder, reverse = True) %}
+
+            {% set recipe = result[0] %}
+            {% set recipe_plan_date = result[1] %}
+
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class="card">
                 <a href="/recipes/{{ recipe.recipe_id }}">    
                     <div class="card-img-container">
                         <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top" alt="{{ recipe.name }}" >      
                         <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
-                            <button` href="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" class="btn btn-add-to-plan p1-2" data-toggle="modal" data-target="#AddToPlanModal{{ recipe.recipe_id }}">
+                            {% if not recipe_plan_date %}
+                            <button href="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" class="btn btn-add-to-plan p1-2" data-toggle="modal" data-target="#AddToPlanModal{{ recipe.recipe_id }}">
                             <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
                             </button> 
+                            {% else %}
+                            <div  class="btn btn-add-to-plan-added p1-2">
+                            <i class="fa-solid fa-check" style="color:lightgreen" data-toggle="tooltip" data-placement="top" title="Recipe added to plan on {{ recipe_plan_date.added_dt.date() }}"></i>
+                            </div> 
+                            {% endif %}
                         </div>
                         <div class="card-img-title">
                             <p class="card-text mt-auto">
                                 {{ recipe.name }}
                             </p>
-                        </div>              
+                        </div>      
+                                
                     </div>                  
                     <div class="card-footer text-secondary text-right">
                         <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
                         <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
                         <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
+                    
                     </div>
+                    
                 </a>
             </div>
             <small class="recipe-card-source text-muted ">
