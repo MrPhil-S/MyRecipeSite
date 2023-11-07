@@ -3,114 +3,117 @@
 {% block content %}
 <div class="content-section">
 
-<h1>Search Recipes</h1>
+    <h1>Search Recipes</h1>
 
-<form method="post">
-    <div class="form-group">
-        <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
-            placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
+    <form method="post">
+        <div class="form-group">
+            <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
+                placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
+                
+            <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
+            {% if old_query_history %}
+            <datalist id="browsers" >
+                {% for query in old_query_history %}
+                    <option value="{{ query.query_text }}">
+                {% endfor %}
+            </datalist>
+
+            {% endif %}
+
+        </div>
             
-        <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
-        {% if old_query_history %}
-        <datalist id="browsers" >
-            {% for query in old_query_history %}
-                <option value="{{ query.query_text }}">
-            {% endfor %}
-        </datalist>
+        <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
+        <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
 
-        {% endif %}
+        <div class="float-right ml-3">Sort...</div>
+        <div class="float-right ml-3">Collection...</div>
+        <div class="float-right ml-3">Cuisine...</div>
+        <div class="float-right">{{ recipes|length }} recipes found</div>    
 
-    </div>
-        
-    <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
-    <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
-
-    <div class="float-right ml-3">Sort...</div>
-    <div class="float-right ml-3">Collection...</div>
-    <div class="float-right ml-3">Cuisine...</div>
-    <div class="float-right">{{ recipes|length }} recipes found</div>    
-
-</form>
+    </form>
 
 
 
 
-{% if recipe_results %}
-    <h2>Results</h2>for {{ recipe_results }} 
-{% elif recipes %}
-
+    {% if recipes %}
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
-
         {% for recipe in recipes|sort(attribute=sortorder, reverse = True) %}
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
-                <div class="card">
-                    <a href="/recipes/{{ recipe.recipe_id }}">    
-                        <div class="card-img-container">
-                            <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top"
-                            alt="{{ recipe.name }}" >
-                            
-                            <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
-                                <button` href="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" class="btn btn-add-to-plan p1-2" data-toggle="modal" data-target="#AddToPlanModal{{ recipe.recipe_id }}">
-                                    <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
+            <div class="card">
+                <a href="/recipes/{{ recipe.recipe_id }}">    
+                    <div class="card-img-container">
+                        <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top" alt="{{ recipe.name }}" >      
+                        <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
+                            <button` href="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" class="btn btn-add-to-plan p1-2" data-toggle="modal" data-target="#AddToPlanModal{{ recipe.recipe_id }}">
+                            <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
                             </button> 
-                            </div>
-                            <div class="card-img-title">
-                                <p class="card-text mt-auto">
-                                    {{ recipe.name }}
-                                </p>
-                            </div>              
-                        </div>                  
-                        <div class="card-footer text-secondary text-right">
-                            <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
-                            <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
-                            <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
                         </div>
-                    </a>
-                </div>
+                        <div class="card-img-title">
+                            <p class="card-text mt-auto">
+                                {{ recipe.name }}
+                            </p>
+                        </div>              
+                    </div>                  
+                    <div class="card-footer text-secondary text-right">
+                        <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
+                        <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
+                        <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
+                    </div>
+                </a>
+            </div>
             <small class="recipe-card-source text-muted ">
                 <i class="fa-solid fa-link mr-2"></i>
                 {% if recipe.source_url_short %}
-                    <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{ recipe.source_url_short | truncate(30) }}</a>
+                <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{ recipe.source_url_short | truncate(30) }}</a>
                 {% elif recipe.source_url %}
-                    <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{recipe.source_url | truncate(30) }}</a>
+                <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{recipe.source_url | truncate(30) }}</a>
                 {% else %}
-                    No source URL available
+                No source URL available
                 {% endif %}
             </small>
-        </div>
-
         
-<!--Plan Modal -->
-<div class="modal fade" id="AddToPlanModal{{ recipe.recipe_id }}" tabindex="-1" role="dialog" aria-labelledby="AddToPlanModal{{ recipe.recipe_id }}" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="DeleteModalLabel">Add recipe to plan?</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+ 
+         <!--Plan Modal -->
+            <div class="modal fade" id="AddToPlanModal{{ recipe.recipe_id }}" tabindex="-1" role="dialog" aria-labelledby="AddToPlanModal{{ recipe.recipe_id }}" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="DeleteModalLabel">Add recipe to plan?</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="POST">
+                            <div class="modal-body">
+                                When do you want to plan {{ recipe.name }}?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                                <input type="submit" class="btn btn-outline-info" value="Save">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="modal-body">
-          When do you want to plan {{ recipe.name }}?
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
-          <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="POST">
-            <input type="submit" class="btn btn-outline-info" value="Save">
-          </form>
-        </div>
-      </div>
+        {% endfor %}    
     </div>
-  </div>
-        {% endfor %}
-    </div>
-{% endif %}
-
-</div>
+    {% else %}
+    No recipes found
+    {% endif %}
+</div>  
 
 
-
-
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const buttons = document.querySelectorAll(".btn-add-to-plan");
+        buttons.forEach(function (button) {
+            button.addEventListener("click", function (event) {
+                event.preventDefault(); // Prevent the default action (following the hyperlink)
+            });
+        });
+    });
+</script>
 
 
 
