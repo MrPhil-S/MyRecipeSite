@@ -17,8 +17,6 @@
       {% endif %}
     </div>
   </div>
-
-
   <div class="row mb-4">
     <div class="col  d-flex flex-column">
       <div>
@@ -29,58 +27,49 @@
           {% endif %}  
         </small>
       </div>
-      
       {% if recipe.source_url_short %}
       <div>
           <a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url_short }}</a>
       </div>  
       {% elif recipe.source_url %}
-
       <div class="">
           <a href="{{ recipe.source_url }}" target="_blank">{{ recipe.source_url | truncate(30)}}</a>
       </div>
       {% endif %}
-
       {% if recipe.whisk_url %}
       <div class=" align-items-end"> 
           <a href="{{ recipe.whisk_url }}" target="_blank">View recipe on Whisk</a>
       </div>
-      {% endif %}
-      
+      {% endif %}      
       {% if note_from_user_list %}
       <div>
         {% for note_from_user in note_from_user_list %}
           <p>{{note_from_user}}</p>
         {% endfor %}
       </div>
+      {% endif %} 
+    <div class="mt-auto">
+      {% if recipe_planned  %}
+      Recipe was added to plan on {{ recipe_planned.added_dt.date() }}  
       {% endif %}
-
- 
-    <div class="float-right mt-auto">
-      <form action="#" method="post">
-          <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>
-        
-        {% if not is_planned  %}
-          <button class="btn btn-outline-info float-left" type="submit" name="button_action" value="add_to_plan">Add to plan</button>
-        {% else %}
-          <div class="btn btn-static float-left">Added to plan</div>
-          <button class="badge badge-pill badge-info float-left ml-2 mt-2" type="submit" name="button_action" value="remove_from_plan">Remove from plan</button>
-        {% endif %}
-
-        
-        <button class="btn btn-outline-info float-right" type="submit" name="button_action" value="mark_cooked">{{ cook_count }}  +1 cooked</button>
-        {% if recipe_pdf %}
-          <a href="{{ url_for('static', filename='custom_prints/' + recipe_pdf) }}" class="btn btn-outline-info float-right mr-3" target="_blank">Source Recipe PDF</a>
-        {% endif %}
-
-      </form>
-
     </div>
-
+    <div class="float-right ">
+    <form action="#" method="post">
+        <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>      
+      {% if recipe_planned  %}
+      <button class="btn btn-danger float-left " type="submit" name="button_action" value="remove_from_plan">Remove from plan</button>
+      {% else %}
+        <button class="btn btn-outline-info float-left" type="submit" name="button_action" value="add_to_plan">Add to plan</button>
+      {% endif %}      
+      <button class="btn btn-outline-info float-right" type="submit" name="button_action" value="mark_cooked">{{ cook_count }}  +1 cooked</button>
+      {% if recipe_pdf %}
+        <a href="{{ url_for('static', filename='custom_prints/' + recipe_pdf) }}" class="btn btn-outline-info float-right mr-3" target="_blank">Source Recipe PDF</a>
+      {% endif %}
+    </form>
+  </div>
       {% if recipe.prep_time or recipe.cook_time or recipe.additional_time or recipe.servings %}
         <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
         <div class="row mt-3 ml-1 p-2 bg-light-gray shadow-sm" >
-
           <div class="col-3">
             {% if recipe.prep_time %}
             <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ recipe.prep_time }}
@@ -104,12 +93,10 @@
         </div>
       {% endif %}
     </div>
-
     <div class="col-5">
       <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
     </div>
   </div>
-
   <div class="mb-4">
     <h2>Ingredients</h2>
     <ul class="list-group">
@@ -137,7 +124,6 @@
     {% endfor %}
   </ol>
 </div>
-
   {% if source_notes %}
     <h2>Source Notes</h2>
     <ul>
@@ -146,10 +132,6 @@
       {% endfor %}
     </ul>
   {% endif %}
-
-
-
-
   <a href="{{ url_for('edit_recipe', recipe_id=recipe.recipe_id) }}" class="btn btn-outline-info">Edit Recipe</a>
 </div>
 <p>View count: {{view_count}}</p>
