@@ -37,7 +37,6 @@ def home():
     # Initialize the 'query' variable
     query = ''
 
-
     if request.method == 'POST':
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
@@ -51,7 +50,6 @@ def home():
     else:
         # If it's a GET request, retrieve the query from the query parameters
         query = request.args.get('search_for', '')
-
 
     tokens, excluded_tokens = parse_search_query(query)
 
@@ -98,6 +96,7 @@ def home():
 def import_recipes():
     return render_template('import_recipes.html')
 
+
 @app.route('/collections', methods=['GET', 'POST'])
 def collections():
     form = add_collection_form()
@@ -115,20 +114,18 @@ def collections():
         db.session.commit()
         flash(f'{collection_name} added', 'success')
 
-
         return redirect(url_for('collections', collections=collections))  
     return render_template('collections.html', collections=collections, title='Collections', form=form)
 
+
 @app.route('/plan', methods=['GET', 'POST'])
 def plan():
-
     plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
-
     return render_template('plan.html', plans=plans)
+
 
 @app.route('/plan/<int:recipe_id>', methods=['POST'])
 def add_to_plan(recipe_id):
-
     recipe = Recipe.query.get_or_404(recipe_id)
     plan = Recipe_Plan_Date(recipe_id=recipe_id)#, planned_dt=planned_dt)
 
@@ -136,10 +133,8 @@ def add_to_plan(recipe_id):
     db.session.flush()
     db.session.refresh(plan)
     db.session.commit()
-
     
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
-
     return redirect(url_for('home'))
 
 
@@ -167,7 +162,6 @@ def process_recipes(option):
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET', 'POST'])
 def recipe(recipe_id):
-
     recipe = Recipe.query.get_or_404(recipe_id)
 
     recipe_view_dt = recipe_view_date(recipe_id=recipe_id)
@@ -197,7 +191,6 @@ def recipe(recipe_id):
         if file == f'{recipe_id}.pdf':
             recipe_pdf = file
             break
-            
 
     if request.method == 'POST':
         button_action = request.form.get('button_action')
@@ -329,7 +322,6 @@ def add_recipe():
                 db.session.add(ingredient)
         db.session.commit()
 
-
         ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
         sequence = 0
         for ingredient_bulk_item in ingredient_bulk_list:
@@ -416,7 +408,6 @@ def edit_recipe(recipe_id):
        # Fetch the collections associated with the current recipe_id
     collections = Collection.query.all()
 
-
     # Convert the collections result into a list of collection names
     #collection_names = [collection[0] for collection in collections]
 
@@ -429,7 +420,6 @@ def edit_recipe(recipe_id):
     
     # Define collections_data as a list of dictionaries
     collections_data = [{'collection_id': collection.collection_id, 'collection_name': collection.collection_name} for collection in collections]
-
 
     # Populate the dropdown fields with data from the database
     form.cuisinelist.choices    = [(cuisine.cuisine_id, cuisine.cuisine_name) for cuisine in Cuisine.query.order_by(Cuisine.cuisine_name).all()]
@@ -583,6 +573,7 @@ def delete_recipe(recipe_id):
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
     
+
 @app.route('/collections/<int:collection_id>/delete', methods=['POST'])
 def delete_collection(collection_id):
     collection = Collection.query.get_or_404(collection_id)
