@@ -51,21 +51,30 @@
     <div class="mt-auto">
       {% if recipe_planned  %}
       Recipe was added to plan on {{ recipe_planned.added_dt.date() }}  
-      {% endif %}
     </div>
     <div class="float-right ">
-    <form action="#" method="post">
-        <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>      
-      {% if recipe_planned  %}
-      <button class="btn btn-danger float-left " type="submit" name="button_action" value="remove_from_plan">Remove from plan</button>
-      {% else %}
-        <button class="btn btn-outline-info float-left" type="submit" name="button_action" value="add_to_plan">Add to plan</button>
-      {% endif %}      
-      <button class="btn btn-outline-info float-right" type="submit" name="button_action" value="mark_cooked">{{ cook_count }}  +1 cooked</button>
+      <form action="{{ url_for('remove_from_plan', recipe_id=recipe.recipe_id) }}" method="post">
+        <button class="btn btn-danger float-left" type="submit">
+          Remove from plan
+        </button>
+      </form>
+      {% endif %} 
+
+      {% if not recipe_planned %}
+        <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="post">
+          <button class="btn btn-outline-info float-left" type="submit" name="button_action" value="add_to_plan">
+            Add to plan
+          </button>
+        </form>
+      {% endif %}
+      <span class="fa-solid fa-chart-simple float-right ml-2 align-self-center pt-2"></span>
+
+      <button class="btn btn-outline-info float-right" type="submit" name="button_action" value="mark_cooked">{{ cook_count }} +1 cooked</button>
+      
       {% if recipe_pdf %}
         <a href="{{ url_for('static', filename='custom_prints/' + recipe_pdf) }}" class="btn btn-outline-info float-right mr-3" target="_blank">Source Recipe PDF</a>
       {% endif %}
-    </form>
+
   </div>
       {% if recipe.prep_time or recipe.cook_time or recipe.additional_time or recipe.servings %}
         <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
