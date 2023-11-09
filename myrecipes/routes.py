@@ -1,6 +1,7 @@
 import os
 
-from flask import flash, jsonify, redirect, render_template, request, url_for
+from flask import (flash, jsonify, make_response, redirect, render_template,
+                   request, url_for)
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 
@@ -118,48 +119,6 @@ def collections():
     return render_template('collections.html', collections=collections, title='Collections', form=form)
 
 
-@app.route('/plan', methods=['GET', 'POST'])
-def plan():
-    plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
-    return render_template('plan.html', plans=plans)
-
-
-@app.route('/plan/<int:recipe_id>', methods=['POST'])
-def add_to_plan(recipe_id):
-    recipe = Recipe.query.get_or_404(recipe_id)
-    plan = Recipe_Plan_Date(recipe_id=recipe_id)#, planned_dt=planned_dt)
-
-    db.session.add(plan)
-    db.session.flush()
-    db.session.refresh(plan)
-    db.session.commit()
-    
-    flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
-    return redirect(url_for('home'))
-
-
-@app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
-def process_recipes(option):
-    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, 4-BAOnly
-    if option == 2:
-        get_recipies.main(option)
-        flash(f'Upserted all recipes.', 'success')
-    elif option == 1:
-        get_recipies.main(option)
-        flash(f'Added new recipes', 'success')
-    elif option in (3, 4):
-        recipes = Recipe.query.order_by(Recipe.recipe_id.asc()).all()
-        if option == 3:
-            for recipe in recipes:
-                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
-            flash('AR recipes updated', 'success')
-        elif option == 4:
-            for recipe in recipes:
-                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
-            flash('BA recipes updated', 'success')     
-    return redirect(url_for('import_recipes'))
-
-
 @app.route('/recipes/<int:recipe_id>', methods=['GET', 'POST'])
 def recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
@@ -194,22 +153,7 @@ def recipe(recipe_id):
 
     if request.method == 'POST':
         button_action = request.form.get('button_action')
-     
-        if button_action == 'add_to_plan':
-            add_date = Recipe_Plan_Date(recipe_id=recipe.recipe_id)
-            db.session.add(add_date)
-            #is_planned = True
-            flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
-
-        elif button_action == 'remove_from_plan':
-            #  user = User.query.filter_by(username=username).first_or_404()
-
-            recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe.recipe_id, removed_dt=None).first_or_404()
-            recipe_planned.removed_dt = db.func.current_timestamp()
-            is_planned = False
-            flash(f'Removed from plan', 'success')
-
-        elif button_action == 'mark_cooked':
+        if button_action == 'mark_cooked':
             add_date = recipe_cooked_date(recipe_id=recipe.recipe_id)
             db.session.add(add_date)
             flash(f'Marked as cooked', 'success')
@@ -585,5 +529,55 @@ def delete_collection(collection_id):
     return redirect(url_for('collections', collections=collections))  
 
 
+@app.route('/plan', methods=['GET', 'POST'])
+def plan():
+    plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
+    return render_template('plan.html', plans=plans)
 
+
+@app.route('/plan/<int:recipe_id>', methods=['POST'])
+def add_to_plan(recipe_id):
+    referer = request.headers.get('Referer')
+    recipe = Recipe.query.get_or_404(recipe_id)
+    plan = Recipe_Plan_Date(recipe_id=recipe_id)#, planned_dt=planned_dt)
+
+    db.session.add(plan)
+    db.session.flush()
+    db.session.refresh(plan)
+    db.session.commit()
+    flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
+    return redirect(referer or url_for('home'))
+
+@app.route('/plan/<int:recipe_id>/delete', methods=['POST'])
+def remove_from_plan(recipe_id):
+    referer = request.headers.get('Referer')
+    recipe = Recipe.query.get_or_404(recipe_id)
+
+    recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe.recipe_id, removed_dt=None).first_or_404()
+    recipe_planned.removed_dt = db.func.current_timestamp()
+    db.session.commit()
+
+    flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
+    return redirect(referer or url_for('home'))
+
+@app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
+def process_recipes(option):
+    #options: 1-Onlyaddnew, 2-Upsertall, 3-AROnly, 4-BAOnly
+    if option == 2:
+        get_recipies.main(option)
+        flash(f'Upserted all recipes.', 'success')
+    elif option == 1:
+        get_recipies.main(option)
+        flash(f'Added new recipes', 'success')
+    elif option in (3, 4):
+        recipes = Recipe.query.order_by(Recipe.recipe_id.asc()).all()
+        if option == 3:
+            for recipe in recipes:
+                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
+            flash('AR recipes updated', 'success')
+        elif option == 4:
+            for recipe in recipes:
+                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
+            flash('BA recipes updated', 'success')     
+    return redirect(url_for('import_recipes'))
 

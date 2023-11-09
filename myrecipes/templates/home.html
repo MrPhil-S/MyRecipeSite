@@ -35,15 +35,25 @@
                     <div class="card-img-container">
                         <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top" alt="{{ recipe.name }}" >      
                         <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
+
                             {% if not recipe_plan_date %}
-                            <button href="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" class="btn btn-add-to-plan p1-2" data-toggle="modal" data-target="#AddToPlanModal{{ recipe.recipe_id }}">
-                            <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
-                            </button> 
+
+                                <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="post">
+                                    <button class="btn btn-add-to-plan p1-2  " type="submit">
+                                        <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
+                                    </button> 
+                                </form>
+
                             {% else %}
-                            <div  class="btn btn-add-to-plan-added p1-2">
-                            <i class="fa-solid fa-check" style="color:lightgreen" data-toggle="tooltip" data-placement="top" title="Recipe added to plan on {{ recipe_plan_date.added_dt.date() }}"></i>
-                            </div> 
+
+                                <form action="{{ url_for('remove_from_plan', recipe_id=recipe.recipe_id) }}" method="post">
+                                    <button class="btn btn-add-to-plan-added p1-2 " type="submit" data-toggle="tooltip"  title="Added to plan (Click to remove)">
+                                        <i class="fa-solid fa-check" style="color:lightgreen"  data-placement="top"></i>
+                                    </button> 
+                                </form>
+
                             {% endif %}
+
                         </div>
                         <div class="card-img-title">
                             <p class="card-text mt-auto">
@@ -53,7 +63,6 @@
                     </div>                  
                     <div class="card-footer text-secondary text-right">
                         <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
-                        <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
                         <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
                     </div>                    
                 </a>
@@ -68,29 +77,6 @@
                 No source URL available
                 {% endif %}
             </small>       
- 
-         <!--Plan Modal -->
-            <div class="modal fade" id="AddToPlanModal{{ recipe.recipe_id }}" tabindex="-1" role="dialog" aria-labelledby="AddToPlanModal{{ recipe.recipe_id }}" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="DeleteModalLabel">Add recipe to plan?</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="POST">
-                            <div class="modal-body">
-                                When do you want to plan {{ recipe.name }}?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
-                                <input type="submit" class="btn btn-outline-info" value="Save">
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
         </div>
         {% endfor %}    
     </div>
@@ -98,17 +84,6 @@
     No recipes found
     {% endif %}
 </div>  
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const buttons = document.querySelectorAll(".btn-add-to-plan");
-        buttons.forEach(function (button) {
-            button.addEventListener("click", function (event) {
-                event.preventDefault(); // Prevent the default action (following the hyperlink)
-            });
-        });
-    });
-</script>
 
 <script>
 $(function () {
