@@ -54,7 +54,7 @@ class Recipe_Instruction(db.Model):
     
 class recipe_view_date(db.Model):
     recipe_view_date_id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
     recipe_view_dt= db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
 
     def __repr__(self):
@@ -64,13 +64,13 @@ class recipe_view_date(db.Model):
     
 class recipe_cooked_date(db.Model):
     recipe_cooked_date_id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
     recipe_cooked_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
 
 
 class Recipe_Plan_Date(db.Model):
     recipe_plan_date_id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id'), nullable=False)
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
     planned_dt = db.Column(db.DateTime, nullable=True)
     added_dt = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
     removed_dt = db.Column(db.DateTime, nullable=True)
