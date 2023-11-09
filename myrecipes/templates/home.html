@@ -2,9 +2,7 @@
 
 {% block content %}
 <div class="content-section">
-
     <h1>Search Recipes</h1>
-
     <form method="post">
         <div class="form-group">
             <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
@@ -17,31 +15,20 @@
                     <option value="{{ query.query_text }}">
                 {% endfor %}
             </datalist>
-
             {% endif %}
-
-        </div>
-            
+        </div>           
         <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
         <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
-
         <div class="float-right ml-3">Sort...</div>
         <div class="float-right ml-3">Collection...</div>
         <div class="float-right ml-3">Cuisine...</div>
         <div class="float-right">{{ all_results|length }} recipes found</div>    
-
     </form>
-
-
-
-
     {% if all_results %}
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
         {% for result in all_results|sort(attribute=sortorder, reverse = True) %}
-
             {% set recipe = result[0] %}
             {% set recipe_plan_date = result[1] %}
-
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class="card">
                 <a href="/recipes/{{ recipe.recipe_id }}">    
@@ -62,16 +49,13 @@
                             <p class="card-text mt-auto">
                                 {{ recipe.name }}
                             </p>
-                        </div>      
-                                
+                        </div>                                      
                     </div>                  
                     <div class="card-footer text-secondary text-right">
                         <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
                         <i class="fa-solid fa-people-group ml-2 mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Serving count"></i>{{recipe.servings}}
                         <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
-                    
-                    </div>
-                    
+                    </div>                    
                 </a>
             </div>
             <small class="recipe-card-source text-muted ">
@@ -83,8 +67,7 @@
                 {% else %}
                 No source URL available
                 {% endif %}
-            </small>
-        
+            </small>       
  
          <!--Plan Modal -->
             <div class="modal fade" id="AddToPlanModal{{ recipe.recipe_id }}" tabindex="-1" role="dialog" aria-labelledby="AddToPlanModal{{ recipe.recipe_id }}" aria-hidden="true">
@@ -116,7 +99,6 @@
     {% endif %}
 </div>  
 
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const buttons = document.querySelectorAll(".btn-add-to-plan");
@@ -127,8 +109,6 @@
         });
     });
 </script>
-
-
 
 <script>
 $(function () {
