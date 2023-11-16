@@ -568,7 +568,7 @@ def add_to_plan(recipe_id):
     db.session.commit()
 
     referer = request.headers.get('Referer')
-    if referer and not '/home':
+    if referer and referer != '/home':
         return redirect(referer)
 
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
@@ -583,7 +583,7 @@ def remove_from_plan(recipe_id):
     db.session.commit()
 
     referer = request.headers.get('Referer')
-    if referer and not '/home':
+    if referer and referer != '/home':
         return redirect(referer)
     
     flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
