@@ -90,4 +90,40 @@ $(function () {
     $('[data-toggle="tooltip"]').tooltip()
   })
 </script>
+
+
+<!---
+This script captures the current scroll position when any button 
+with the classes "btn-add-to-plan" or "btn-add-to-plan-added" is clicked
+ and stores it in a session cookie named "scrollPosition."
+-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const addButtonContainers = document.querySelectorAll(".btn-add-to-plan, .btn-add-to-plan-added");
+
+        addButtonContainers.forEach(function (button) {
+            button.addEventListener("click", function (event) {
+                // Capture the current scroll position
+                const scrollY = window.scrollY;
+
+                // Store the scroll position in a session cookie
+                document.cookie = `scrollPosition=${scrollY};path=/`;
+            });
+        });
+    });
+
+    // Script specific to this child template
+    document.addEventListener("DOMContentLoaded", function () {
+        const scrollPosition = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('scrollPosition='))
+            ?.split('=')[1];
+
+        // Scroll to the stored position
+        if (scrollPosition) {
+            window.scrollTo(0, parseInt(scrollPosition, 10));
+        }
+    });
+</script>
+
 {% endblock %}
