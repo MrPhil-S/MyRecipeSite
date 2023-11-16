@@ -99,31 +99,61 @@ with the classes "btn-add-to-plan" or "btn-add-to-plan-added" is clicked
 -->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const addButtonContainers = document.querySelectorAll(".btn-add-to-plan, .btn-add-to-plan-added");
+        const planButtons = document.querySelectorAll(".btn-add-to-plan, .btn-add-to-plan-added");
+        const recipeLinks = document.querySelectorAll(".card");
 
-        addButtonContainers.forEach(function (button) {
+        planButtons.forEach(function (button) {
             button.addEventListener("click", function (event) {
-                // Capture the current scroll position
-                const scrollY = window.scrollY;
+                // Capture the current scroll position for the plan button
+                const planScrollY = window.scrollY;
 
-                // Store the scroll position in a session cookie
-                document.cookie = `scrollPosition=${scrollY};path=/`;
+                // Store the plan button scroll position in a session cookie
+                document.cookie = `planScrollPosition=${planScrollY};path=/`;
             });
         });
-    });
 
-    // Script specific to this child template
-    document.addEventListener("DOMContentLoaded", function () {
-        const scrollPosition = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('scrollPosition='))
-            ?.split('=')[1];
+        recipeLinks.forEach(function (link) {
+            link.addEventListener("click", function (event) {
+                // Capture the current scroll position for the recipe link
+                const recipeScrollY = window.scrollY;
 
-        // Scroll to the stored position
-        if (scrollPosition) {
-            window.scrollTo(0, parseInt(scrollPosition, 10));
+                // Store the recipe link scroll position in a session cookie
+                document.cookie = `recipeScrollPosition=${recipeScrollY};path=/`;
+            });
+        });
+
+        // Check if the plan button scroll should be used
+        const shouldUsePlanScroll = new URLSearchParams(window.location.search).get('usePlanScroll') === 'true';
+
+        if (shouldUsePlanScroll) {
+            const planScrollPosition = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('planScrollPosition='))
+                ?.split('=')[1];
+
+            // Scroll to the stored plan button position
+            if (planScrollPosition) {
+                window.scrollTo(0, parseInt(planScrollPosition, 10));
+            }
+        }
+
+        // Check if the recipe link scroll should be used
+        const shouldUseRecipeScroll = new URLSearchParams(window.location.search).get('useRecipeScroll') === 'true';
+
+        if (shouldUseRecipeScroll) {
+            const recipeScrollPosition = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('recipeScrollPosition='))
+                ?.split('=')[1];
+
+            // Scroll to the stored recipe link position
+            if (recipeScrollPosition) {
+                window.scrollTo(0, parseInt(recipeScrollPosition, 10));
+            }
         }
     });
 </script>
+
+
 
 {% endblock %}

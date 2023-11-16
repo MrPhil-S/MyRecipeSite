@@ -1,7 +1,7 @@
 import os
 
-from flask import (flash, jsonify, make_response, redirect, render_template,
-                   request, url_for)
+from flask import (flash, jsonify, redirect, render_template, request, session,
+                   url_for)
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 
@@ -41,6 +41,10 @@ def home():
     if request.method == 'POST':
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
+
+        session['session_form_data'] = query
+        
+
         if len(query.strip()) > 0:
         # Add search term DB
             saved_query = Query_History(query_text=query)
@@ -51,6 +55,10 @@ def home():
     else:
         # If it's a GET request, retrieve the query from the query parameters
         query = request.args.get('search_for', '')
+
+    if not query:
+        query = session.get('session_form_data', '')
+
 
     tokens, excluded_tokens = parse_search_query(query)
 
@@ -531,13 +539,26 @@ def delete_collection(collection_id):
 
 @app.route('/plan', methods=['GET', 'POST'])
 def plan():
-    plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
+    #plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
+
+    #plans = db.session.query(Recipe).
+    #        join(Recipe, (Recipe_Plan_Date.recipe_id == Recipe.recipe_id)).\
+    #        order_by(Recipe_Plan_Date.added_dt.desc()).\
+    #        all()
+    
+    plans = (
+        db.session.query(Recipe)
+        .select_from(Recipe_Plan_Date)
+        .join(Recipe, Recipe.recipe_id == Recipe_Plan_Date.recipe_id)
+        .filter(Recipe_Plan_Date.removed_dt.is_(None))
+        .order_by(Recipe_Plan_Date.added_dt.desc())
+    )
+
     return render_template('plan.html', plans=plans)
 
 
 @app.route('/plan/<int:recipe_id>', methods=['POST'])
 def add_to_plan(recipe_id):
-    referer = request.headers.get('Referer')
     recipe = Recipe.query.get_or_404(recipe_id)
     plan = Recipe_Plan_Date(recipe_id=recipe_id)#, planned_dt=planned_dt)
 
@@ -545,20 +566,28 @@ def add_to_plan(recipe_id):
     db.session.flush()
     db.session.refresh(plan)
     db.session.commit()
+
+    referer = request.headers.get('Referer')
+    if referer and not '/home':
+        return redirect(referer)
+
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
-    return redirect(referer or url_for('home'))
+    return redirect(url_for('home', usePlanScroll='true'))
 
 @app.route('/plan/<int:recipe_id>/delete', methods=['POST'])
 def remove_from_plan(recipe_id):
-    referer = request.headers.get('Referer')
     recipe = Recipe.query.get_or_404(recipe_id)
 
     recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe.recipe_id, removed_dt=None).first_or_404()
     recipe_planned.removed_dt = db.func.current_timestamp()
     db.session.commit()
 
+    referer = request.headers.get('Referer')
+    if referer and not '/home':
+        return redirect(referer)
+    
     flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
-    return redirect(referer or url_for('home'))
+    return redirect(url_for('home', usePlanScroll='true'))
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
