@@ -8,10 +8,25 @@
     <h1>Plan</h1>
 
     {% if plans %}
-    plans found!
         {% for plan in plans %}
           
-              {{ plan.recipe_id }}
+        <div class="row mb-4">
+            <div class="col-md-4">
+              <img src="{{ plan.image_file }}" alt="{{ plan.name }}" class="img-fluid">
+            </div>
+            <div class="col-md-8">
+              <h4>{{ plan.name }}</h4>
+              <p><strong>Source:</strong> <a href="{{ plan.source_url }}" target="_blank">{{ plan.source_url }}</a></p>
+              
+<!--              <h5>Ingredients:</h5>
+              <ul>
+                {% for ingredient in plan.ingredients %}
+                  <li>{{ ingredient }}</li>
+                {% endfor %}
+              </ul>
+    -->
+            </div>
+          </div>
 
         {% endfor %}
     {% endif %}
