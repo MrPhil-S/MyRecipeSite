@@ -47,9 +47,11 @@
                             {% else %}
 
                                 <form action="{{ url_for('remove_from_plan', recipe_id=recipe.recipe_id) }}" method="post">
-                                    <button class="btn btn-add-to-plan-added p1-2 " type="submit" data-toggle="tooltip"  title="Added to plan (Click to remove)">
-                                        <i class="fa-solid fa-check" style="color:lightgreen"  data-placement="top"></i>
-                                    </button> 
+                                    <button class="btn btn-add-to-plan-added p1-2" type="submit" data-toggle="tooltip" title="Added to plan (Click to remove)">
+                                        <i class="fa-solid fa-check" style="color: lightgreen" data-placement="top"></i>
+                                        <i class="fa-solid fa-x" style="color: rgb(238, 144, 144)" data-placement="top"></i>
+                                    </button>
+                                    
                                 </form>
 
                             {% endif %}
