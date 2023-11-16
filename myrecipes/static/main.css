@@ -213,3 +213,19 @@ body {
   
   }
 
+
+.btn-add-to-plan-added:hover .fa-check {
+    display: none;
+}
+
+.btn-add-to-plan-added:hover .fa-x {
+    display: inline-block; 
+}
+
+.btn-add-to-plan-added .fa-check {
+  display: inline-block; 
+}
+
+.btn-add-to-plan-added .fa-x {
+  display: none;
+}
