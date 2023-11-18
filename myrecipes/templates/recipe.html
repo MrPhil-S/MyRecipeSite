@@ -5,7 +5,7 @@
 <div class="content-section">
   <div class="pt-3 mb-4">
     <small class="text-muted">
-      <a class="ml-4 link-secondary" href="{{ url_for('home', useRecipeScroll='true') }}">Back to all recipies</a>
+      <a class="ml-4 link-secondary" href="{{ url_for('home', useRecipeScroll='true',  retreive_search_query='true') }}">Back to all recipies</a>
     </small>
     <div class="float-right">
       {%if collections %}
