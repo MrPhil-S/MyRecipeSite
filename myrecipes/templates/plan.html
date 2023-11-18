@@ -2,7 +2,6 @@
 
 {% block content %}
 
-
 <div class="content-section">
 
     <h1>Plan</h1>
@@ -10,27 +9,37 @@
     {% if plans %}
         {% for plan in plans %}
           
-        <div class="row mb-4">
-            <div class="col-md-4">
-              <img src="{{ plan.image_file }}" alt="{{ plan.name }}" class="img-fluid">
+
+        <div class="container">
+            <div class="card flex-row flex-wrap">
+                <div class="card-header border-0">
+                    <img src="{{ plan.image_file }}" alt="{{ plan.name }}">
+                </div>
+                <div class="card-block px-2">
+                    <h4 class="card-title">{{ plan.name }}</h4>
+                    <p class="card-text">Description</p>
+                    <a href="#" class="btn btn-primary">BUTTON</a>
+                </div>
+                <div class="w-100"></div>
+                <div class="card-footer w-100 text-muted">
+                    <a href="{{ plan.source_url }}" target="_blank">{{ plan.source_url }}</a>
+                </div>
             </div>
-            <div class="col-md-8">
-              <h4>{{ plan.name }}</h4>
-              <p><strong>Source:</strong> <a href="{{ plan.source_url }}" target="_blank">{{ plan.source_url }}</a></p>
-              
-<!--              <h5>Ingredients:</h5>
-              <ul>
-                {% for ingredient in plan.ingredients %}
-                  <li>{{ ingredient }}</li>
-                {% endfor %}
-              </ul>
-    -->
-            </div>
-          </div>
+            <br>
+
+        </div>
+
+
+
+          
 
         {% endfor %}
     {% endif %}
       </div>
+
+
+
+
 
 
 
