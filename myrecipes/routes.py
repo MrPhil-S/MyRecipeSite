@@ -1,8 +1,9 @@
 import os
+from urllib.parse import urlparse
 
 from flask import (flash, jsonify, redirect, render_template, request, session,
                    url_for)
-from sqlalchemy import text
+from sqlalchemy import desc, text
 from sqlalchemy.orm import aliased
 
 from myrecipes import app, db, get_recipies
@@ -33,8 +34,21 @@ def frontlights():
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/home', methods=['GET', 'POST'])
 def home():
-    old_query_history = Query_History.query.order_by(Query_History.query_dt.desc()).limit(5).all()
+    old_query_history = (
+            db.session.query(Query_History.query_text)
+            .distinct(Query_History.query_text)
+            .order_by(Query_History.query_dt.desc())
+            .limit(5)
+            .all()
+            )
+            
     sortorder = 'create_dt'
+
+    should_prepopulate = request.args.get('retreive_search_query') == 'true'
+    if not should_prepopulate:
+        session.pop('session_form_data')
+     
+
     # Initialize the 'query' variable
     query = ''
 
@@ -52,13 +66,21 @@ def home():
             db.session.flush()
             db.session.refresh(saved_query)
             db.session.commit()
+    elif not query:
+        #this allows the previously searched query to repopulate (when add/remove from plan is used)
+        query = session.get('session_form_data', '')
     else:
         # If it's a GET request, retrieve the query from the query parameters
+        #This might need to be removed - it never happens?
+        print(f"it happened!: {request.args.get('search_for', '')}")
         query = request.args.get('search_for', '')
 
-    if not query:
-        query = session.get('session_form_data', '')
 
+    origin = request.args.get('origin', '')
+
+    # If the origin is 'add_to_plan', clear the session variable
+    if origin == 'add_to_plan' and 'form_data' in session:
+        session.pop('form_data', None)
 
     tokens, excluded_tokens = parse_search_query(query)
 
@@ -99,6 +121,17 @@ def home():
                            query=query, 
                            old_query_history=old_query_history,
                            sortorder=sortorder)
+
+
+@app.route('/reset_session', methods=['GET'])
+def reset_session():
+    # Clear the specific session variable 'form_data'
+    session.pop('form_data', None)
+
+    # Alternatively, to clear the entire session, use session.clear()
+
+    # Redirect back to the home page or any other route
+    return redirect(url_for('home'))
 
 
 @app.route('/import_recipes')
@@ -567,12 +600,15 @@ def add_to_plan(recipe_id):
     db.session.refresh(plan)
     db.session.commit()
 
+    # Redirect back to the same page if the referer is not /home 
+    # (example) when add/remove from plan from within the Recipe route
     referer = request.headers.get('Referer')
-    if referer and referer != '/home':
+    referer_path = urlparse(referer).path
+    if referer_path and referer_path != '/home':
         return redirect(referer)
 
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
-    return redirect(url_for('home', usePlanScroll='true'))
+    return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
 
 @app.route('/plan/<int:recipe_id>/delete', methods=['POST'])
 def remove_from_plan(recipe_id):
@@ -582,12 +618,15 @@ def remove_from_plan(recipe_id):
     recipe_planned.removed_dt = db.func.current_timestamp()
     db.session.commit()
 
+    # Redirect back to the same page if the referer is not /home 
+    # (example) when add/remove from plan from within the Recipe route
     referer = request.headers.get('Referer')
-    if referer and referer != '/home':
+    referer_path = urlparse(referer).path
+    if referer_path and referer_path != '/home':
         return redirect(referer)
     
     flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
-    return redirect(url_for('home', usePlanScroll='true'))
+    return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
