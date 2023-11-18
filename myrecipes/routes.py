@@ -75,13 +75,6 @@ def home():
         print(f"it happened!: {request.args.get('search_for', '')}")
         query = request.args.get('search_for', '')
 
-
-    origin = request.args.get('origin', '')
-
-    # If the origin is 'add_to_plan', clear the session variable
-    if origin == 'add_to_plan' and 'form_data' in session:
-        session.pop('form_data', None)
-
     tokens, excluded_tokens = parse_search_query(query)
 
     # Initialize a set to store distinct recipe IDs that match all tokens
