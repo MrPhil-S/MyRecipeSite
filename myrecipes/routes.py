@@ -46,7 +46,7 @@ def home():
 
     should_prepopulate = request.args.get('retreive_search_query') == 'true'
     if not should_prepopulate:
-        session.pop('session_form_data')
+        session.pop('session_form_data', '')
      
 
     # Initialize the 'query' variable
