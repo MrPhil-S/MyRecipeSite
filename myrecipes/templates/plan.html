@@ -12,17 +12,57 @@
 
         <div class="container">
             <div class="card flex-row flex-wrap">
-                <div class="card-header border-0">
-                    <img src="{{ plan.image_file }}" alt="{{ plan.name }}">
+                <div class="col-md-3 pl-0">
+                    <a href="/recipes/{{ plan.recipe_id }}">    
+                        <img src="{{ url_for('static', filename='recipe_images/' + plan.image_file) }}" alt="{{ plan.name }}" class="card-img-top">
+                    </a>
                 </div>
-                <div class="card-block px-2">
+                <div class="col-md-8 card-block px-2 pt-2">
                     <h4 class="card-title">{{ plan.name }}</h4>
-                    <p class="card-text">Description</p>
-                    <a href="#" class="btn btn-primary">BUTTON</a>
+                    <div class="card-text">
+                        
+                        {% if plan.prep_time or plan.cook_time or plan.additional_time or plan.servings %}
+                        <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
+                        <div class="row mt-3 mb-3 ml-1 p-2 bg-light-gray shadow-sm" >
+                          <div class="col-3">
+                            {% if plan.prep_time %}
+                            <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ plan.prep_time }}
+                            {% endif %}
+                          </div>
+                          <div class="col-3">
+                            {% if plan.cook_time %}
+                            <b><i class="fa-regular fa-clock mr-1"></i>Cook time: </b><br>{{ plan.cook_time }}
+                            {% endif %}
+                          </div>
+                          <div class="col-3">
+                            {% if plan.additional_time %}
+                            <b><i class="fa-regular fa-clock mr-1"></i>Additional time:</b> {{ plan.additional_time }}
+                            {% endif %}
+                          </div>  
+                          <div class="col-3">
+                            {% if plan.servings %}
+                            <b><i class="fa-solid fa-people-group ml-2 mr-1"></i>Servings:</b> <br>{{ plan.servings }}
+                            {% endif %}
+                          </div>  
+                        </div>
+                      {% endif %}
+                        
+                    </div>
+                    <a href="#" class="btn btn-danger float-right">Remove from plan</a>
                 </div>
                 <div class="w-100"></div>
                 <div class="card-footer w-100 text-muted">
-                    <a href="{{ plan.source_url }}" target="_blank">{{ plan.source_url }}</a>
+                    {% if plan.source_url_short %}
+                    <a href="{{ plan.source_url }}" target="_blank" class="text-muted">{{ plan.source_url_short | truncate(30) }}</a>
+                    {% elif plan.source_url %}
+                    <a href="{{ plan.source_url }}" target="_blank" class="text-muted">{{plan.source_url | truncate(30) }}</a>
+                    {% else %}
+                    No source URL available
+                    {% endif %}
+
+
+
+
                 </div>
             </div>
             <br>
