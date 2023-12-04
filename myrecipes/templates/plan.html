@@ -7,73 +7,70 @@
     <h1>Plan</h1>
 
     {% if plans %}
-        {% for plan in plans %}
-          
+    {% set plans_by_date = plans | groupby('added_dt') %}
 
-        <div class="container">
-            <div class="card flex-row flex-wrap">
-                <div class="col-md-3 pl-0">
-                    <a href="/recipes/{{ plan.recipe_id }}">    
-                        <img src="{{ url_for('static', filename='recipe_images/' + plan.image_file) }}" alt="{{ plan.name }}" class="card-img-top">
-                    </a>
-                </div>
-                <div class="col-md-8 card-block px-2 pt-2">
-                    <h4 class="card-title">{{ plan.name }}</h4>
-                    <div class="card-text">
-                        
-                        {% if plan.prep_time or plan.cook_time or plan.additional_time or plan.servings %}
-                        <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
-                        <div class="row mt-3 mb-3 ml-1 p-2 bg-light-gray shadow-sm" >
-                          <div class="col-3">
-                            {% if plan.prep_time %}
-                            <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ plan.prep_time }}
-                            {% endif %}
-                          </div>
-                          <div class="col-3">
-                            {% if plan.cook_time %}
-                            <b><i class="fa-regular fa-clock mr-1"></i>Cook time: </b><br>{{ plan.cook_time }}
-                            {% endif %}
-                          </div>
-                          <div class="col-3">
-                            {% if plan.additional_time %}
-                            <b><i class="fa-regular fa-clock mr-1"></i>Additional time:</b> {{ plan.additional_time }}
-                            {% endif %}
-                          </div>  
-                          <div class="col-3">
-                            {% if plan.servings %}
-                            <b><i class="fa-solid fa-people-group ml-2 mr-1"></i>Servings:</b> <br>{{ plan.servings }}
-                            {% endif %}
-                          </div>  
-                        </div>
-                      {% endif %}
-                        
+        <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
+            {% for added_dt, recipes in plans_by_date %}
+                <div class="date-container">
+                    <h2>{{ date }}</h2>
+                {% for recipe in recipes %}
+
+                <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
+                    <div class="card">
+                        <a href="/recipes/{{ recipe.recipe_id }}">    
+                            <div class="card-img-container">
+                                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top" alt="{{ recipe.name }}" >      
+                                <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
+        
+                                    {% if not recipe_plan_date %}
+        
+                                        <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="post">
+                                            <button class="btn btn-add-to-plan p1-2  " type="submit">
+                                                <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
+                                            </button> 
+                                        </form>
+        
+                                    {% else %}
+        
+                                        <form action="{{ url_for('remove_from_plan', recipe_id=recipe.recipe_id) }}" method="post">
+                                            <button class="btn btn-add-to-plan-added p1-2" type="submit" data-toggle="tooltip" title="Added to plan (Click to remove)">
+                                                <i class="fa-solid fa-check" style="color: lightgreen" data-placement="top"></i>
+                                                <i class="fa-solid fa-x" style="color: rgb(238, 144, 144)" data-placement="top"></i>
+                                            </button>
+                                            
+                                        </form>
+        
+                                    {% endif %}
+        
+                                </div>
+                                <div class="card-img-title">
+                                    <p class="card-text mt-auto">
+                                        {{ recipe.name }}
+                                    </p>
+                                </div>                                      
+                            </div>                  
+                            <div class="card-footer text-secondary text-right">
+                                <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
+                                <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
+                            </div>                    
+                        </a>
                     </div>
-                    <a href="#" class="btn btn-danger float-right">Remove from plan</a>
+                    <small class="recipe-card-source text-muted ">
+                        <i class="fa-solid fa-link mr-2"></i>
+                        {% if recipe.source_url_short %}
+                        <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{ recipe.source_url_short | truncate(30) }}</a>
+                        {% elif recipe.source_url %}
+                        <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{recipe.source_url | truncate(30) }}</a>
+                        {% else %}
+                        No source URL available
+                        {% endif %}
+                    </small>       
                 </div>
-                <div class="w-100"></div>
-                <div class="card-footer w-100 text-muted">
-                    {% if plan.source_url_short %}
-                    <a href="{{ plan.source_url }}" target="_blank" class="text-muted">{{ plan.source_url_short | truncate(30) }}</a>
-                    {% elif plan.source_url %}
-                    <a href="{{ plan.source_url }}" target="_blank" class="text-muted">{{plan.source_url | truncate(30) }}</a>
-                    {% else %}
-                    No source URL available
-                    {% endif %}
-
-
-
-
+                {% endfor %}
                 </div>
-            </div>
-            <br>
 
-        </div>
-
-
-
-          
-
-        {% endfor %}
+            {% endfor %}
+        </div>  
     {% endif %}
       </div>
 

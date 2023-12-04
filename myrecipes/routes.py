@@ -573,11 +573,12 @@ def plan():
     #        all()
     
     plans = (
-        db.session.query(Recipe)
-        .select_from(Recipe_Plan_Date)
+        db.session.query(Recipe, Recipe_Plan_Date)
+      #  .select_from(Recipe_Plan_Date)
         .join(Recipe, Recipe.recipe_id == Recipe_Plan_Date.recipe_id)
         .filter(Recipe_Plan_Date.removed_dt.is_(None))
         .order_by(Recipe_Plan_Date.added_dt.desc())
+        .all()
     )
 
     return render_template('plan.html', plans=plans)
