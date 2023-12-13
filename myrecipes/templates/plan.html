@@ -6,73 +6,64 @@
 
     <h1>Plan</h1>
 
-    {% if plans %}
-    {% set plans_by_date = plans | groupby('added_dt') %}
+    {% for date, plans_in_date in grouped_plans.items() %}
+        <div class="content-section shadow-sm">
+            <div class="card-title">
+                <span class="h2 pull-left">{{ date }}</span>
+                <span class="ml-3">({{ days_since_added }})</span>
+                <i class="fa-solid fa-x float-right" style="color: rgb(238, 144, 144)" data-placement="top"></i>
 
-        <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
-            {% for added_dt, recipes in plans_by_date %}
-                <div class="date-container">
-                    <h2>{{ date }}</h2>
-                {% for recipe in recipes %}
+            </div>
+            <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
 
-                <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
-                    <div class="card">
-                        <a href="/recipes/{{ recipe.recipe_id }}">    
-                            <div class="card-img-container">
-                                <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" class="card-img-top" alt="{{ recipe.name }}" >      
-                                <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
-        
-                                    {% if not recipe_plan_date %}
-        
-                                        <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="post">
-                                            <button class="btn btn-add-to-plan p1-2  " type="submit">
-                                                <i class="fa-solid fa-plus" style="color:lightgray" data-toggle="tooltip" data-placement="top" title="Add to plan"></i>
-                                            </button> 
-                                        </form>
-        
-                                    {% else %}
-        
-                                        <form action="{{ url_for('remove_from_plan', recipe_id=recipe.recipe_id) }}" method="post">
-                                            <button class="btn btn-add-to-plan-added p1-2" type="submit" data-toggle="tooltip" title="Added to plan (Click to remove)">
-                                                <i class="fa-solid fa-check" style="color: lightgreen" data-placement="top"></i>
-                                                <i class="fa-solid fa-x" style="color: rgb(238, 144, 144)" data-placement="top"></i>
-                                            </button>
-                                            
-                                        </form>
-        
-                                    {% endif %}
-        
-                                </div>
-                                <div class="card-img-title">
-                                    <p class="card-text mt-auto">
-                                        {{ recipe.name }}
-                                    </p>
-                                </div>                                      
-                            </div>                  
-                            <div class="card-footer text-secondary text-right">
-                                <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
-                                <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
-                            </div>                    
-                        </a>
+                {% for plan in plans_in_date %}
+                    <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
+                        <div class="card">
+                            <a href="/recipes/{{ plan.recipe.recipe_id }}">    
+                                <div class="card-img-container">
+                                    <img src="{{ url_for('static', filename='recipe_images/' + plan.recipe.image_file) }}" class="card-img-top" alt="{{ plan.recipe.name }}" >      
+                                    <div class="card-img-overlay  d-flex align-items-end flex-column bd-highlight  mb-3">
+            
+               
+            
+                                            <form action="{{ url_for('remove_from_plan', recipe_id=plan.recipe.recipe_id) }}" method="post">
+                                                <button class="btn btn-add-to-plan-added p1-2" type="submit" data-toggle="tooltip" title="Added to plan (Click to remove)">
+                                                    <i class="fa-solid fa-check" style="color: lightgreen" data-placement="top"></i>
+                                                    <i class="fa-solid fa-x" style="color: rgb(238, 144, 144)" data-placement="top"></i>
+                                                </button>
+                                                
+                                            </form>
+            
+            
+                                    </div>
+                                    <div class="card-img-title">
+                                        <p class="card-text mt-auto">
+                                            {{ plan.recipe.name }}
+                                        </p>
+                                    </div>                                      
+                                </div>                  
+                                <div class="card-footer text-secondary text-right">
+                                    <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{plan.recipe.total_time}} 
+                                    <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{plan.recipe.ingredient_count}}
+                                </div>                    
+                            </a>
+                        </div>
+                        <small class="recipe-card-source text-muted ">
+                            <i class="fa-solid fa-link mr-2"></i>
+                            {% if plan.recipe.source_url_short %}
+                            <a href="{{ plan.recipe.source_url }}" target="_blank" class="text-muted">{{ plan.recipe.source_url_short | truncate(30) }}</a>
+                            {% elif plan.recipe.source_url %}
+                            <a href="{{ plan.recipe.source_url }}" target="_blank" class="text-muted">{{plan.recipe.source_url | truncate(30) }}</a>
+                            {% else %}
+                            No source URL available
+                            {% endif %}
+                        </small>       
                     </div>
-                    <small class="recipe-card-source text-muted ">
-                        <i class="fa-solid fa-link mr-2"></i>
-                        {% if recipe.source_url_short %}
-                        <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{ recipe.source_url_short | truncate(30) }}</a>
-                        {% elif recipe.source_url %}
-                        <a href="{{ recipe.source_url }}" target="_blank" class="text-muted">{{recipe.source_url | truncate(30) }}</a>
-                        {% else %}
-                        No source URL available
-                        {% endif %}
-                    </small>       
-                </div>
                 {% endfor %}
-                </div>
-
-            {% endfor %}
-        </div>  
-    {% endif %}
-      </div>
+            </div>  
+        </div>
+    {% endfor %}
+</div>
 
 
 

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from urllib.parse import urlparse
 
 from flask import (flash, jsonify, redirect, render_template, request, session,
@@ -574,14 +575,25 @@ def plan():
     
     plans = (
         db.session.query(Recipe, Recipe_Plan_Date)
-      #  .select_from(Recipe_Plan_Date)
+        .select_from(Recipe_Plan_Date)
         .join(Recipe, Recipe.recipe_id == Recipe_Plan_Date.recipe_id)
         .filter(Recipe_Plan_Date.removed_dt.is_(None))
         .order_by(Recipe_Plan_Date.added_dt.desc())
         .all()
     )
 
-    return render_template('plan.html', plans=plans)
+       # Grouping by added_dt in Python code
+    grouped_plans = {}
+    for recipe, plan_date in plans:
+        date_str = plan_date.added_dt.strftime("%Y-%m-%d")
+        days_since_added = (datetime.now() - plan_date.added_dt).days
+        
+        if date_str not in grouped_plans:
+            grouped_plans[date_str] = []
+        grouped_plans.setdefault(date_str, []).append({'recipe': recipe, 'plan_date': plan_date})
+
+
+    return render_template('plan.html', grouped_plans=grouped_plans)
 
 
 @app.route('/plan/<int:recipe_id>', methods=['POST'])
