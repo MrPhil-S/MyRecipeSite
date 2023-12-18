@@ -229,3 +229,8 @@ body {
 .btn-add-to-plan-added .fa-x {
   display: none;
 }
+
+.plan-day {
+  background-color: #c8c8c8;
+  border-radius: 0.25rem;
+}
