@@ -111,3 +111,12 @@ class Query_History(db.Model):
 
     def __repr__(self):
         return f"({self.query})"
+    
+# class Synonym(db.Model):
+#     synonym_id = db.Column(db.Integer, primary_key=True)
+#     synonym_name = db.Column(db.String(50), nullable=False)
+#     create_dt = db.Column(db.DateTime, nullable=True, default=db.func.current_timestamp())
+#     #recipes = db.relationship('Recipe', secondary='recipe_collection', back_populates='collections')
+
+#     def __repr__(self):
+#         return self.synonym_name
