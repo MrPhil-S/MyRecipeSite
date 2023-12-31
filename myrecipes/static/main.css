@@ -234,3 +234,5 @@ body {
   background-color: #c8c8c8;
   border-radius: 0.25rem;
 }
+
+body { padding-top: 50px; }

@@ -38,8 +38,8 @@ def search_recipe(token):
     search_query = db.session.query(Recipe.recipe_id)
 
     # Create an OR condition for the case-insensitive exact word match with MariaDB word boundaries
-    token_upper = token.upper()
-    or_condition = db.func.upper(Recipe.name).like(f"%{token_upper}%")
+    #token_upper = token.upper()
+    or_condition = (Recipe.name).like(f"%{token}%")
 
     # Apply the condition to the query
     search_query = search_query.filter(or_condition)
@@ -52,8 +52,8 @@ def search_recipe_ingredient(token):
     search_query = db.session.query(Recipe_Ingredient.recipe_id)
 
     # Create an OR condition for the case-insensitive exact word match with MariaDB word boundaries
-    token_upper = token.upper()
-    or_condition = db.func.upper(Recipe_Ingredient.name_written).like(f"%{token_upper}%")
+    #token_upper = token.upper()
+    or_condition = db.func.concat(Recipe_Ingredient.name_written, ' ', Recipe_Ingredient.note).like(f"%{token}%")
 
     # Apply the condition to the query
     search_query = search_query.filter(or_condition)
