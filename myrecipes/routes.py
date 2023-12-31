@@ -51,7 +51,6 @@ def home():
     if not should_prepopulate:
         session.pop('session_form_data', '')
      
-
     # Initialize the 'query' variable
     query = ''
 
@@ -560,10 +559,25 @@ def delete_collection(collection_id):
     collection = Collection.query.get_or_404(collection_id)
     db.session.delete(collection)
    # recipe_collection.filter_by(collection_id=collection_id).delete()
+       #form.name.data = recipe.name
+
     db.session.commit()
 
     flash(f'{collection.collection_name} deleted!', 'success')
     return redirect(url_for('collections', collections=collections))  
+
+
+@app.route('/collections/<int:collection_id>/edit', methods=['GET', 'POST'])
+def edit_collection(collection_id):
+    collection = Collection.query.get_or_404(collection_id)
+    form = add_collection_form()
+    
+    if form.validate_on_submit():
+        collection.collection_name = form.collection_name.data
+        db.session.commit()
+        flash(f'{collection.collection_name} updated', 'success')
+        return redirect(url_for('collections', collections=collections))  
+    return render_template('collections.html', collections=collections, title='Collections', form=form)
 
 
 @app.route('/plan', methods=['GET', 'POST'])

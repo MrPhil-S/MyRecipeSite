@@ -26,7 +26,7 @@ $(document).ready( function () {
             <tr>
                 <td>{{ collection.collection_name }}</td>
                 <td>
-                  <button class="btn btn-outline-info"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <a href="#" class="btn btn-outline-info" data-toggle="modal" data-target="#EditCollection{{ collection.collection_id }}"><i class="fa-solid fa-pen-to-square"></i></a>
                   <a href="{{ url_for('delete_collection', collection_id=collection.collection_id) }}" class="btn btn-outline-danger" data-toggle="modal" data-target="#DeleteCollection{{ collection.collection_id }}"><i class="fa-solid fa-trash"></i></a>
                 </td>
             </tr>
@@ -58,6 +58,45 @@ $(document).ready( function () {
                     </div>
                 </div>
             </div>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="EditCollection{{ collection.collection_id }}" tabindex="-1" role="dialog" aria-labelledby="EditCollection{{ collection.collection_id }}" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="EditCollection{{ collection.collection_id }}">Edit collection</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                  </div>
+                  <form action="{{ url_for('edit_collection', collection_id=collection.collection_id) }}" method="POST" enctype="multipart/form-data">
+                    {{form.hidden_tag()}}
+                    <div class="modal-body">
+                      <div class="form-group ">
+                        {{ form.collection_name.label(class="form-control-label") }}        
+                        {% if form.collection_name.errors %}
+                          {{ form.collection_name(class="form-control form-control-lg is-invalid ") }}
+                          <div class="invalid-feedback">
+                            {% for error in form.collection_name.errors %}
+                              <span>{{ error }}</span>
+                            {% endfor %}
+                          </div>
+                        {% else %}
+                          {{ form.collection_name(class="form-control form-control-lg", value=collection) }}
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancel</button>
+                      <input type="submit" class="btn btn-outline-info" value="Update">
+                    </div>
+                </form>
+                </div>
+              </div>
+            </div>
+
+
+
           {% endfor %}
         </tbody>
     </table>
@@ -101,6 +140,8 @@ $(document).ready( function () {
     </div>
   </div>
 </div>
+
+
 
 
 {% endblock %}
