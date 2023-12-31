@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from flask import (flash, jsonify, redirect, render_template, request, session,
                    url_for)
-from sqlalchemy import desc, text
+from sqlalchemy import func, text
 from sqlalchemy.orm import aliased
 
 from myrecipes import app, db, get_recipies
@@ -36,13 +36,15 @@ def frontlights():
 @app.route('/home', methods=['GET', 'POST'])
 def home():
     old_query_history = (
-            db.session.query(Query_History.query_text)
-            .distinct(Query_History.query_text)
-            .order_by(Query_History.query_dt.desc())
-            .limit(5)
-            .all()
-            )
-            
+    db.session.query(Query_History.query_text, func.max(Query_History.query_dt).label('max_query_dt'))
+    .group_by(Query_History.query_text)
+    .order_by(func.max(Query_History.query_dt).desc())
+    .limit(5)
+    .all()
+)
+    #session.query(users.age, func.count(users.id))
+    #.group_by(users.age)
+
     sortorder = 'create_dt'
 
     should_prepopulate = request.args.get('retreive_search_query') == 'true'
