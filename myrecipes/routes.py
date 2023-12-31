@@ -155,6 +155,28 @@ def collections():
     return render_template('collections.html', collections=collections, title='Collections', form=form)
 
 
+@app.route('/synonyms', methods=['GET', 'POST'])
+def synonyms():
+    form = add_collection_form()
+    collections = Collection.query.order_by(Collection.collection_name.asc()).all()
+
+    if form.validate_on_submit():
+        # Get populted form data
+        collection_name = request.form['collection_name']
+        
+        # Add new collection to DB
+        collection = Collection(collection_name=collection_name)
+        db.session.add(collection)
+        db.session.flush()
+        db.session.refresh(collection)
+        db.session.commit()
+        flash(f'{collection_name} added', 'success')
+
+        return redirect(url_for('synonyms', collections=collections))  
+    return render_template('synonyms.html', collections=collections, title='Collections', form=form)
+
+
+
 @app.route('/recipes/<int:recipe_id>', methods=['GET', 'POST'])
 def recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
