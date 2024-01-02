@@ -16,13 +16,18 @@
                 {% endfor %}
             </datalist>
             {% endif %}
-        </div>           
-        <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
-        <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
-        <div class="float-right ml-3">Sort...</div>
-        <div class="float-right ml-3">Collection...</div>
-        <div class="float-right ml-3">Cuisine...</div>
-        <div class="float-right">{{ all_results|length }} recipes found</div>    
+        </div>        
+        <div class="d-flex">
+            <div class="mr-auto p-2" >
+                <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
+                <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
+            </div>
+
+            <div class="p-2">{{ all_results|length }} recipes found</div>    
+            <div class="p-2">Collection...</div>
+            <div class="p-2">Cuisine...</div>
+            <div class="p-2" >Sort...</div>
+        </div>
     </form>
     {% if all_results %}
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
