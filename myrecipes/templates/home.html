@@ -8,8 +8,8 @@
             <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
                 placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
                 
-            <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
             {% if old_query_history %}
+            <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
             <datalist id="browsers" >
                 {% for query in old_query_history %}
                     <option value="{{ query.query_text }}">
