@@ -64,8 +64,16 @@
               <a class="nav-link" href="{{ url_for('plan') }}">Plan</a>
             </li>
           </ul>
-          <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" type="search" placeholder="Search">
+          <form class="form-inline my-2 my-lg-0" action="{{ url_for('home') }}" method="post">
+            <input class="form-control mr-sm-2" list="browsers" autocomplete="off" type="search" placeholder="Search" aria-label="Search" id="search_for" name="search_for">
+            {% if old_query_history %}
+              <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
+              <datalist id="browsers" >
+                  {% for query in old_query_history %}
+                      <option value="{{ query.query_text }}">
+                  {% endfor %}
+              </datalist>
+            {% endif %}
             <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
           </form>
         </div>
