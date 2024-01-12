@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from flask import (flash, jsonify, redirect, render_template, request, session,
                    url_for)
-from sqlalchemy import func, text
+from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
 from myrecipes import app, db, get_recipies
@@ -42,8 +42,38 @@ def home():
     .limit(5)
     .all()
 )
-    #session.query(users.age, func.count(users.id))
-    #.group_by(users.age)
+    
+    collections = (
+        db.session.query(
+            Collection.collection_name,
+            func.max(Recipe.update_dt).label('latest_update_dt'),
+            func.count(Recipe.recipe_id).label('recipe_count'),
+            func.first_value(Recipe.image_file).over(
+                order_by=Recipe.update_dt.desc(),
+                partition_by=Collection.collection_id
+            ).label('latest_image_file')
+        )
+        .select_from(Collection)
+        .join(recipe_collection, Recipe)
+        .group_by(Collection.collection_name)
+        .order_by(Collection.collection_name, desc('latest_update_dt'))
+    ).all()
+
+    recently_viewed = (
+        db.session.query(Recipe.image_file)
+        .select_from(recipe_view_date)
+        .join(Recipe, Recipe.recipe_id == recipe_view_date.recipe_id)
+        .order_by(recipe_view_date.recipe_view_dt.desc())
+        .first()
+    )
+
+    recently_cooked = (
+        db.session.query(Recipe.image_file)
+        .select_from(recipe_cooked_date)
+        .join(Recipe, Recipe.recipe_id == recipe_cooked_date.recipe_id)
+        .order_by(recipe_cooked_date.recipe_cooked_dt.desc())
+        .first()
+    )
 
     sortorder = 'create_dt'
 
@@ -58,8 +88,7 @@ def home():
         # If the form is submitted via POST, retrieve the query from the form data
         query = request.form.get('search_for', '')
 
-        session['session_form_data'] = query
-        
+        session['session_form_data'] = query        
 
         if len(query.strip()) > 0:
         # Add search term DB
@@ -115,7 +144,12 @@ def home():
                            title='Recipes', 
                            query=query, 
                            old_query_history=old_query_history,
-                           sortorder=sortorder)
+                           sortorder=sortorder,
+                           collections = collections,
+                           recently_viewed = recently_viewed,
+                           recently_cooked = recently_cooked
+
+                           )
 
 
 @app.route('/reset_session', methods=['GET'])
@@ -262,7 +296,10 @@ def add_recipe():
         prep_time = request.form['prep_time']
         cook_time = request.form['cook_time']
         additional_time = request.form['additional_time']
-        servings = request.form['servings']
+        if request.form['servings'] is not '':
+            servings = request.form['servings']
+        else:
+            servings = None
         selected_collections = request.form.getlist('collection_list')
 
         selected_cuisine_id = form.cuisinelist.data

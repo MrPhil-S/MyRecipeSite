@@ -113,6 +113,23 @@ body {
   text-overflow: ellipsis;
 }
 
+
+.collection-img-title {
+  position: absolute; /* Position the background text */
+  color: #f1f1f1; /* Grey text */
+  width: 100%; /* Full width */
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+
+  
+}
+
+
 .obj-cover {
   object-fit: cover;
   width: 400px;
@@ -236,3 +253,20 @@ body {
 }
 
 body { padding-top: 50px; }
+
+
+.scrolling-wrapper-flexbox {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+
+  .cardd {
+    flex: 0 0 auto;
+  }
+}
+
+.scrolling-wrapper-flexbox {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
