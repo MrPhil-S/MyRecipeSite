@@ -259,6 +259,8 @@ body { padding-top: 50px; }
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
+  scroll-behavior: smooth; 
+
 
   .cardd {
     flex: 0 0 auto;
@@ -269,4 +271,19 @@ body { padding-top: 50px; }
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.small-gutters-right {
+  padding-right: 0;
+  padding-left: 3px;
+}
+
+.small-gutters-left {
+  padding-right: 3px;
+  padding-left: 3px;
+}
+
+.small-gutters-left:hover,
+.small-gutters-right:hover {
+  background-color: #ccc;
 }

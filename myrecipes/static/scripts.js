@@ -70,4 +70,19 @@ function updateThumbnail(dropZoneElement, file) {
 	}
 }
 
+//Horizontal scrolling for collections on home page
+var scrollingWrapper = document.getElementById('scrollingWrapper');
+var scrollLeftIcon = document.getElementById('scrollLeftIcon');
+var scrollRightIcon = document.getElementById('scrollRightIcon');
 
+// Add event listener for the left arrow icon
+scrollLeftIcon.addEventListener('click', function() {
+	// Scroll the container to the left by a certain amount (adjust as needed)
+	scrollingWrapper.scrollLeft -= 300;
+});
+
+// Add event listener for the right arrow icon
+scrollRightIcon.addEventListener('click', function() {
+	// Scroll the container to the right by a certain amount (adjust as needed)
+	scrollingWrapper.scrollLeft += 300;
+});

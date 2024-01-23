@@ -29,19 +29,15 @@
                     <div class="p-2 font-weight-bold">{{ all_results|length }} recipes found</div>    
                 </li>
                 <li class="nav-item">
-                    <div class="p-2">Collection...</div>
-                </li>
-                <li class="nav-item">
-                    <div class="p-2">Cuisine...</div>
-                </li>
-                <li class="nav-item">
                     <div class="dropdown p-2">
                         <a class="text-muted dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                          Sort
+                          Sort by
                         </a>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                          <a class="dropdown-item" href="#">Ascending</a>
-                          <a class="dropdown-item" href="#">Descending</a>
+                          <a class="dropdown-item" href="#">A to Z</a>
+                          <a class="dropdown-item" href="#">Last Cooked</a>
+                          <a class="dropdown-item" href="#">Last Visited</a>
+                          <a class="dropdown-item" href="#">Recently Added</a>
                         </div>
                     </div>                
                 </li>
@@ -50,67 +46,70 @@
     </form>
     <h4>Collections</h4>
 
-    <div class="container pb-3 ">
-        <div class="row row-cols-5 scrolling-wrapper-flexbox">
-
-            <div class="container">
-                <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                    {% if recently_viewed %}
-                        <img src="{{ url_for('static', filename='recipe_images/' + recently_viewed.image_file) }}" class="img-fluid" alt="Thumbnail">
-                    {% else %}
-                        <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Thumbnail">
-                    {% endif %}
-                    <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                        <div class="collection-img-title">
-                            Recently Viewed
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="container">
-                <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                    {% if recently_cooked %}
-                        <img src="{{ url_for('static', filename='recipe_images/' + recently_cooked.image_file) }}" class="img-fluid" alt="Thumbnail">
-                    {% else %}
-                        <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Thumbnail">
-                    {% endif %}
-                    <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                        <div class="collection-img-title">
-                            Recently Cooked
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-              
-            {% if collections %}
-                {% for collection in collections%}
-                
-                    <div class="container">
-                        <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                            <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
-
-                            <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                                <div class="collection-img-title">
-                                {{ collection.collection_name }}
-                                <br>
-                                <small>
-                                    {{ collection.recipe_count }} Recipes
-                                </small>
-                                </div>
+    <div class="container pb-3 border-bottom mb-3 row px-1">
+        <div class="col-md-auto small-gutters-left d-flex align-items-center justify-content-center" id="scrollLeftIcon">
+            <i class="fas fa-arrow-left"></i>
+          </div>
+        <div class="col">
+            <div class="row row-cols-5 scrolling-wrapper-flexbox" id="scrollingWrapper">
+                <div class="container">
+                    <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
+                        {% if recently_viewed %}
+                            <img src="{{ url_for('static', filename='recipe_images/' + recently_viewed.image_file) }}" class="img-fluid" alt="Recently Viewed">
+                        {% else %}
+                            <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Recently Viewed">
+                        {% endif %}
+                        <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
+                            <div class="collection-img-title">
+                                Recently Viewed
                             </div>
                         </div>
                     </div>
+                </div>
 
-                {% endfor %}
-            {% endif %}
+                <div class="container">
+                    <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
+                        {% if recently_cooked %}
+                            <img src="{{ url_for('static', filename='recipe_images/' + recently_cooked.image_file) }}" class="img-fluid" alt="Recently Cooked">
+                        {% else %}
+                            <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Recently Cooked">
+                        {% endif %}
+                        <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
+                            <div class="collection-img-title">
+                                Recently Cooked
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                {% if collections %}
+                    {% for collection in collections%}
+                    
+                        <div class="container">
+                            <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
+                                <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
+
+                                <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
+                                    <div class="collection-img-title">
+                                    {{ collection.collection_name }}
+                                    <br>
+                                    <small>
+                                        {{ collection.recipe_count }} Recipes
+                                    </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-auto small-gutters-right d-flex align-items-center justify-content-center" id="scrollRightIcon">
+            <i class="fa-solid fa-arrow-right"></i>
         </div>
       </div>
-
-      
-                  
-    
 
     {% if all_results %}
     <h4>Recipes</h4>
