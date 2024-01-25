@@ -59,6 +59,7 @@ def home():
         .order_by(Collection.collection_name, desc('latest_update_dt'))
     ).all()
 
+    #get the first reciently viewed image 
     recently_viewed = (
         db.session.query(Recipe.image_file)
         .select_from(recipe_view_date)
@@ -66,7 +67,7 @@ def home():
         .order_by(recipe_view_date.recipe_view_dt.desc())
         .first()
     )
-
+    #get the first reciently cooked image
     recently_cooked = (
         db.session.query(Recipe.image_file)
         .select_from(recipe_cooked_date)
@@ -75,7 +76,21 @@ def home():
         .first()
     )
 
-    sortorder = 'create_dt'
+    
+    sorting_options = [
+        ('A to Z', 'Recipe.name'),
+        ('Recently Cooked', 'max_recipe_cooked_dt'),
+        ('recently Visited', 'max_recipe_view_dt'),
+        ('Recently Added', 'Recipe.create_dt'),
+    ]
+
+    
+    recipe_sort = request.args.get('recipe_sort', 'create_dt')
+    if recipe_sort.endswith('_dt'):
+        sort_reverse = True
+    else:
+        sort_reverse = False
+    #sortorder = 'create_dt'
 
     should_prepopulate = request.args.get('retreive_search_query') == 'true'
     if not should_prepopulate:
@@ -132,23 +147,34 @@ def home():
     # Retrieve recipes based on the common recipe IDs
     #all_results = Recipe.query.filter(Recipe.recipe_id.in_(all_recipe_ids)).order_by(Recipe.recipe_id.desc()).all()
     rp = aliased(Recipe_Plan_Date)
+    rvd = db.aliased(recipe_view_date)
+    rcd = db.aliased(recipe_cooked_date)
 
-    all_results = db.session.query(Recipe, rp).\
+    # Modify the query
+    all_results = db.session.query(Recipe, rp,
+        func.coalesce(func.max(rvd.recipe_view_dt), Recipe.create_dt).label('max_recipe_view_dt'),
+        func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt).label('max_recipe_cooked_dt'),
+    ).\
         outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
+        outerjoin(rvd, Recipe.recipe_id == rvd.recipe_id).\
+        outerjoin(rcd, Recipe.recipe_id == rcd.recipe_id).\
         filter(Recipe.recipe_id.in_(all_recipe_ids)).\
+        group_by(Recipe.recipe_id).\
         order_by(Recipe.recipe_id.desc()).\
         all()
+
 
     return render_template('home.html', 
                            all_results=all_results, 
                            title='Recipes', 
                            query=query, 
                            old_query_history=old_query_history,
-                           sortorder=sortorder,
+                           recipe_sort=recipe_sort,
+                           sort_reverse = sort_reverse,
                            collections = collections,
                            recently_viewed = recently_viewed,
-                           recently_cooked = recently_cooked
-
+                           recently_cooked = recently_cooked,
+                           sorting_options=sorting_options,
                            )
 
 
