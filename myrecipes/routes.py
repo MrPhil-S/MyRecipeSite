@@ -81,12 +81,11 @@ def home():
         ('Recently Cooked', 'max_recipe_cooked_dt'),
         ('Recently Visited', 'max_recipe_view_dt'),
         ('Recently Added', 'Recipe.create_dt'),
+        ('Most cooked', 'Recipe.create_dt')
+
     ]
-
-
     
     session_sort_order = session.get('session_sort_order', 'create_dt')
-
     
     if request_sort := request.args.get('recipe_sort'):
         if session_sort_order == request_sort:
@@ -96,22 +95,14 @@ def home():
         session_sort_order = request_sort
         session['session_sort_order'] = session_sort_order
     else:
+        #Default sorting for new session
         sort_reverse = True
-        recipe_sort_label = "Create Date"
-
-
-    
-
-
-
-
-
+        recipe_sort_label = "Recently Added"
 
     for i in sorting_options:
         if i[1] == session_sort_order:
             recipe_sort_label = i[0]
     
-
     should_prepopulate = request.args.get('retreive_search_query') == 'true'
     if not should_prepopulate:
         session.pop('session_form_data', '')
@@ -290,17 +281,6 @@ def recipe(recipe_id):
             recipe_pdf = file
             break
 
-    if request.method == 'POST':
-        button_action = request.form.get('button_action')
-        if button_action == 'mark_cooked':
-            add_date = recipe_cooked_date(recipe_id=recipe.recipe_id)
-            db.session.add(add_date)
-            flash(f'Marked as cooked', 'success')
-
-        else:
-            return "Invalid action"
-        db.session.commit()
-        return redirect(url_for('recipe', recipe_id=recipe_id, recipe_planned=recipe_planned))#is_planned=is_planned))
     return render_template('recipe.html', recipe=recipe, 
                            note_from_user_list=note_from_user_list, 
                            ingredients=ingredients, 
@@ -738,6 +718,19 @@ def add_to_plan(recipe_id):
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
     return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
 
+
+@app.route('/mark_cooked', methods=['POST'])
+def mark_cooked():
+    recipe_id = request.form.get('recipe_id')
+    add_date = recipe_cooked_date(recipe_id=recipe_id)
+    db.session.add(add_date)
+    db.session.commit()
+    flash(f'Marked as cooked', 'success')
+    return redirect(request.referrer)
+
+
+
+
 @app.route('/plan/<int:recipe_id>/delete', methods=['POST'])
 def remove_from_plan(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
@@ -755,6 +748,8 @@ def remove_from_plan(recipe_id):
     
     flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
     return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
+
+
 
 @app.route('/import_recipes/process/<int:option>', methods=['GET', 'POST'])
 def process_recipes(option):
