@@ -17,8 +17,8 @@ from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               recipe_view_date)
 
 #import secrets
-from .helpers import (parse_search_query, save_file, save_image, search_recipe,
-                      search_recipe_ingredient)
+from .helpers import (get_sort_reverse, parse_search_query, save_file,
+                      save_image, search_recipe, search_recipe_ingredient)
 
 
 @app.route('/setup')
@@ -75,22 +75,42 @@ def home():
         .order_by(recipe_cooked_date.recipe_cooked_dt.desc())
         .first()
     )
-
     
     sorting_options = [
         ('A to Z', 'Recipe.name'),
         ('Recently Cooked', 'max_recipe_cooked_dt'),
-        ('recently Visited', 'max_recipe_view_dt'),
+        ('Recently Visited', 'max_recipe_view_dt'),
         ('Recently Added', 'Recipe.create_dt'),
     ]
 
+
     
-    recipe_sort = request.args.get('recipe_sort', 'create_dt')
-    if recipe_sort.endswith('_dt'):
-        sort_reverse = True
+    session_sort_order = session.get('session_sort_order', 'create_dt')
+
+    
+    if request_sort := request.args.get('recipe_sort'):
+        if session_sort_order == request_sort:
+            sort_reverse = not get_sort_reverse(request_sort) 
+        else:
+            sort_reverse =  get_sort_reverse(request_sort)
+        session_sort_order = request_sort
+        session['session_sort_order'] = session_sort_order
     else:
-        sort_reverse = False
-    #sortorder = 'create_dt'
+        sort_reverse = True
+        recipe_sort_label = "Create Date"
+
+
+    
+
+
+
+
+
+
+    for i in sorting_options:
+        if i[1] == session_sort_order:
+            recipe_sort_label = i[0]
+    
 
     should_prepopulate = request.args.get('retreive_search_query') == 'true'
     if not should_prepopulate:
@@ -169,12 +189,13 @@ def home():
                            title='Recipes', 
                            query=query, 
                            old_query_history=old_query_history,
-                           recipe_sort=recipe_sort,
+                           session_sort_order=session_sort_order,
                            sort_reverse = sort_reverse,
                            collections = collections,
                            recently_viewed = recently_viewed,
                            recently_cooked = recently_cooked,
                            sorting_options=sorting_options,
+                           recipe_sort_label = recipe_sort_label
                            )
 
 
