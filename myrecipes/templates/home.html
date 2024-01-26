@@ -18,34 +18,10 @@
             {% endif %}
         </div>        
         <div class="d-flex">
-            <div class="mr-auto p-2" >
-                <button type="submit" class="btn btn-outline-info mb-4 mr-3">Search</button>
-                <a class="btn mb-4" href="{{ url_for('home') }} ">Reset</a>
+            <div class="mr-auto" >
+                <button type="submit" class="btn btn-outline-info mb-2 mr-3">Search</button>
+                <a class="btn mb-2" href="{{ url_for('home') }} ">Reset</a>
             </div>
-
-
-            <ul class="nav">
-                <li class="nav-item">
-                    <div class="p-2 font-weight-bold">{{ all_results|length }} recipes found</div>    
-                </li>
-                <li class="nav-item">
-                    
-                    <div class="dropdown p-2">
-                        <a class="text-muted dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Sort by
-                        </a>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            {% for sort_option in sorting_options %}
-                                <a class="dropdown-item" href="{{ url_for('home', recipe_sort=sort_option[1]) }}" {% if current_sort == sort_option[1] %}class="active"{% endif %}>{{ sort_option[0] }}</a>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-
-
-                    
-                </li>
-              </ul>
         </div>
     </form>
     <h4>Collections</h4>
@@ -116,10 +92,32 @@
       </div>
 
     {% if all_results %}
-    <h4>Recipes</h4>
+        <div class="d-flex pb-2">
+            <div class="mr-auto">
+                <h4>Recipes</h4>    
+            </div>
+            <ul class="nav">
+                <li class="nav-item">
+                    <div class="p-2 font-weight-bold">{{ all_results|length }} recipes found</div>    
+                </li>
+                <li class="nav-item">
+                    
+                    <div class="dropdown p-2">
+                        <a class="text-muted dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="font-weight-bold"> {{ recipe_sort_label }} </span> 
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            {% for sort_option in sorting_options %}
+                                <a class="dropdown-item" href="{{ url_for('home', recipe_sort=sort_option[1]) }}" {% if current_sort == sort_option[1] %}class="active"{% endif %}>{{ sort_option[0] }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
         
-        {% for result in all_results|sort(attribute=recipe_sort, reverse = sort_reverse) %}
+        {% for result in all_results|sort(attribute=session_sort_order, reverse = sort_reverse) %}
             {% set recipe = result[0] %}
             {% set recipe_plan_date = result[1] %}
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->

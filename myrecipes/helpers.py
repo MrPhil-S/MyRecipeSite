@@ -91,3 +91,9 @@ def save_file(form_file, recipe_id):
     ))
 
     return filename 
+
+def get_sort_reverse(session_sort_order):
+    if session_sort_order.endswith('_dt'):
+        return True
+    else:
+        return False
