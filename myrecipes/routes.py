@@ -80,20 +80,22 @@ def home():
         ('A to Z', 'Recipe.name'),
         ('Recently Cooked', 'max_recipe_cooked_dt'),
         ('Recently Visited', 'max_recipe_view_dt'),
-        ('Recently Added', 'Recipe.create_dt'),
-        ('Most cooked', 'Recipe.create_dt')
+        ('Recently Added', 'Recipe.create_dt')
 
     ]
     
     session_sort_order = session.get('session_sort_order', 'create_dt')
-    
+    session_sort_reverse = session.get('session_sort_reverse')
+
     if request_sort := request.args.get('recipe_sort'):
         if session_sort_order == request_sort:
-            sort_reverse = not get_sort_reverse(request_sort) 
+            sort_reverse = not session_sort_reverse 
         else:
             sort_reverse =  get_sort_reverse(request_sort)
         session_sort_order = request_sort
         session['session_sort_order'] = session_sort_order
+        session['session_sort_reverse'] = sort_reverse
+
     else:
         #Default sorting for new session
         sort_reverse = True
