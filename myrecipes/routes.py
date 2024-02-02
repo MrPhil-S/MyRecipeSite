@@ -7,7 +7,8 @@ from flask import (flash, jsonify, redirect, render_template, request, session,
 from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
-from myrecipes import app, db, get_recipies
+from myrecipes import (  # , get_recipies<<<<<<<<<<<<<<<<<<<<<<<<<<<disabled!
+    app, db)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
@@ -45,6 +46,7 @@ def home():
     
     collections = (
         db.session.query(
+            Collection.collection_id,
             Collection.collection_name,
             func.max(Recipe.update_dt).label('latest_update_dt'),
             func.count(Recipe.recipe_id).label('recipe_count'),
@@ -58,6 +60,10 @@ def home():
         .group_by(Collection.collection_name)
         .order_by(Collection.collection_name, desc('latest_update_dt'))
     ).all()
+
+
+    collection_id_filter = request.args.get('collection_id_filter', None)
+    collection_name_filter = request.args.get('collection_name_filter', None)
 
    
     sorting_options = [
@@ -146,8 +152,10 @@ def home():
     rp = aliased(Recipe_Plan_Date)
     rvd = db.aliased(recipe_view_date)
     rcd = db.aliased(recipe_cooked_date)
+    rc = db.aliased(recipe_collection)
+    
 
-    # Modify the query
+    # query
     all_results = db.session.query(Recipe, rp,
         func.coalesce(func.max(rvd.recipe_view_dt), Recipe.create_dt).label('max_recipe_view_dt'),
         func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt).label('max_recipe_cooked_dt'),
@@ -155,7 +163,8 @@ def home():
         outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
         outerjoin(rvd, Recipe.recipe_id == rvd.recipe_id).\
         outerjoin(rcd, Recipe.recipe_id == rcd.recipe_id).\
-        filter(Recipe.recipe_id.in_(all_recipe_ids)).\
+        join(rc, Recipe.recipe_id == rc.c.recipe_id, isouter=True).\
+        filter(Recipe.recipe_id.in_(all_recipe_ids), rc.c.collection_id == collection_id_filter if collection_id_filter is not None else True).\
         group_by(Recipe.recipe_id).\
         order_by(Recipe.recipe_id.desc()).\
         all()
@@ -170,7 +179,8 @@ def home():
                            sort_reverse = sort_reverse,
                            collections = collections,
                            sorting_options=sorting_options,
-                           recipe_sort_label = recipe_sort_label
+                           recipe_sort_label = recipe_sort_label,
+                           collection_name_filter = collection_name_filter
                            )
 
 
