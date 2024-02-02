@@ -32,37 +32,7 @@
           </div>
         <div class="col">
             <div class="row row-cols-5 scrolling-wrapper-flexbox" id="scrollingWrapper">
-                <div class="container">
-                    <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                        {% if recently_viewed %}
-                            <img src="{{ url_for('static', filename='recipe_images/' + recently_viewed.image_file) }}" class="img-fluid" alt="Recently Viewed">
-                        {% else %}
-                            <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Recently Viewed">
-                        {% endif %}
-                        <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                            <div class="collection-img-title">
-                                Recently Visited
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="container">
-                    <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                        {% if recently_cooked %}
-                            <img src="{{ url_for('static', filename='recipe_images/' + recently_cooked.image_file) }}" class="img-fluid" alt="Recently Cooked">
-                        {% else %}
-                            <img src="/static/recipe_images/default.jpg" class="img-fluid" alt="Recently Cooked">
-                        {% endif %}
-                        <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                            <div class="collection-img-title">
-                                Recently Cooked
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                
+              
                 {% if collections %}
                     {% for collection in collections%}
                     

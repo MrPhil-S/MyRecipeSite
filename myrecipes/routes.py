@@ -59,23 +59,7 @@ def home():
         .order_by(Collection.collection_name, desc('latest_update_dt'))
     ).all()
 
-    #get the first reciently viewed image 
-    recently_viewed = (
-        db.session.query(Recipe.image_file)
-        .select_from(recipe_view_date)
-        .join(Recipe, Recipe.recipe_id == recipe_view_date.recipe_id)
-        .order_by(recipe_view_date.recipe_view_dt.desc())
-        .first()
-    )
-    #get the first reciently cooked image
-    recently_cooked = (
-        db.session.query(Recipe.image_file)
-        .select_from(recipe_cooked_date)
-        .join(Recipe, Recipe.recipe_id == recipe_cooked_date.recipe_id)
-        .order_by(recipe_cooked_date.recipe_cooked_dt.desc())
-        .first()
-    )
-    
+   
     sorting_options = [
         ('A to Z', 'Recipe.name'),
         ('Recently Cooked', 'max_recipe_cooked_dt'),
@@ -185,8 +169,6 @@ def home():
                            session_sort_order=session_sort_order,
                            sort_reverse = sort_reverse,
                            collections = collections,
-                           recently_viewed = recently_viewed,
-                           recently_cooked = recently_cooked,
                            sorting_options=sorting_options,
                            recipe_sort_label = recipe_sort_label
                            )
@@ -668,6 +650,16 @@ def edit_collection(collection_id):
     return render_template('collections.html', collections=collections, title='Collections', form=form)
 
 
+@app.route('/mark_cooked', methods=['POST'])
+def mark_cooked():
+    recipe_id = request.form.get('recipe_id')
+    add_date = recipe_cooked_date(recipe_id=recipe_id)
+    db.session.add(add_date)
+    db.session.commit()
+    flash(f'Marked as cooked', 'success')
+    return redirect(request.referrer)
+
+
 @app.route('/plan', methods=['GET', 'POST'])
 def plan():
     #plans = Recipe_Plan_Date.query.order_by(Recipe_Plan_Date.added_dt.desc()).all()
@@ -695,8 +687,6 @@ def plan():
         if date_str not in grouped_plans:
             grouped_plans[date_str] = []
         grouped_plans.setdefault(date_str, []).append({'recipe': recipe, 'plan_date': plan_date})
-
-
     return render_template('plan.html', grouped_plans=grouped_plans)
 
 
@@ -715,22 +705,11 @@ def add_to_plan(recipe_id):
     referer = request.headers.get('Referer')
     referer_path = urlparse(referer).path
     if referer_path and referer_path != '/home':
+        flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
         return redirect(referer)
 
     flash(f'{recipe.name} added to <a href="{url_for("plan")}">plan</a>!', 'success')
     return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
-
-
-@app.route('/mark_cooked', methods=['POST'])
-def mark_cooked():
-    recipe_id = request.form.get('recipe_id')
-    add_date = recipe_cooked_date(recipe_id=recipe_id)
-    db.session.add(add_date)
-    db.session.commit()
-    flash(f'Marked as cooked', 'success')
-    return redirect(request.referrer)
-
-
 
 
 @app.route('/plan/<int:recipe_id>/delete', methods=['POST'])
@@ -740,15 +719,22 @@ def remove_from_plan(recipe_id):
     recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe.recipe_id, removed_dt=None).first_or_404()
     recipe_planned.removed_dt = db.func.current_timestamp()
     db.session.commit()
-
+    #<a href="/recipes/{{ recipe.recipe_id }}"> 
     # Redirect back to the same page if the referer is not /home 
     # (example) when add/remove from plan from within the Recipe route
     referer = request.headers.get('Referer')
     referer_path = urlparse(referer).path
-    if referer_path and referer_path != '/home':
-        return redirect(referer)
     
-    flash(f'{recipe.name} removed from <a href="{url_for("plan")}">plan</a>!', 'success')
+    if referer_path and '/recipes/' in referer_path:
+        flash(f'{recipe.name}      removed from <a href="{url_for("plan")}">plan</a>!', 'success')
+        return redirect(referer)
+    if referer_path and referer_path == '/plan':
+        flash(f'<a href="/recipes/{ recipe.recipe_id }"> {recipe.name}</a>      removed from plan!', 'success')
+        return redirect(referer)
+    elif referer_path and referer_path != '/home':
+        flash(f'<a href="/recipes/{ recipe.recipe_id }"> {recipe.name}</a>      removed from <a href="{url_for("plan")}">plan</a>!', 'success')
+        return redirect(referer)
+    flash(f'<a href="/recipes/{ recipe.recipe_id }"> {recipe.name}</a>      removed from <a href="{url_for("plan")}">plan</a>!', 'success')
     return redirect(url_for('home', usePlanScroll='true', retreive_search_query='true'))
 
 
