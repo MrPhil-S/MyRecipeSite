@@ -2,8 +2,8 @@ import os
 from datetime import datetime
 from urllib.parse import urlparse
 
-from flask import (flash, jsonify, redirect, render_template, request, session,
-                   url_for)
+from flask import (current_app, flash, jsonify, redirect, render_template,
+                   request, session, url_for)
 from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
@@ -624,12 +624,13 @@ def delete_recipe(recipe_id):
     Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
     Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
     #TODO: add additional child table records to delete (ex recipe_collection)
-
     db.session.commit()
 
-    image_file = url_for('static', filename=f'recipe_images/{Recipe.image_file}')
-    if os.path.exists(image_file):
-        os.remove(image_file) 
+    if recipe.image_file != 'default.jpg':
+        image_file = os.path.join(current_app.root_path, 'static', 'recipe_images', recipe.image_file)
+        if os.path.exists(image_file):
+            os.remove(image_file) 
+
     flash(f'{recipe.name} deleted!', 'success')
     return redirect(url_for('home'))
     
