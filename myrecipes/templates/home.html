@@ -28,7 +28,7 @@
 
     <div class="container pb-3 border-bottom mb-3 row px-1">
         <div class="col-md-auto small-gutters-left d-flex align-items-center justify-content-center" id="scrollLeftIcon">
-            <i class="fas fa-arrow-left"></i>
+            <i class="fas fa-arrow-left text-secondary"></i>
           </div>
         <div class="col">
             <div class="row row-cols-5 scrolling-wrapper-flexbox" id="scrollingWrapper">
@@ -37,19 +37,21 @@
                     {% for collection in collections%}
                     
                         <div class="container">
-                            <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
-                                <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
+                            <a href="{{ url_for('home', collection_id_filter=collection.collection_id, collection_name_filter=collection.collection_name) }}">
+                                <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
+                                    <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
 
-                                <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
-                                    <div class="collection-img-title">
-                                    {{ collection.collection_name }}
-                                    <br>
-                                    <small>
-                                        {{ collection.recipe_count }} Recipes
-                                    </small>
+                                    <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
+                                        <div class="collection-img-title">
+                                        {{ collection.collection_name }}
+                                        <br>
+                                        <small>
+                                            {{ collection.recipe_count }} Recipes
+                                        </small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
 
                     {% endfor %}
@@ -57,21 +59,25 @@
             </div>
         </div>
         <div class="col-md-auto small-gutters-right d-flex align-items-center justify-content-center" id="scrollRightIcon">
-            <i class="fa-solid fa-arrow-right"></i>
+            <i class="fa-solid fa-arrow-right text-secondary"></i>
         </div>
       </div>
 
     {% if all_results %}
         <div class="d-flex pb-2">
             <div class="mr-auto">
-                <h4>Recipes</h4>    
+                {% if collection_name_filter %}
+                    <a class="text-secondary d-inline-block mr-2" href="{{ url_for('home') }} "><i class="fa-solid fa-arrow-left"></i></a>
+                    <h4 class="d-inline-block">{{ collection_name_filter }}</h4>
+                {% else %}
+                    <h4 class="d-inline-block">Recipes</h4>
+
+                {% endif %}
+                <div class="p-2 font-weight-bold d-inline-block text text-secondary">{{ all_results|length }} recipes</div>    
+
             </div>
             <ul class="nav">
                 <li class="nav-item">
-                    <div class="p-2 font-weight-bold">{{ all_results|length }} recipes found</div>    
-                </li>
-                <li class="nav-item">
-                    
                     <div class="dropdown p-2">
                         <a class="text-muted dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="font-weight-bold"> {{ recipe_sort_label }} </span> 
