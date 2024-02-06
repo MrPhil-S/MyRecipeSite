@@ -24,23 +24,21 @@
             </div>
         </div>
     </form>
-    <h4>Collections</h4>
+    <h4 class="d-inline-block">Collections</h4> 
+    <div class="p-2 font-weight-bold d-inline-block text text-secondary">({{ collections|length }})</div>    
 
-    <div class="container pb-3 border-bottom mb-3 row px-1">
-        <div class="col-md-auto small-gutters-left d-flex align-items-center justify-content-center" id="scrollLeftIcon">
+    <div class="container pb-3 border-bottom mb-3 row px-1 justify-content-center">
+        <div class="collection_gutter col-auto d-inline-block d-flex align-items-center justify-content-center" id="scrollLeftIcon">
             <i class="fas fa-arrow-left text-secondary"></i>
-          </div>
-        <div class="col">
-            <div class="row row-cols-5 scrolling-wrapper-flexbox" id="scrollingWrapper">
-              
+        </div>
+        <div class="col-sm-3 col-lg-10 d-inline-block">
+            <div class="row scrolling-wrapper-flexbox" id="scrollingWrapper">              
                 {% if collections %}
                     {% for collection in collections%}
-                    
-                        <div class="container">
+                        <div class="col px-2">
                             <a href="{{ url_for('home', collection_id_filter=collection.collection_id, collection_name_filter=collection.collection_name) }}">
-                                <div class="card-img-container card-img-top row border rounded m-2 overflow-hidden">
+                                <div class="collection-img-container card-img-top row border rounded m-2 overflow-hidden">
                                     <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
-
                                     <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
                                         <div class="collection-img-title">
                                         {{ collection.collection_name }}
@@ -53,12 +51,11 @@
                                 </div>
                             </a>
                         </div>
-
                     {% endfor %}
                 {% endif %}
             </div>
         </div>
-        <div class="col-md-auto small-gutters-right d-flex align-items-center justify-content-center" id="scrollRightIcon">
+        <div class="collection_gutter col-auto d-inline-block d-flex align-items-center justify-content-center" id="scrollRightIcon">
             <i class="fa-solid fa-arrow-right text-secondary"></i>
         </div>
       </div>
@@ -71,10 +68,8 @@
                     <h4 class="d-inline-block">{{ collection_name_filter }}</h4>
                 {% else %}
                     <h4 class="d-inline-block">Recipes</h4>
-
                 {% endif %}
-                <div class="p-2 font-weight-bold d-inline-block text text-secondary">{{ all_results|length }} recipes</div>    
-
+                <div class="p-2 font-weight-bold d-inline-block text text-secondary">({{ all_results|length }})</div>    
             </div>
             <ul class="nav">
                 <li class="nav-item">
