@@ -27,15 +27,16 @@
     <h4 class="d-inline-block">Collections</h4> 
     <div class="p-2 font-weight-bold d-inline-block text text-secondary">({{ collections|length }})</div>    
 
-    <div class="container pb-3 border-bottom mb-3 row px-1 justify-content-center">
-        <div class="collection_gutter col-auto d-inline-block d-flex align-items-center justify-content-center" id="scrollLeftIcon">
+    <div class="container pb-3 border-bottom mb-3 px-1 justify-content-center">
+        <div class="row justify-content-center">
+        <div class="col-auto collection_gutter  d-inline-block d-flex align-items-center " id="scrollLeftIcon">
             <i class="fas fa-arrow-left text-secondary"></i>
         </div>
-        <div class="col-sm-3 col-lg-10 d-inline-block">
+        <div class="col-9 d-inline-block">
             <div class="row scrolling-wrapper-flexbox" id="scrollingWrapper">              
                 {% if collections %}
                     {% for collection in collections%}
-                        <div class="col px-2">
+                        <div class="col px-0">
                             <a href="{{ url_for('home', collection_id_filter=collection.collection_id, collection_name_filter=collection.collection_name) }}">
                                 <div class="collection-img-container card-img-top row border rounded m-2 overflow-hidden">
                                     <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
@@ -58,6 +59,7 @@
         <div class="collection_gutter col-auto d-inline-block d-flex align-items-center justify-content-center" id="scrollRightIcon">
             <i class="fa-solid fa-arrow-right text-secondary"></i>
         </div>
+        </div> <!-- row -->
       </div>
 
     {% if all_results %}

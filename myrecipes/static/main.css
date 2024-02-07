@@ -283,4 +283,6 @@ body { padding-top: 50px; }
 
 .collection_gutter:hover{
 background-color: #ccc;
+border-radius: 5px;
+
 }
