@@ -18,7 +18,7 @@
     </div>
   </div>
   <div class="row mb-4">
-    <div class="col  d-flex flex-column">
+    <div class="col-md-6 d-flex flex-column">
       <div>
         <h1 style="display: inline;">{{ recipe.name }}</h1> 
         <small class="text-muted ml-3" >
@@ -48,36 +48,39 @@
         {% endfor %}
       </div>
       {% endif %} 
-    <div class="mt-auto">
-    </div>
+      <div class="mt-auto"></div>
       {% if recipe.prep_time or recipe.cook_time or recipe.additional_time or recipe.servings %}
         <!--<div class="row mt-auto ml-1 p-2 bg-light-gray shadow-sm" >   this was used in the past but had too large of a margin at the top-->
-        <div class="row mt-3 ml-1 p-2 bg-light-gray shadow-sm" >
-          <div class="col-3">
-            {% if recipe.prep_time %}
-            <b><i class="fa-regular fa-clock mr-1"></i>Prep time:</b> <br> {{ recipe.prep_time }}
-            {% endif %}
+        <div class="row mt-3 mx-1 px-1 py-2  " >
+          {% if recipe.prep_time %}
+          <div class="col-lg-3 col-6 px-2">
+            <b><i class="fa-regular fa-clock mr-1"></i>Prep:</b> <br> {{ recipe.prep_time }}
           </div>
-          <div class="col-3">
-            {% if recipe.cook_time %}
-            <b><i class="fa-regular fa-clock mr-1"></i>Cook time: </b><br>{{ recipe.cook_time }}
-            {% endif %}
+          {% endif %}
+          {% if recipe.cook_time %}
+
+          <div class="col-lg-3 col-6 px-2">
+            <b><i class="fa-regular fa-clock mr-1"></i>Cook: </b><br>{{ recipe.cook_time }}
           </div>
-          <div class="col-3">
-            {% if recipe.additional_time %}
-            <b><i class="fa-regular fa-clock mr-1"></i>Additional time:</b> {{ recipe.additional_time }}
-            {% endif %}
+          {% endif %}
+          {% if recipe.additional_time %}
+
+          <div class="col-lg-3 col-6 px-2">
+            <b><i class="fa-regular fa-clock mr-1"></i>Additional:</b><br> {{ recipe.additional_time }}
           </div>  
-          <div class="col-3">
-            {% if recipe.servings %}
+          {% endif %}
+          {% if recipe.servings %}
+
+          <div class="col-lg-3 col-6 px-2">
             <b><i class="fa-solid fa-people-group ml-2 mr-1"></i>Servings:</b> <br>{{ recipe.servings }}
-            {% endif %}
           </div>  
+          {% endif %}
+
         </div>
       {% endif %}
     </div>
-    <div class="col-5">
-      <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover">
+    <div class="col-md-6">
+      <img src="{{ url_for('static', filename='recipe_images/' + recipe.image_file) }}" alt="{{ recipe.name }}" class="rounded img-fluid  obj-cover mt-3 mt-sm-03">
       <div class="recipe-img-overlay  d-flex align-items-end flex-column bd-highlight">
         {% if not recipe_planned %}
             <form action="{{ url_for('add_to_plan', recipe_id=recipe.recipe_id) }}" method="post">
@@ -117,10 +120,10 @@
       {% for ingredient in ingredients %}
       <li class="list-group-item">
         <div class="row">
-          <div class="col-1">
+          <div class="col-2 col-md-1">
             <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
           </div>
-          <div class="col-11">
+          <div class="col-10 col-md-11">
             {{ ingredient.name_written }}
             <br>
             <small class="text-muted">{{ ingredient.note or '' }}</small>
