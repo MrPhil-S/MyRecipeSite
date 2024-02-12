@@ -526,9 +526,11 @@ def edit_recipe(recipe_id):
         recipe.note_from_user = request.form['note_from_user']
         recipe.prep_time = request.form['prep_time']
         recipe.cook_time = request.form['cook_time']
-        recipe.additional_time = request.form['additional_time']
-        recipe.servings = request.form['servings']
-        
+        recipe.additional_time = request.form['additional_time']        
+        if request.form['servings'] is not '':
+            recipe.servings = request.form['servings']
+        else:
+            recipe.servings = None
         recipe.cuisine_id = form.cuisinelist.data
         db.session.commit() 
 
