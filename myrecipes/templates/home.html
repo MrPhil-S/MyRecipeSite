@@ -128,9 +128,14 @@
                         </div>                                      
                     </div>                  
                     <div class="card-footer text-secondary text-right">
-                        <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
-                        <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
-                    </div>                    
+                        {% if recipe.total_time %} 
+                            <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
+                        {% endif %}
+                        {% if recipe.ingredient_count %} 
+                            <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
+                        {% endif %}
+
+                        </div>                    
                 </a>
             </div>
             <small class="recipe-card-source text-muted ">
