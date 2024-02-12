@@ -466,7 +466,8 @@ def edit_recipe(recipe_id):
     form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
    
        # Fetch the collections associated with the current recipe_id
-    collections = Collection.query.all()
+    collections = Collection.query.order_by(Collection.collection_name.asc()).all()
+
 
     # Convert the collections result into a list of collection names
     #collection_names = [collection[0] for collection in collections]
