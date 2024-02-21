@@ -304,6 +304,8 @@ def add_recipe():
     form.collection_list.choices = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
     #collection_list = [(collection.collection_id, collection.collection_name) for collection in Collection.query.order_by(Collection.collection_name).all()]
 
+
+
     if form.validate_on_submit():
         # Get populted form data
         name = request.form['name']
@@ -468,17 +470,9 @@ def edit_recipe(recipe_id):
        # Fetch the collections associated with the current recipe_id
     collections = Collection.query.order_by(Collection.collection_name.asc()).all()
 
-
-    # Convert the collections result into a list of collection names
-    #collection_names = [collection[0] for collection in collections]
-
     # Retrieve selected collection_ids for the current recipe
     selected_collection_ids = [collection.collection_id for collection in recipe.collections]
 
-
-    # Fetch the selected collection names for the current recipe
-    #selected_collection_names = [collection.collection_name for collection in recipe.collections]
-    
     # Define collections_data as a list of dictionaries
     collections_data = [{'collection_id': collection.collection_id, 'collection_name': collection.collection_name} for collection in collections]
 
