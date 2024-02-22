@@ -25,10 +25,10 @@
 
     function addIngredientRow(initialLoad, name = "", note = "") {
       let ingredientRow = document.createElement("div");
-      ingredientRow.setAttribute("class", "form-row ml-3");
+      ingredientRow.setAttribute("class", "form-row");
 
       let ingredientCol1 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col-md-4");
+      ingredientCol1.setAttribute("class", "col-md-5");
       let ingredientFieldContainer1 = createIngredientField(initialLoad, name);
 
       let ingredientCol2 = document.createElement("div");
@@ -68,18 +68,36 @@
     }
 
     function createIngredientNoteField(initialLoad, note = "") {
-      let ingredientNoteFieldContainer = document.createElement("div");
-      ingredientNoteFieldContainer.setAttribute("class", "form-group");
 
+      // Create a row
+      let ingredientNoteRow = document.createElement("div");
+      ingredientNoteRow.setAttribute("class", "row");
+
+      // Create a column for the "label"
+      let labelColumn = document.createElement("div");
+      labelColumn.setAttribute("class", "col-auto mt-1 pr-0");
+
+      // Create the label element
+      let ingredientNoteLabel = document.createElement("div");
+      ingredientNoteLabel.setAttribute("class", "d-block d-md-none float-left ml-4 ");
+      ingredientNoteLabel.innerText = "Note:"; // Set the label text
+      labelColumn.appendChild(ingredientNoteLabel);
+
+
+      // Create a column for the input field
+      let inputColumn = document.createElement("div");
+      inputColumn.setAttribute("class", "col");
 
       let ingredientNoteField = document.createElement("input");
       ingredientNoteField.setAttribute("type", "text");
       ingredientNoteField.setAttribute("name", "ingredient_note[]");
-      ingredientNoteField.setAttribute("class", "form-control form-control-md ");
+      ingredientNoteField.setAttribute("class", "form-group form-control form-control-md");
       ingredientNoteField.value = note; // Prepopulate the field with data
+      inputColumn.appendChild(ingredientNoteField);
 
-      ingredientNoteFieldContainer.appendChild(ingredientNoteField);
-      return ingredientNoteFieldContainer;
+      ingredientNoteRow.appendChild(labelColumn);
+      ingredientNoteRow.appendChild(inputColumn);
+      return ingredientNoteRow;
     }
 
   // Loop through existing ingredients and notes to prepopulate fields
@@ -251,27 +269,31 @@
       </div>
     </div> <!--end row -->
 
-    <div class="form-row ml-3">
-      <div class="col-md-4">
-        <label>Ingredient</label>
-      </div>
-        <div class="col-md-4">
-          <label>Ingredient Note</label>
-      </div>
-    </div>
-
-    <div class="form-group">
-   
-      {% if form.ingredient.errors %}
-        {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
-        <div class="invalid-feedback">
-          {% for error in form.ingredient.errors %}
-            <span>{{ error }}</span>
-          {% endfor %}
+    <div class="row">
+      <div class="col-md-8">  
+        <div class="form-row">
+          <div class="col-md-5">
+            <label>Ingredient</label>
+          </div>
+            <div class="col-md-5 d-none d-md-block">
+              <label>Ingredient Note</label>
+          </div>
         </div>
-      {% endif %}
-    
-      <div id="additional_ingredients" class="form-group"></div>
+
+        <div class="form-group">
+      
+          {% if form.ingredient.errors %}
+            {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
+            <div class="invalid-feedback">
+              {% for error in form.ingredient.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        
+          <div id="additional_ingredients" class="form-group"></div>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -301,6 +323,8 @@
         {{ form.source_notes(class="form-control form-control-lg") }}
       {% endif %}
     </div>
+  
+
 
   </fieldset>
   {{form.submit(class="btn btn-outline-info")}}
