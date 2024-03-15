@@ -1,5 +1,5 @@
+import datetime
 import os
-from datetime import datetime
 from urllib.parse import urlparse
 
 from flask import (current_app, flash, jsonify, redirect, render_template,
@@ -689,9 +689,10 @@ def plan():
        # Grouping by added_dt in Python code
     grouped_plans = {}
     for recipe, plan_date in plans:
-        date_str = plan_date.added_dt.strftime("%Y-%m-%d")
-        days_since_added = (datetime.now() - plan_date.added_dt).days
-        
+        date_str = plan_date.added_dt.strftime("%d-%m-%Y")
+        days_since_added = (datetime.datetime.now() - plan_date.added_dt).days
+        #grouped_plans['days_since_added'] = days_since_added
+
         if date_str not in grouped_plans:
             grouped_plans[date_str] = []
         grouped_plans.setdefault(date_str, []).append({'recipe': recipe, 'plan_date': plan_date})
