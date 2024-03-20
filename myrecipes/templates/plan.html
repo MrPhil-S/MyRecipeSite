@@ -9,8 +9,8 @@
     {% for date, plans_in_date in grouped_plans.items() %}
         <!-- <div class="content-section shadow-sm"> -->
             <div class="card-title plan-day py-1 px-2 align-middle" >
-                <span class="h2 pull-left">{{ date }}</span>
-                <span class="ml-3">({{ days_since_added }})</span>
+                <span class="h2 pull-left">{{ date.strftime("%d-%m-%Y") }}</span>
+                <span class="ml-3">({{ date - datetime.today().date() }})</span>
                 <i class="fa-solid fa-x float-right pt-2 pr-2" style="color: rgb(238, 144, 144)" data-placement="top"></i>
 
             </div>
