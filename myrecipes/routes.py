@@ -689,7 +689,7 @@ def plan():
        # Grouping by added_dt in Python code
     grouped_plans = {}
     for recipe, plan_date in plans:
-        date_str = plan_date.added_dt.strftime("%d-%m-%Y")
+        date_str = plan_date.added_dt.date()
         days_since_added = (datetime.datetime.now() - plan_date.added_dt).days
         #grouped_plans['days_since_added'] = days_since_added
 
