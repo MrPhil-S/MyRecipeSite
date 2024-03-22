@@ -8,15 +8,22 @@
 
     {% for date, plans_in_date in grouped_plans.items() %}
         <!-- <div class="content-section shadow-sm"> -->
-            <div class="card-title plan-day py-1 px-2 align-middle" >
-                <span class="h2 pull-left">{{ date.strftime("%d-%m-%Y") }}</span>
-                <span class="ml-3">({{ date - datetime.today().date() }})</span>
-                <i class="fa-solid fa-x float-right pt-2 pr-2" style="color: rgb(238, 144, 144)" data-placement="top"></i>
+            <div class="card-title plan-day py-1 px-2 d-flex justify-content-between align-items-center" >
+                <div class="d-flex align-items-center">
+                    <span class="plan_date font-weight-bold pull-left">{{ date }}</span>
+                    {% if plans_in_date.days_since_added == 0 %}
+                        <span class="ml-4 text-muted">(Today)</span>
+                    {% else %}
+                        <span class="ml-4 text-muted">({{ plans_in_date.days_since_added }} days ago)</span>
+                    {% endif %}
+                </div>
+                <i class="fa-solid fa-x " style="color: rgb(238, 144, 144)" data-placement="top"></i>
 
             </div>
-            <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4">
+            
+            <div class="ml-2 row row-cols-2 row-cols-md-2 row-cols-lg-4">
 
-                {% for plan in plans_in_date %}
+                {% for plan in plans_in_date.plans %}
                     <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
                         <div class="card">
                             <a href="/recipes/{{ plan.recipe.recipe_id }}">    
@@ -64,12 +71,5 @@
         <!-- </div> -->
     {% endfor %}
 </div>
-
-
-
-
-
-
-
 
 {% endblock %}

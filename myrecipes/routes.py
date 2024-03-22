@@ -689,13 +689,13 @@ def plan():
        # Grouping by added_dt in Python code
     grouped_plans = {}
     for recipe, plan_date in plans:
-        date_str = plan_date.added_dt.date()
+        date_str =  plan_date.added_dt.date()
         days_since_added = (datetime.datetime.now() - plan_date.added_dt).days
         #grouped_plans['days_since_added'] = days_since_added
 
         if date_str not in grouped_plans:
-            grouped_plans[date_str] = []
-        grouped_plans.setdefault(date_str, []).append({'recipe': recipe, 'plan_date': plan_date})
+            grouped_plans[date_str] = {'days_since_added': days_since_added, 'plans': []}
+        grouped_plans[date_str]['plans'].append({'recipe': recipe})
     return render_template('plan.html', grouped_plans=grouped_plans)
 
 
