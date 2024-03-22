@@ -29,7 +29,7 @@ class Recipe(db.Model):
     collections = db.relationship('Collection', secondary='recipe_collection', back_populates='recipes')
     
     def __repr__(self):
-        return f"Recipe('{self.name}','{self.source_url}','{self.instructions}','{self.image_file}')"
+        return f"Recipe('{self.name}','{self.source_url}','{self.image_file}')"
 
 class Recipe_Ingredient(db.Model):
     recipe_ingredient_id = db.Column(db.Integer, primary_key=True)
