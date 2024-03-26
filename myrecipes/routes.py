@@ -199,6 +199,9 @@ def reset_session():
 def import_recipes():
     return render_template('import_recipes.html')
 
+@app.route('/cooking_tips')
+def cooking_tips():
+    return render_template('cooking_tips.html')
 
 @app.route('/collections', methods=['GET', 'POST'])
 def collections():
