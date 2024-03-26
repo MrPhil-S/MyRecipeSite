@@ -31,6 +31,11 @@
 -->
 
 
+    <!-- Include Quill.js files - Used in  Cooking Tips template-->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+
+
     {% if title %}
     <title>My Recipes - {{title}}</title>
     {% else %}
@@ -56,10 +61,13 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('collections') }}">Collections</a>
             </li>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('synonyms') }}">Synonyms</a>
-          </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('synonyms') }}">Synonyms</a>
+            </li>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('cooking_tips') }}">Cooking Tips!</a>
+            </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('plan') }}">Plan</a>
             </li>
