@@ -26,11 +26,11 @@
       ingredientRow.setAttribute("class", "form-row ml-3");
 
       let ingredientCol1 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col-md-4");
+      ingredientCol1.setAttribute("class", "col-6");
       ingredientCol1.appendChild(createIngredientField(initialLoad));
 
       let ingredientCol2 = document.createElement("div");
-      ingredientCol2.setAttribute("class", "col");
+      ingredientCol2.setAttribute("class", "col-6");
       ingredientCol2.appendChild(createIngredientNoteField(initialLoad));
 
       ingredientRow.appendChild(ingredientCol1);
@@ -212,7 +212,7 @@
 
         </div><!--end col-->
       
-        <div class="mr-3">
+        <div class="mx-3">
           <div class="drop-zone">
             <span class="drop-zone__prompt">Drop file here or click to upload</span>
             {{ form.image(class="form-control-file drop-zone__input") }} 
@@ -238,7 +238,7 @@
       <div class="form-group col-md-6">
           <div id="additional_ingredients"></div>
       </div>
-      <div class="form-group col-md-1 pt-5 pl-3">
+      <div class="form-group col-md-1 align-self-center text-center">
         --OR--
       </div>
       <div class="form-group col">
