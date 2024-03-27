@@ -307,3 +307,8 @@ background-color: #ccc;
 .plan_date {
   font-size: 150%;
 }
+
+.collection-row {
+  /* Override flex-wrap property */
+  flex-wrap: nowrap !important; 
+}
