@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'testing - need to replace!'
 
 if socket.gethostname() == 'raspberrypi':
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:password_4_PKS@192.168.1.143:3307/MyRecipes'
 else:
 #    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV'
      app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:password_4_PKS@192.168.1.143:3307/MyRecipes_DEV'
