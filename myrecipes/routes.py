@@ -273,12 +273,7 @@ def recipe(recipe_id):
     #planned = planned is not None
     
     recipe_pdf = None
-<<<<<<< HEAD
-    for file in os.listdir(os.path.join(current_app.root_path, 'static/custom_prints/')):
-        
-=======
-    for file in os.listdir(os.path.join(app.root_path, 'myrecipes/static/custom_prints/')):
->>>>>>> 902f88209b263401e3811afac82eaa1c7f5d9883
+    for file in os.listdir(os.path.join(current_app.root_path, 'static/custom_prints/')):  
         if file == f'{recipe_id}.pdf':
             recipe_pdf = file
             break
