@@ -38,6 +38,7 @@ class Recipe_Ingredient(db.Model):
     name_written = db.Column(db.String(100), nullable=False)
     note = db.Column(db.String(100), nullable=True)
     name_official = db.Column(db.String(100), nullable=True)
+    is_group_header = db.Column(db.Boolean, nullable=True)
 
     def __repr__(self):
         return f"Recipe_Ingredient('{self.name_written}','{self.name_official}')"
@@ -48,6 +49,8 @@ class Recipe_Instruction(db.Model):
     text_contents = db.Column(db.String(1000), nullable=False)
     type = db.Column(db.Integer, nullable=True)
     sequence = db.Column(db.Integer, nullable=True)
+    is_group_header = db.Column(db.Boolean, nullable=True)
+
 
     def __repr__(self):
         return f"Recipe_Instructions('{self.text_contents}','{self.type}','{self.sequence}')"

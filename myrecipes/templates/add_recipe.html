@@ -70,8 +70,18 @@
 
       if (initialLoad) {
         let ingredientNoteLabel = document.createElement("label");
-        ingredientNoteLabel.textContent = "Ingredient Note";
+        ingredientNoteLabel.textContent = "Ingredient Note/Group";
+
+        // Create the FontAwesome icon
+        let questionMarkIcon = document.createElement("i");
+        questionMarkIcon.setAttribute("class", "fas fa-question-circle ml-2");
+        questionMarkIcon.setAttribute("data-toggle", "tooltip");
+        questionMarkIcon.setAttribute("title", "Leave Ingredient field empty to make this a group title");
+
+
+          // Append label and icon to the container
         ingredientNoteFieldContainer.appendChild(ingredientNoteLabel);
+        ingredientNoteFieldContainer.appendChild(questionMarkIcon);
       }
 
       let ingredientNoteField = document.createElement("input");
@@ -249,6 +259,7 @@
 
       <div class="form-group">
         {{ form.instructions.label(class="form-control-label") }}  
+        <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
         {% if form.instructions.errors %}
           {{ form.instructions(class="form-control form-control-lg is-invalid") }}
           <div class="invalid-feedback">
@@ -263,6 +274,7 @@
 
       <div class="form-group">
         {{ form.source_notes.label(class="form-control-label") }}  
+        <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>  
         {% if form.source_notes.errors %}
           {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
           <div class="invalid-feedback">
