@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # 2. Define the URL
-url = ''
+url = 'https://web.archive.org/web/20230810012537/https://www.bonappetit.com/recipe/grilled-brisket-with-scallion-peanut-salsa'
 
 # 3. Fetch the HTML content from the URL
 response = requests.get(url)
@@ -18,21 +18,22 @@ soup = BeautifulSoup(html_content, 'html.parser')
 # 5. Find the div containing the preparation steps using a wildcard match
 preparation_div = soup.select_one('div[class*="InstructionsWrapper"]')
 
-# Check if the div was found
+# Check if the parent div was found
 if preparation_div is None:
     raise Exception("Could not find the preparation steps container.")
 
-groups = soup.findall('div[class*="InstructionGroupHed"]')
-    preparation_steps.append(prep_group)
+
+groups = soup.find_all('div[class*="InstructionGroupHed"]')
+    #preparation_steps.append(prep_group)
 
 # 6. Extract all the steps within the <ol> tag
-steps = preparation_div.find_all('li', class_='InstructionListWrapper-dcpygI')
+steps = preparation_div.find_all('p')
 
 # 7. Iterate over each step and collect the text
 preparation_steps = []
 for step in steps:
 		
-    step_text = step.find('p').get_text(strip=True)
+    step_text = step.get_text(strip=True)
     preparation_steps.append(step_text)
 
 # 8. Print the extracted preparation steps
