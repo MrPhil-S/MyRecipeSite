@@ -46,7 +46,18 @@
       if (initialLoad) {
         let ingredientLabel = document.createElement("label");
         ingredientLabel.textContent = "Ingredient";
-        ingredientFieldContainer.appendChild(ingredientLabel);
+
+        // Create the FontAwesome icon
+        let questionMarkIcon = document.createElement("i");
+        questionMarkIcon.setAttribute("class", "fas fa-question-circle ml-2");
+        questionMarkIcon.setAttribute("data-toggle", "tooltip");
+        questionMarkIcon.setAttribute("title", "Start a line with > to make it a group");
+
+
+          // Append label and icon to the container
+          
+          ingredientFieldContainer.appendChild(ingredientLabel);
+          ingredientFieldContainer.appendChild(questionMarkIcon);
       }
 
       let ingredientField = document.createElement("input");
@@ -72,16 +83,8 @@
         let ingredientNoteLabel = document.createElement("label");
         ingredientNoteLabel.textContent = "Ingredient Note/Group";
 
-        // Create the FontAwesome icon
-        let questionMarkIcon = document.createElement("i");
-        questionMarkIcon.setAttribute("class", "fas fa-question-circle ml-2");
-        questionMarkIcon.setAttribute("data-toggle", "tooltip");
-        questionMarkIcon.setAttribute("title", "Leave Ingredient field empty to make this a group title");
-
-
-          // Append label and icon to the container
         ingredientNoteFieldContainer.appendChild(ingredientNoteLabel);
-        ingredientNoteFieldContainer.appendChild(questionMarkIcon);
+
       }
 
       let ingredientNoteField = document.createElement("input");
@@ -253,6 +256,8 @@
       </div>
       <div class="form-group col">
         {{ form.ingredient_bulk.label(class="form-control-label") }}  
+        <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
+
         {{ form.ingredient_bulk(class="form-control form-control-lg") }}
       </div>
     </div>
