@@ -7,8 +7,8 @@ from flask import (current_app, flash, jsonify, redirect, render_template,
 from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
-from myrecipes import (  # , get_recipies<<<<<<<<<<<<<<<<<<<<<<<<<<<disabled!
-    app, db)
+from myrecipes import (app, db,  # <<<disable get_recipies if not using
+                       get_recipies)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
@@ -768,7 +768,7 @@ def process_recipes(option):
             flash('AR recipes updated', 'success')
         elif option == 4:
             for recipe in recipes:
-                get_recipies.update_AR_recipe(recipe.recipe_id, recipe.source_url)  
+                get_recipies.update_BA_recipe(recipe.recipe_id, recipe.source_url)  
             flash('BA recipes updated', 'success')     
     return redirect(url_for('import_recipes'))
 

@@ -1,26 +1,23 @@
-from myrecipes import db
-from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
-
-from sqlalchemy import delete, exc
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import update
-
-
 import os
-import re
 import random
+import re
 import urllib
-#import sqlite3  <<Need to pip uninstall
-from myrecipes import whisk_secrets
-from myrecipes import ScrapeAR  #.scrapeAR
-
 from time import sleep
+
+import requests
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from sqlalchemy import delete, exc, update
+from sqlalchemy.ext.declarative import declarative_base
 
+#import sqlite3  <<Need to pip uninstall
+from myrecipes import ScrapeAR  # .scrapeAR
+from myrecipes import db, whisk_secrets
+from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
 
 
 def main(option):
@@ -393,6 +390,64 @@ def update_AR_recipe(current_recipe_id, source_url):
         note_query = Recipe_Instruction(recipe_id=current_recipe_id, text_contents=note, type=2, sequence=sequence)
         db.session.add(note_query)
         db.session.commit()
+
+def update_BA_recipe(current_recipe_id, source_url):
+    if 'https://www.bonappetit.com/' in source_url:  
+
+      response = requests.get(source_url)
+      if response.status_code == 200:
+          html_content = response.text
+      else:
+          raise Exception(f"Failed to fetch the page. Status code: {response.status_code}")
+
+      # 4. Parse the HTML content using BeautifulSoup
+      soup = BeautifulSoup(html_content, 'html.parser')
+
+      # 5. Find the div containing the preparation steps using a wildcard match
+      preparation_div = soup.select_one('ol[class*="InstructionGroupWrapper"]')
+
+      # Check if the parent div was found
+      if preparation_div is None:
+          raise Exception("Could not find the preparation steps container.")
+
+
+      groups = soup.find_all('div[class*="InstructionGroupHed"]')
+          #preparation_steps.append(prep_group)
+
+      # 6. Extract all the steps within the <ol> tag
+      #steps = preparation_div.find_all('p')
+      steps = preparation_div.find_all()
+      #if H3 then group header
+      #if p then instruction
+      # 7. Iterate over each step and collect the text
+      instruction_steps = []
+      for seq, step in enumerate(steps, start=1):
+          if step.name == 'h3':
+              is_group_header = True
+          elif step.name == 'p':
+              is_group_header = False
+          else:
+            continue
+          
+          instruction_steps.append({
+              'recipe_id': current_recipe_id,
+              'text_contents': step.get_text(strip=True),
+              'type': 1,
+              'sequence': seq,
+              'is_group_header': is_group_header
+              })
+
+
+      print(f'Adding instructions for recipe_id: {current_recipe_id}: {instruction_steps}, {seq}')
+      for instruciton_data in instruction_steps:
+        instruction = Recipe_Instruction(**instruciton_data)
+        db.session.add(instruction)
+      db.session.commit()
+
+
+
+
+
 
 
   #driver.quit()
