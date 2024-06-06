@@ -18,8 +18,9 @@ from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               recipe_view_date)
 
 #import secrets
-from .helpers import (get_sort_reverse, parse_search_query, save_file,
-                      save_image, search_recipe, search_recipe_ingredient)
+from .helpers import (get_official_ingredient_name, get_sort_reverse,
+                      parse_search_query, save_file, save_image, search_recipe,
+                      search_recipe_ingredient)
 
 
 @app.route('/setup')
@@ -364,27 +365,19 @@ def add_recipe():
         # Add related ingredients to DB
         for index, ingredient in enumerate(ingredients):
             if len(ingredient) > 0: 
-
-                stmt = text(''' #TODO: fix hardcoded ingredient lookup values
-                SELECT name_official 
-                FROM 
-                    (SELECT  
-                    name_official
-                    FROM `recipe__ingredient`
-                    UNION
-                    SELECT 'soy_sauce'
-                    ) x
-                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
-                ORDER BY length(name_official) DESC
-                LIMIT 1''')
-                result  = db.engine.execute(stmt, ingredient_param=ingredient)
-                row = result.fetchone()
-                name_official = row[0] if row is not None else 'default_ingredient'
-
+                if ingredient.strip()[0] == '>':
+                    is_group_header = 1
+                    ingredient = ingredient.strip()[1:]
+                    name_official = None
+                else:
+                    is_group_header = 0
+                    ingredient = ingredient.strip()
+                    name_official = get_official_ingredient_name(ingredient)
+                    
                 ingredient_note = ingredient_notes[index]
 
-                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
-                db.session.add(ingredient)
+                ingredient_record = Recipe_Ingredient(name_written=ingredient, note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official, is_group_header=is_group_header)
+                db.session.add(ingredient_record)
         db.session.commit()
 
         ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
@@ -396,22 +389,8 @@ def add_recipe():
                 try: 
                     ingredient_note = ingredient_parsed[1]
                 except:
-                    ingredient_note = None
-                stmt = text(''' 
-                SELECT name_official 
-                FROM 
-                    (SELECT  
-                    name_official
-                    FROM `recipe__ingredient`
-                    UNION
-                    SELECT 'soy_sauce'
-                    ) x
-                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
-                ORDER BY length(name_official) DESC
-                LIMIT 1''')
-                result  = db.engine.execute(stmt, ingredient_param=ingredient)
-                row = result.fetchone()
-                name_official = row[0] if row is not None else 'default_ingredient'
+                    ingredient_note = None       
+                name_official = get_official_ingredient_name(ingredient)
 
                 ingredient =  Recipe_Ingredient(name_written=ingredient_bulk_item.strip(), recipe_id=recipe.recipe_id, name_official=name_official, note=ingredient_note)
                 db.session.add(ingredient)
@@ -565,24 +544,10 @@ def edit_recipe(recipe_id):
 
         # Add related ingredients to DB
         for index, ingredient in enumerate(ingredients):
-            if len(ingredient) > 0: 
+            if len(ingredient.strip()) > 0:
+                ingredient = ingredient.strip() 
 
-                stmt = text(''' #TODO: fix hardcoded ingredient lookup values
-                SELECT name_official 
-                FROM 
-                    (SELECT  
-                    name_official
-                    FROM `recipe__ingredient`
-                    UNION
-                    SELECT 'soy_sauce'
-                    ) x
-                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
-                ORDER BY length(name_official) DESC
-                LIMIT 1''')
-                result  = db.engine.execute(stmt, ingredient_param=ingredient)
-                row = result.fetchone()
-                name_official = row[0] if row is not None else 'default_ingredient'
-
+                name_official = get_official_ingredient_name(ingredient)
                 ingredient_note = ingredient_notes[index]
 
                 ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
