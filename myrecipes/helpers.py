@@ -99,20 +99,38 @@ def get_sort_reverse(session_sort_order):
     else:
         return False
     
-def get_official_ingredient_name(ingredient_param):
-    stmt = text(''' #TODO: fix hardcoded ingredient lookup values
-                SELECT name_official 
-                FROM 
-                    (SELECT  
-                    name_official
-                    FROM `recipe__ingredient`
-                    UNION
-                    SELECT 'soy_sauce'
-                    ) x
-                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
-                ORDER BY length(name_official) DESC
-                LIMIT 1''')
-    result  = db.engine.execute(stmt, ingredient_param=ingredient_param)
-    row = result.fetchone()
-    name_official = row[0] if row is not None else 'default_ingredient'
-    return name_official
+def process_ingredients(recipe_id, ingredients, ingredient_notes):
+    for index, ingredient in enumerate(ingredients):
+        if len(ingredient) > 0: 
+            if ingredient.strip()[0] == '>':
+                is_group_header = 1
+                ingredient = ingredient.strip()[1:]
+                name_official = None
+            else:
+                is_group_header = 0
+                ingredient = ingredient.strip()
+
+                stmt = text(''' #TODO: fix hardcoded ingredient lookup values
+                            SELECT name_official 
+                            FROM 
+                                (SELECT  
+                                name_official
+                                FROM `recipe__ingredient`
+                                UNION
+                                SELECT 'soy_sauce'
+                                ) x
+                            WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
+                            ORDER BY length(name_official) DESC
+                            LIMIT 1''')
+                result  = db.engine.execute(stmt, ingredient_param=ingredient)
+                row = result.fetchone()
+                name_official = row[0] if row is not None else 'default_ingredient'
+
+            if ingredient_notes[index]:
+                ingredient_note = ingredient_notes[index].strip()
+            else:
+                ingredient_note = None
+            sequence = index + 1
+            ingredient_record = Recipe_Ingredient(name_written=ingredient, note=ingredient_note, recipe_id=recipe_id, name_official=name_official, sequence=sequence, is_group_header=is_group_header)
+            db.session.add(ingredient_record)
+        db.session.commit()
