@@ -18,9 +18,9 @@ from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               recipe_view_date)
 
 #import secrets
-from .helpers import (get_official_ingredient_name, get_sort_reverse,
-                      parse_search_query, save_file, save_image, search_recipe,
-                      search_recipe_ingredient)
+from .helpers import (get_sort_reverse, parse_search_query,
+                      process_ingredients, save_file, save_image,
+                      search_recipe, search_recipe_ingredient)
 
 
 @app.route('/setup')
@@ -258,9 +258,9 @@ def recipe(recipe_id):
     view_count = recipe_view_date.query.filter_by(recipe_id=recipe_id).count()
     cook_count = recipe_cooked_date.query.filter_by(recipe_id=recipe.recipe_id).count()
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
-    ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=1).all()
-    source_notes = Recipe_Instruction.query.filter_by(recipe_id=recipe_id, type=2).all()
+    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence).filter_by(recipe_id=recipe_id).all()
+    instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
     cuisine_name = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collections = recipe.collections
     
@@ -363,39 +363,24 @@ def add_recipe():
         db.session.commit()
 
         # Add related ingredients to DB
-        for index, ingredient in enumerate(ingredients):
-            if len(ingredient) > 0: 
-                if ingredient.strip()[0] == '>':
-                    is_group_header = 1
-                    ingredient = ingredient.strip()[1:]
-                    name_official = None
-                else:
-                    is_group_header = 0
-                    ingredient = ingredient.strip()
-                    name_official = get_official_ingredient_name(ingredient)
-                    
-                ingredient_note = ingredient_notes[index]
+        if ingredients:
+            process_ingredients(recipe_id, ingredients, ingredient_notes)
 
-                ingredient_record = Recipe_Ingredient(name_written=ingredient, note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official, is_group_header=is_group_header)
-                db.session.add(ingredient_record)
-        db.session.commit()
-
-        ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
-        sequence = 0
-        for ingredient_bulk_item in ingredient_bulk_list:
-            if len(ingredient_bulk_item) > 0:
-                ingredient_parsed = ingredient_bulk_item.split(',', maxsplit=1)      
-                ingredient = ingredient_parsed[0]
-                try: 
-                    ingredient_note = ingredient_parsed[1]
-                except:
-                    ingredient_note = None       
-                name_official = get_official_ingredient_name(ingredient)
-
-                ingredient =  Recipe_Ingredient(name_written=ingredient_bulk_item.strip(), recipe_id=recipe.recipe_id, name_official=name_official, note=ingredient_note)
-                db.session.add(ingredient)
-        db.session.commit()
-
+        # for bulk ingredients 
+        if ingredient_bulk:
+            bulk_ingredients = []
+            bulk_ingredient_notes = []
+            ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
+            sequence = 0
+            for ingredient_bulk_item in ingredient_bulk_list:
+                if len(ingredient_bulk_item.strip()) > 0:
+                    ingredient_parsed = ingredient_bulk_item.split(',', maxsplit=1)      
+                    bulk_ingredients.append(ingredient_parsed[0])
+                    try: 
+                        bulk_ingredient_notes.append(ingredient_parsed[1])
+                    except:
+                        bulk_ingredient_notes.append(None)    
+            process_ingredients(recipe_id, bulk_ingredients, bulk_ingredient_notes)
 
         instructions_list = instructions.splitlines()   
         sequence = 0
@@ -441,7 +426,7 @@ def edit_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     form = edit_recipe_form(cuisinelist = recipe.cuisine_id)
 
-    ingredients = Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).all()
+    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence).filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
     #collections = recipe_collection.query.order_by(recipe_collection.collecton_id).filter_by(recipe_id=recipe_id).all()
@@ -474,6 +459,11 @@ def edit_recipe(recipe_id):
     #cuisine
     #collection
     form.note_from_user.data = recipe.note_from_user
+
+    for ingredient in ingredients:
+        if ingredient.is_group_header:
+            ingredient.name_written = ">" + ingredient.name_written 
+
     form.ingredient.data =  ingredients
 
     pdf_file = None
@@ -543,16 +533,8 @@ def edit_recipe(recipe_id):
 
 
         # Add related ingredients to DB
-        for index, ingredient in enumerate(ingredients):
-            if len(ingredient.strip()) > 0:
-                ingredient = ingredient.strip() 
+        process_ingredients(recipe_id, ingredients, ingredient_notes)
 
-                name_official = get_official_ingredient_name(ingredient)
-                ingredient_note = ingredient_notes[index]
-
-                ingredient = Recipe_Ingredient(name_written=ingredient.strip(), note=ingredient_note.strip(), recipe_id=recipe.recipe_id, name_official=name_official)
-                db.session.add(ingredient)
-        db.session.commit()
 
         # Delete existing instructions first
         Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
