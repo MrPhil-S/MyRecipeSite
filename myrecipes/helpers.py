@@ -3,6 +3,7 @@ import os
 import re
 
 from PIL import Image
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 
 from myrecipes import app, db
@@ -97,3 +98,21 @@ def get_sort_reverse(session_sort_order):
         return True
     else:
         return False
+    
+def get_official_ingredient_name(ingredient_param):
+    stmt = text(''' #TODO: fix hardcoded ingredient lookup values
+                SELECT name_official 
+                FROM 
+                    (SELECT  
+                    name_official
+                    FROM `recipe__ingredient`
+                    UNION
+                    SELECT 'soy_sauce'
+                    ) x
+                WHERE LOCATE(REPLACE(name_official, '_', ' '), :ingredient_param) > 0
+                ORDER BY length(name_official) DESC
+                LIMIT 1''')
+    result  = db.engine.execute(stmt, ingredient_param=ingredient_param)
+    row = result.fetchone()
+    name_official = row[0] if row is not None else 'default_ingredient'
+    return name_official
