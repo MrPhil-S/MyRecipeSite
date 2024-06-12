@@ -109,14 +109,17 @@ def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingre
                     is_group_header = 1
                     ingredient = ingredient.strip()[1:]
                     name_official = None
+                else:
+                    is_group_header = 0
                     
             if not is_bulk_ingredients:
-                if ingredient_groups[index]:
+                if ingredient_groups[index] == 'true':
                     is_group_header = 1
                     name_official = None
-            else:
-                is_group_header = 0
+                else:
+                    is_group_header = 0
 
+            if is_group_header == 0:
                 stmt = text(''' #TODO: fix hardcoded ingredient lookup values
                             SELECT name_official 
                             FROM 
