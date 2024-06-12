@@ -99,16 +99,23 @@ def get_sort_reverse(session_sort_order):
     else:
         return False
     
-def process_ingredients(recipe_id, ingredients, ingredient_notes):
+def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes):
     for index, ingredient in enumerate(ingredients):
-        if len(ingredient) > 0: 
-            if ingredient.strip()[0] == '>':
-                is_group_header = 1
-                ingredient = ingredient.strip()[1:]
-                name_official = None
+        if len(ingredient.strip()) > 0: 
+            ingredient = ingredient.strip()
+
+            if is_bulk_ingredients:
+                if ingredient[0] == '>':
+                    is_group_header = 1
+                    ingredient = ingredient.strip()[1:]
+                    name_official = None
+                    
+            if not is_bulk_ingredients:
+                if ingredient_groups[index]:
+                    is_group_header = 1
+                    name_official = None
             else:
                 is_group_header = 0
-                ingredient = ingredient.strip()
 
                 stmt = text(''' #TODO: fix hardcoded ingredient lookup values
                             SELECT name_official 

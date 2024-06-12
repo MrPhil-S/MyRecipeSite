@@ -314,6 +314,11 @@ def add_recipe():
         # Get populted form data
         name = request.form['name']
         source_url = request.form['url']
+        is_ingredient_group = request.form.getlist('is_ingredient_group[]')
+
+        is_ingredient_group = [bool(value) for value in is_ingredient_group]
+
+        ingredient_groups = request.form.getlist('is_ingredient_group[]')
         ingredients = request.form.getlist('ingredient[]')
         ingredient_notes = request.form.getlist('ingredient_note[]')    
         ingredient_bulk = request.form['ingredient_bulk']
@@ -364,7 +369,7 @@ def add_recipe():
 
         # Add related ingredients to DB
         if ingredients:
-            process_ingredients(recipe_id, ingredients, ingredient_notes)
+            process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
 
         # for bulk ingredients 
         if ingredient_bulk:
@@ -380,7 +385,7 @@ def add_recipe():
                         bulk_ingredient_notes.append(ingredient_parsed[1])
                     except:
                         bulk_ingredient_notes.append(None)    
-            process_ingredients(recipe_id, bulk_ingredients, bulk_ingredient_notes)
+            process_ingredients(recipe_id, 1, ingredient_groups, bulk_ingredients, bulk_ingredient_notes)
 
         instructions_list = instructions.splitlines()   
         sequence = 0
@@ -460,10 +465,6 @@ def edit_recipe(recipe_id):
     #collection
     form.note_from_user.data = recipe.note_from_user
 
-    for ingredient in ingredients:
-        if ingredient.is_group_header:
-            ingredient.name_written = ">" + ingredient.name_written 
-
     form.ingredient.data =  ingredients
 
     pdf_file = None
@@ -508,6 +509,7 @@ def edit_recipe(recipe_id):
             #recipe.pdf_file = pdf_file
 
         #Get new form values for child tables
+        ingredient_groups = request.form.getlist('is_ingredient_group[]')
         ingredients = request.form.getlist('ingredient[]')
         ingredient_notes = request.form.getlist('ingredient_note[]')    
         
@@ -533,7 +535,7 @@ def edit_recipe(recipe_id):
 
 
         # Add related ingredients to DB
-        process_ingredients(recipe_id, ingredients, ingredient_notes)
+        process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
 
 
         # Delete existing instructions first
