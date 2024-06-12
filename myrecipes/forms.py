@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField
-from wtforms import (IntegerField, SelectField, SelectMultipleField,
-                     StringField, SubmitField, TextAreaField, validators,
-                     widgets)
+from wtforms import (BooleanField, IntegerField, SelectField,
+                     SelectMultipleField, StringField, SubmitField,
+                     TextAreaField, validators, widgets)
 from wtforms.validators import DataRequired, Length, Optional
 
 
@@ -15,6 +15,7 @@ class add_recipe_form(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=200)])
     url = StringField('URL', validators=[Length(max=500)])
     user_note = TextAreaField('Notes')    
+    is_ingredient_group = BooleanField('Group?', false_values=None)
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
     ingredient_bulk = TextAreaField('Ingredients (Add each on a new line)')#, validators=[Length(min=1, max=100)])
