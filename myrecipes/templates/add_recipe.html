@@ -68,12 +68,24 @@
 
       }
 
+      // Hidden input to capture unchecked state
+      let hiddenInput = document.createElement("input");
+      hiddenInput.setAttribute("type", "hidden");
+      hiddenInput.setAttribute("name", "is_ingredient_group[]");
+      hiddenInput.setAttribute("value", "false");
+
       let IsGroupCheckbox = document.createElement("input");
       IsGroupCheckbox.setAttribute("type", "checkbox");
       IsGroupCheckbox.setAttribute("name", "is_ingredient_group[]");
       IsGroupCheckbox.setAttribute("class", "mt-2");
+      IsGroupCheckbox.setAttribute("value", "true");
 
-      
+      // When checkbox is checked, remove the hidden input value
+      IsGroupCheckbox.addEventListener("change", function() {
+          hiddenInput.disabled = this.checked;
+      });
+
+      IsGroupCheckboxContainer.appendChild(hiddenInput);      
 
       IsGroupCheckboxContainer.appendChild(IsGroupCheckbox);
       return IsGroupCheckboxContainer;
@@ -282,6 +294,7 @@
 
     <div class="form-row">
       <div class="form-group col-md-6">
+          <!-- javascript -->
           <div id="additional_ingredients"></div>
       </div>
       <div class="form-group col-md-1 align-self-center text-center">
