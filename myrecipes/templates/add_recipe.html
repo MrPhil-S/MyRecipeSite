@@ -29,7 +29,6 @@
       ingredientCol1.setAttribute("class", "col-2 text-center");
       ingredientCol1.appendChild(createIsGroupCheckbox(initialLoad));
 
-
       let ingredientCol2 = document.createElement("div");
       ingredientCol2.setAttribute("class", "col-5");
       ingredientCol2.appendChild(createIngredientField(initialLoad));
@@ -98,10 +97,7 @@
       if (initialLoad) {
         let ingredientLabel = document.createElement("label");
         ingredientLabel.textContent = "Ingredient";
-
-
           // Append label and icon to the container
-          
           ingredientFieldContainer.appendChild(ingredientLabel);
       }
 

@@ -23,32 +23,89 @@
     let additionalIngredients = document.getElementById("additional_ingredients");
     let latestIngredientField;
 
-    function addIngredientRow(initialLoad, name = "", note = "") {
+    function addIngredientRow(initialLoad, checkbox = "" name = "", note = "") {
       let ingredientRow = document.createElement("div");
       ingredientRow.setAttribute("class", "form-row");
 
       let ingredientCol1 = document.createElement("div");
       ingredientCol1.setAttribute("class", "col-md-5");
-      let ingredientFieldContainer1 = createIngredientField(initialLoad, name);
+      let ingredientFieldContainer1 = createIsGroupCheckbox(initialLoad, checkbox);
 
       let ingredientCol2 = document.createElement("div");
-      ingredientCol2.setAttribute("class", "col");
-      let ingredientFieldContainer2 = createIngredientNoteField(initialLoad, note);
+      ingredientCol1.setAttribute("class", "col-md-5");
+      let ingredientFieldContainer2 = createIngredientField(initialLoad, name);
+
+      let ingredientCol3 = document.createElement("div");
+      ingredientCol3.setAttribute("class", "col");
+      let ingredientFieldContainer3 = createIngredientNoteField(initialLoad, note);
 
       ingredientRow.appendChild(ingredientCol1);
       ingredientRow.appendChild(ingredientCol2);
+      ingredientRow.appendChild(ingredientCol3);
+
 
       ingredientCol1.appendChild(ingredientFieldContainer1);
       ingredientCol2.appendChild(ingredientFieldContainer2);
+      ingredientCol3.appendChild(ingredientFieldContainer3);
 
       additionalIngredients.appendChild(ingredientRow);
     }
 
+
+//start checkbox
+function createIsGroupCheckbox(initialLoad, checkmark="") {
+      let IsGroupCheckboxContainer = document.createElement("div");
+      IsGroupCheckboxContainer.setAttribute("class", "form-group");
+
+      // if (initialLoad) {
+      //   let IsGroupCheckboxLabel = document.createElement("label");
+      //   IsGroupCheckboxLabel.textContent = "Group?";
+
+
+          // Append label and icon to the container
+        // Create the FontAwesome icon
+        let questionMarkIcon = document.createElement("i");
+        questionMarkIcon.setAttribute("class", "fas fa-question-circle ml-2");
+        questionMarkIcon.setAttribute("data-toggle", "tooltip");
+        questionMarkIcon.setAttribute("title", "Check to make this a group header");
+        ingredientField.value = checkmark; // Prepopulate the field with data
+
+          
+        IsGroupCheckboxContainer.appendChild(IsGroupCheckboxLabel);
+        IsGroupCheckboxLabel.appendChild(questionMarkIcon);
+
+      }
+
+      // Hidden input to capture unchecked state
+      let hiddenInput = document.createElement("input");
+      hiddenInput.setAttribute("type", "hidden");
+      hiddenInput.setAttribute("name", "is_ingredient_group[]");
+      hiddenInput.setAttribute("value", "false");
+
+      let IsGroupCheckbox = document.createElement("input");
+      IsGroupCheckbox.setAttribute("type", "checkbox");
+      IsGroupCheckbox.setAttribute("name", "is_ingredient_group[]");
+      IsGroupCheckbox.setAttribute("class", "mt-2");
+      IsGroupCheckbox.setAttribute("value", "true");
+
+      // When checkbox is checked, remove the hidden input value
+      IsGroupCheckbox.addEventListener("change", function() {
+          hiddenInput.disabled = this.checked;
+      });
+
+      IsGroupCheckboxContainer.appendChild(hiddenInput);      
+
+      IsGroupCheckboxContainer.appendChild(IsGroupCheckbox);
+      return IsGroupCheckboxContainer;
+    }
+
+//end checkbox
+
+
+
     function createIngredientField(initialLoad, name = "") {
       let ingredientFieldContainer = document.createElement("div");
       ingredientFieldContainer.setAttribute("class", "form-group");
-
-
 
       let ingredientField = document.createElement("input");
       ingredientField.setAttribute("type", "text");
