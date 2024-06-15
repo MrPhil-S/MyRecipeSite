@@ -18,63 +18,39 @@
 
 </style>
 
+
 <script>
   window.onload = function() {
     let additionalIngredients = document.getElementById("additional_ingredients");
     let latestIngredientField;
 
-    function addIngredientRow(initialLoad, checkbox = "" name = "", note = "") {
+    function addIngredientRow(initialLoad, isGroup, name, note) {
       let ingredientRow = document.createElement("div");
-      ingredientRow.setAttribute("class", "form-row");
+      ingredientRow.setAttribute("class", "form-row align-items-center");
 
       let ingredientCol1 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col-md-5");
-      let ingredientFieldContainer1 = createIsGroupCheckbox(initialLoad, checkbox);
+      ingredientCol1.setAttribute("class", "col-2 text-center d-flex align-items-center justify-content-center");
+      ingredientCol1.appendChild(createIsGroupCheckbox(initialLoad && additionalIngredients.children.length === 0, isGroup));
 
       let ingredientCol2 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col-md-5");
-      let ingredientFieldContainer2 = createIngredientField(initialLoad, name);
+      ingredientCol2.setAttribute("class", "col-5");
+      ingredientCol2.appendChild(createIngredientField(initialLoad && additionalIngredients.children.length === 0, name));
 
       let ingredientCol3 = document.createElement("div");
-      ingredientCol3.setAttribute("class", "col");
-      let ingredientFieldContainer3 = createIngredientNoteField(initialLoad, note);
+      ingredientCol3.setAttribute("class", "col-5");
+      ingredientCol3.appendChild(createIngredientNoteField(initialLoad && additionalIngredients.children.length === 0, note));
 
       ingredientRow.appendChild(ingredientCol1);
       ingredientRow.appendChild(ingredientCol2);
       ingredientRow.appendChild(ingredientCol3);
 
-
-      ingredientCol1.appendChild(ingredientFieldContainer1);
-      ingredientCol2.appendChild(ingredientFieldContainer2);
-      ingredientCol3.appendChild(ingredientFieldContainer3);
-
       additionalIngredients.appendChild(ingredientRow);
     }
 
+    function createIsGroupCheckbox(showLabel, isGroup = false) {
+      let isGroupCheckboxContainer = document.createElement("div");
+      isGroupCheckboxContainer.setAttribute("class", "form-group mb-0 d-flex align-items-center justify-content-center");
 
-//start checkbox
-function createIsGroupCheckbox(initialLoad, checkmark="") {
-      let IsGroupCheckboxContainer = document.createElement("div");
-      IsGroupCheckboxContainer.setAttribute("class", "form-group");
-
-      // if (initialLoad) {
-      //   let IsGroupCheckboxLabel = document.createElement("label");
-      //   IsGroupCheckboxLabel.textContent = "Group?";
-
-
-          // Append label and icon to the container
-        // Create the FontAwesome icon
-        let questionMarkIcon = document.createElement("i");
-        questionMarkIcon.setAttribute("class", "fas fa-question-circle ml-2");
-        questionMarkIcon.setAttribute("data-toggle", "tooltip");
-        questionMarkIcon.setAttribute("title", "Check to make this a group header");
-        ingredientField.value = checkmark; // Prepopulate the field with data
-
-          
-        IsGroupCheckboxContainer.appendChild(IsGroupCheckboxLabel);
-        IsGroupCheckboxLabel.appendChild(questionMarkIcon);
-
-      }
 
       // Hidden input to capture unchecked state
       let hiddenInput = document.createElement("input");
@@ -82,35 +58,38 @@ function createIsGroupCheckbox(initialLoad, checkmark="") {
       hiddenInput.setAttribute("name", "is_ingredient_group[]");
       hiddenInput.setAttribute("value", "false");
 
-      let IsGroupCheckbox = document.createElement("input");
-      IsGroupCheckbox.setAttribute("type", "checkbox");
-      IsGroupCheckbox.setAttribute("name", "is_ingredient_group[]");
-      IsGroupCheckbox.setAttribute("class", "mt-2");
-      IsGroupCheckbox.setAttribute("value", "true");
+      let isGroupCheckbox = document.createElement("input");
+      isGroupCheckbox.setAttribute("type", "checkbox");
+      isGroupCheckbox.setAttribute("name", "is_ingredient_group[]");
+      isGroupCheckbox.setAttribute("class", "mt-2");
+      isGroupCheckbox.setAttribute("value", "true");
+
+      // Set the checkbox state based on the isGroup parameter
+      if (isGroup === "true" || isGroup === true) {
+        isGroupCheckbox.checked = true;
+        hiddenInput.disabled = true;
+      }
 
       // When checkbox is checked, remove the hidden input value
-      IsGroupCheckbox.addEventListener("change", function() {
-          hiddenInput.disabled = this.checked;
+      isGroupCheckbox.addEventListener("change", function() {
+        hiddenInput.disabled = this.checked;
       });
 
-      IsGroupCheckboxContainer.appendChild(hiddenInput);      
-
-      IsGroupCheckboxContainer.appendChild(IsGroupCheckbox);
-      return IsGroupCheckboxContainer;
+      isGroupCheckboxContainer.appendChild(hiddenInput);
+      isGroupCheckboxContainer.appendChild(isGroupCheckbox);
+      return isGroupCheckboxContainer;
     }
 
-//end checkbox
-
-
-
-    function createIngredientField(initialLoad, name = "") {
+    function createIngredientField(showLabel, name = "") {
       let ingredientFieldContainer = document.createElement("div");
       ingredientFieldContainer.setAttribute("class", "form-group");
+
+
 
       let ingredientField = document.createElement("input");
       ingredientField.setAttribute("type", "text");
       ingredientField.setAttribute("name", "ingredient[]");
-      ingredientField.setAttribute("class", "form-control form-control-md ");
+      ingredientField.setAttribute("class", "form-control form-control-md");
       ingredientField.value = name; // Prepopulate the field with data
 
       ingredientField.addEventListener("input", function() {
@@ -124,48 +103,33 @@ function createIsGroupCheckbox(initialLoad, checkmark="") {
       return ingredientFieldContainer;
     }
 
-    function createIngredientNoteField(initialLoad, note = "") {
-
-      // Create a row
-      let ingredientNoteRow = document.createElement("div");
-      ingredientNoteRow.setAttribute("class", "row");
-
-      // Create a column for the "label"
-      let labelColumn = document.createElement("div");
-      labelColumn.setAttribute("class", "col-auto mt-1 pr-0");
-
-      // Create the label element
-      let ingredientNoteLabel = document.createElement("div");
-      ingredientNoteLabel.setAttribute("class", "d-block d-md-none float-left ml-4 ");
-      ingredientNoteLabel.innerText = "Note:"; // Set the label text
-      labelColumn.appendChild(ingredientNoteLabel);
-
-
-      // Create a column for the input field
-      let inputColumn = document.createElement("div");
-      inputColumn.setAttribute("class", "col");
+    function createIngredientNoteField(showLabel, note = "") {
+      let ingredientNoteFieldContainer = document.createElement("div");
+      ingredientNoteFieldContainer.setAttribute("class", "form-group");
 
       let ingredientNoteField = document.createElement("input");
       ingredientNoteField.setAttribute("type", "text");
       ingredientNoteField.setAttribute("name", "ingredient_note[]");
-      ingredientNoteField.setAttribute("class", "form-group form-control form-control-md");
+      ingredientNoteField.setAttribute("class", "form-control form-control-md");
       ingredientNoteField.value = note; // Prepopulate the field with data
-      inputColumn.appendChild(ingredientNoteField);
 
-      ingredientNoteRow.appendChild(labelColumn);
-      ingredientNoteRow.appendChild(inputColumn);
-      return ingredientNoteRow;
+      ingredientNoteFieldContainer.appendChild(ingredientNoteField);
+      return ingredientNoteFieldContainer;
     }
 
-  // Loop through existing ingredients and notes to prepopulate fields
-  {% for ingredient in ingredients %}
-    addIngredientRow(true, "{{ ingredient.name_written }}", "{% if ingredient.note %}{{ ingredient.note }}{% endif %}");
-  {% endfor %}
-    // Add an initial ingredient row with labels
+    // Loop through existing ingredients and notes to prepopulate fields
+    {% for ingredient in ingredients %}
+      addIngredientRow(true, {{ ingredient.is_group_header|tojson|safe }}, {{ ingredient.name_written|tojson|safe }}, {{ ingredient.note|tojson|safe }});
+    {% endfor %}
+
+    // Add an initial empty ingredient row with labels
     addIngredientRow(true);
     latestIngredientField = additionalIngredients.lastElementChild.querySelector("input[name='ingredient[]']");
   }
 </script>
+
+
+
 
 
 <div class="content-section">
@@ -329,10 +293,14 @@ function createIsGroupCheckbox(initialLoad, checkmark="") {
     <div class="row">
       <div class="col-md-8">  
         <div class="form-row">
+          <div class="col-md-2 text-center  ">
+            <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i>
+            </label>
+          </div>
           <div class="col-md-5">
             <label>Ingredient</label>
           </div>
-            <div class="col-md-5 d-none d-md-block">
+          <div class="col-md-5 d-none d-md-block">
               <label>Ingredient Note</label>
           </div>
         </div>
@@ -354,7 +322,7 @@ function createIsGroupCheckbox(initialLoad, checkmark="") {
     </div>
 
     <div class="form-group">
-      {{ form.instructions.label(class="form-control-label") }}     
+      {{ form.instructions.label(class="form-control-label") }}<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>     
       {% if form.instructions.errors %}
         {{ form.instructions(class="form-control form-control-lg is-invalid") }}
         <div class="invalid-feedback">
@@ -368,7 +336,7 @@ function createIsGroupCheckbox(initialLoad, checkmark="") {
     </div>
 
     <div class="form-group">
-      {{ form.source_notes.label(class="form-control-label") }}  
+      {{ form.source_notes.label(class="form-control-label") }} <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i> 
       {% if form.source_notes.errors %}
         {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
         <div class="invalid-feedback">
