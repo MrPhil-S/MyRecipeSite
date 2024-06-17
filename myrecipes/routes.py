@@ -273,6 +273,17 @@ def recipe(recipe_id):
     recipe_planned = Recipe_Plan_Date.query.filter_by(recipe_id=recipe_id, removed_dt=None).first()
     #planned = planned is not None
     
+    number = 0
+    instructions_numbered = []
+    for instruction in instructions:
+        if instruction.is_group_header:
+            instructions_numbered.append(instruction)
+            number = 0
+        else:
+            number += 1
+            instruction.text_contents = f"{number}. {instruction.text_contents}"
+            instructions_numbered.append(instruction)
+
     recipe_pdf = None
     for file in os.listdir(os.path.join(current_app.root_path, 'static/custom_prints/')):  
         if file == f'{recipe_id}.pdf':
@@ -282,7 +293,7 @@ def recipe(recipe_id):
     return render_template('recipe.html', recipe=recipe, 
                            note_from_user_list=note_from_user_list, 
                            ingredients=ingredients, 
-                           instructions=instructions, 
+                           instructions=instructions_numbered, 
                            source_notes=source_notes, 
                            title=recipe.name, 
                            image_file=image_file, 

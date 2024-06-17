@@ -146,21 +146,19 @@
   </div>
 <div class="mb-4">
   <h2 >Instructions</h2>
-  <div>
     {% for instruction in instructions %}
       {% if instruction.is_group_header %}
-        <div class="h4 list-unstyled">{{ instruction.text_contents }}</div>
+        <div class="h4">{{ instruction.text_contents }}</div>
       {% else %}
-        <div class="list-unstyled  pl-3">{{ instruction.text_contents }}</div>
+        <div class="pl-4 pb-3">{{ instruction.text_contents }}</div>
       {% endif %}
     {% endfor %}
-  </div>
 </div>
   {% if source_notes %}
     <h2>Source Notes</h2>
     <ul>
       {% for source_note in source_notes %}
-      <li>{{ source_note.text_contents }}</li>
+      <li class="pb-1">{{ source_note.text_contents }}</li>
       {% endfor %}
     </ul>
   {% endif %}
