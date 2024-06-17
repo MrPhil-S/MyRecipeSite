@@ -120,7 +120,7 @@
     <h2>Ingredients</h2>
     <ul class="list-group">
       {% for ingredient in ingredients %}
-      <li class="list-group-item">
+      <li class="list-unstyled py-2">
         <div class="row">
           {% if not ingredient.is_group_header %}
             <div class="col-2 col-md-1">
@@ -146,15 +146,15 @@
   </div>
 <div class="mb-4">
   <h2 >Instructions</h2>
-  <ol>
+  <div>
     {% for instruction in instructions %}
-      {% if ingredient.is_group_header %}
-        <li class="h4">{{ instruction.text_contents }}</li>
+      {% if instruction.is_group_header %}
+        <div class="h4 list-unstyled">{{ instruction.text_contents }}</div>
       {% else %}
-        <li>{{ instruction.text_contents }}</li>
+        <div class="list-unstyled  pl-3">{{ instruction.text_contents }}</div>
       {% endif %}
     {% endfor %}
-  </ol>
+  </div>
 </div>
   {% if source_notes %}
     <h2>Source Notes</h2>

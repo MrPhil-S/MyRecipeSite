@@ -392,7 +392,12 @@ def add_recipe():
         for instruction in instructions_list:
             if len(instruction) > 0:  
                 sequence += 1
-                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
+                if instruction.strip()[0] == '>':
+                    is_group_header = 1
+                    instruction = instruction.strip()[1:] 
+                else:
+                    is_group_header = 0
+                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, is_group_header=is_group_header, recipe_id=recipe.recipe_id)
                 db.session.add(instruction)
         db.session.commit()
 
@@ -432,7 +437,7 @@ def edit_recipe(recipe_id):
     form = edit_recipe_form(cuisinelist = recipe.cuisine_id)
 
     ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence).filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
+    instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents, Recipe_Instruction.is_group_header).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
     source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
     #collections = recipe_collection.query.order_by(recipe_collection.collecton_id).filter_by(recipe_id=recipe_id).all()
 
@@ -474,7 +479,14 @@ def edit_recipe(recipe_id):
         pdf_file = os.path.basename(pdf_file_path)
 
     # Extract the text_contents values and join them with newlines
-    instructions_list = [item[0] for item in instructions]
+    instructions_list = []
+    for instruction_line in instructions:
+        if instruction_line[1] == True:
+            instruction_line = ">" + instruction_line[0]
+        else: 
+            instruction_line = instruction_line[0]
+        instructions_list.append(instruction_line)
+
     instructions_string = "\n".join(instructions_list)
     form.instructions.data = instructions_string
 
@@ -533,10 +545,8 @@ def edit_recipe(recipe_id):
         # Delete existing ingredients first
         Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
 
-
         # Add related ingredients to DB
         process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
-
 
         # Delete existing instructions first
         Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
@@ -545,9 +555,15 @@ def edit_recipe(recipe_id):
         instructions_list = instructions.splitlines()   
         sequence = 0
         for instruction in instructions_list:
-            if len(instruction) > 0:  
+            if len(instruction.strip()) > 0:
                 sequence =+ 1
-                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, recipe_id=recipe.recipe_id)
+                if instruction.strip()[0] == '>':
+                    is_group_header = 1
+                    instruction = instruction.strip()[1:]
+                else:
+                    is_group_header = 0
+                    instruction = instruction.strip()
+                instruction = Recipe_Instruction(text_contents=instruction.strip(), sequence=sequence, type=1, is_group_header=is_group_header, recipe_id=recipe.recipe_id)
                 db.session.add(instruction)
         db.session.commit()
 
