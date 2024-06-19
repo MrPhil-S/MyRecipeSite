@@ -188,7 +188,7 @@
                   {% endfor %}
               </div>
             {% else %}
-              {{ form.note_from_user(class="form-control form-control-lg") }}
+              {{ form.note_from_user(class="form-control form-control-lg auto-resize") }}
             {% endif %}
           </div>
 
@@ -300,7 +300,7 @@
         {{ form.ingredient_bulk.label(class="form-control-label") }}  
         <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
 
-        {{ form.ingredient_bulk(class="form-control form-control-lg") }}
+        {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
       </div>
     </div>
 
@@ -315,7 +315,7 @@
               {% endfor %}
           </div>
         {% else %}
-          {{ form.instructions(class="form-control form-control-lg") }}
+          {{ form.instructions(class="form-control form-control-lg auto-resize") }}
         {% endif %}
       </div>
 
@@ -329,7 +329,7 @@
               {% endfor %}
           </div>
         {% else %}
-          {{ form.source_notes(class="form-control form-control-lg") }}
+          {{ form.source_notes(class="form-control form-control-lg auto-resize") }}
         {% endif %}
       </div>
     </fieldset>
@@ -337,19 +337,34 @@
   </form>
 </div>
 
-    <!-- Multiselect Dropdown Initialization -->
-    <script>
-      $(document).ready(function () {
-          // Initialize the multiselect dropdown using the 'id' attribute of the select element
-          $('#collection_list').multiselect({
-            buttonWidth: '100%',
-            buttonTextAlignment: 'left',
-            nonSelectedText: '',
-            numberDisplayed: 0,
+<!-- Multiselect Dropdown Initialization -->
+<script>
+  $(document).ready(function () {
+      // Initialize the multiselect dropdown using the 'id' attribute of the select element
+      $('#collection_list').multiselect({
+        buttonWidth: '100%',
+        buttonTextAlignment: 'left',
+        nonSelectedText: '',
+        numberDisplayed: 0,
 
-          });
       });
-  </script>
+  });
+</script>
 
+<!-- Auto-resize large text fields, based on CSS class -->
+<script>
+  function autoResizeTextarea(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      const textareas = document.querySelectorAll('.auto-resize');
+      textareas.forEach(textarea => {
+          autoResizeTextarea(textarea);
+          textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+      });
+  });
+</script>
 
 {% endblock %}
