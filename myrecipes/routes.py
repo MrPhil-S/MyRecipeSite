@@ -7,8 +7,8 @@ from flask import (current_app, flash, jsonify, redirect, render_template,
 from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
-from myrecipes import (app, db,  # <<<disable get_recipies if not using
-                       get_recipies)
+from myrecipes import (  # <<<disable get_recipies if not using; get_recipies
+    app, db)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
