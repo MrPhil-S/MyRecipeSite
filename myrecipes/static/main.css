@@ -319,3 +319,9 @@ background-color: #ccc;
   /* Override flex-wrap property */
   flex-wrap: nowrap !important; 
 }
+
+.auto-resize {
+  width: 100%;
+  min-height: 50px;
+  overflow: hidden;
+}

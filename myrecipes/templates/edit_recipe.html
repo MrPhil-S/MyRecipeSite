@@ -331,7 +331,7 @@
             {% endfor %}
         </div>
       {% else %}
-        {{ form.instructions(class="form-control form-control-lg") }}
+        {{ form.instructions(class="form-control form-control-lg auto-resize") }}
       {% endif %}
     </div>
 
@@ -345,7 +345,7 @@
             {% endfor %}
         </div>
       {% else %}
-        {{ form.source_notes(class="form-control form-control-lg") }}
+        {{ form.source_notes(class="form-control form-control-lg  auto-resize") }}
       {% endif %}
     </div>
   
@@ -413,5 +413,20 @@
     });
 </script>
 
+<!-- Auto-resize large text fields, based on CSS class -->
+<script>
+  function autoResizeTextarea(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      const textareas = document.querySelectorAll('.auto-resize');
+      textareas.forEach(textarea => {
+          autoResizeTextarea(textarea);
+          textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+      });
+  });
+</script>
 
 {% endblock %}
