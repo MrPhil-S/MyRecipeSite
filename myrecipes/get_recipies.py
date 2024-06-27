@@ -392,7 +392,12 @@ def update_AR_recipe(current_recipe_id, source_url):
         db.session.commit()
 
 def update_BA_recipe(current_recipe_id, source_url):
-    if 'https://www.bonappetit.com/' in source_url:  
+    instructions = Recipe_Instruction.query.filter_by(recipe_id=current_recipe_id).first()
+
+    #instructions = Recipe_Instruction.query.get(current_recipe_id)
+    if 'https://www.bonappetit.com/' in source_url and instructions is None:  
+
+
 
       response = requests.get(source_url)
       if response.status_code == 200:
