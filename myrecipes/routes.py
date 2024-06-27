@@ -8,7 +8,7 @@ from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
 from myrecipes import (  # <<<disable get_recipies if not using; get_recipies
-    app, db)
+    app, db, get_recipies)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
