@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import re
@@ -18,6 +19,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from myrecipes import ScrapeAR  # .scrapeAR
 from myrecipes import db, whisk_secrets
 from myrecipes.models import Recipe, Recipe_Ingredient, Recipe_Instruction
+
+# Configuring logging to output to standard output (console)
+logging.basicConfig(level=logging.DEBUG, filename='recipe_import.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__)
 
 
 def main(option):
@@ -392,18 +398,19 @@ def update_AR_recipe(current_recipe_id, source_url):
         db.session.commit()
 
 def update_BA_recipe(current_recipe_id, source_url):
+    
     instructions = Recipe_Instruction.query.filter_by(recipe_id=current_recipe_id).first()
 
-    #instructions = Recipe_Instruction.query.get(current_recipe_id)
     if 'https://www.bonappetit.com/' in source_url and instructions is None:  
-
-
+      logger.debug(f'Preparing to scrape url {source_url}, Recipe_id: {current_recipe_id}')
 
       response = requests.get(source_url)
       if response.status_code == 200:
           html_content = response.text
       else:
           raise Exception(f"Failed to fetch the page. Status code: {response.status_code}")
+          logger.warning(f'No inctructions located for url {source_url}, Recipe_id: {current_recipe_id}')
+
 
       # 4. Parse the HTML content using BeautifulSoup
       soup = BeautifulSoup(html_content, 'html.parser')
@@ -415,15 +422,11 @@ def update_BA_recipe(current_recipe_id, source_url):
       if preparation_div is None:
           raise Exception("Could not find the preparation steps container.")
 
-
       groups = soup.find_all('div[class*="InstructionGroupHed"]')
-          #preparation_steps.append(prep_group)
 
       # 6. Extract all the steps within the <ol> tag
-      #steps = preparation_div.find_all('p')
       steps = preparation_div.find_all()
-      #if H3 then group header
-      #if p then instruction
+
       # 7. Iterate over each step and collect the text
       instruction_steps = []
       for seq, step in enumerate(steps, start=1):
@@ -436,20 +439,17 @@ def update_BA_recipe(current_recipe_id, source_url):
           
           instruction_steps.append({
               'recipe_id': current_recipe_id,
-              'text_contents': step.get_text(strip=True),
+              'text_contents': step.get_text(),
               'type': 1,
               'sequence': seq,
               'is_group_header': is_group_header
               })
 
-
-      print(f'Adding instructions for recipe_id: {current_recipe_id}: {instruction_steps}, {seq}')
+      print(f'Adding instructions for recipe_id: {current_recipe_id}')
       for instruciton_data in instruction_steps:
         instruction = Recipe_Instruction(**instruciton_data)
         db.session.add(instruction)
       db.session.commit()
-
-
 
 
 
