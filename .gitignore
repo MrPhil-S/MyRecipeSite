@@ -11,3 +11,4 @@ myrecipes/static/recipe_images
 myrecipes/static/ingredient_images
 myrecipes/static/custom_prints
 *.db
+*.log
