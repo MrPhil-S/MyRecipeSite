@@ -100,10 +100,10 @@ def get_sort_reverse(session_sort_order):
         return False
     
 def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes):
+    ingredient_count = 0
     for index, ingredient in enumerate(ingredients):
         if len(ingredient.strip()) > 0: 
             ingredient = ingredient.strip()
-
             if is_bulk_ingredients:
                 if ingredient[0] == '>':
                     is_group_header = 1
@@ -111,6 +111,7 @@ def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingre
                     name_official = None
                 else:
                     is_group_header = 0
+                    ingredient_count += 1
                     
             if not is_bulk_ingredients:
                 if ingredient_groups[index] == 'true':
@@ -118,6 +119,7 @@ def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingre
                     name_official = None
                 else:
                     is_group_header = 0
+                    ingredient_count += 1
 
             if is_group_header == 0:
                 stmt = text(''' #TODO: fix hardcoded ingredient lookup values
@@ -143,4 +145,7 @@ def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingre
             sequence = index + 1
             ingredient_record = Recipe_Ingredient(name_written=ingredient, note=ingredient_note, recipe_id=recipe_id, name_official=name_official, sequence=sequence, is_group_header=is_group_header)
             db.session.add(ingredient_record)
+            recipe = Recipe.query.get_or_404(recipe_id)
+            recipe.ingredient_count = ingredient_count
+
         db.session.commit()
