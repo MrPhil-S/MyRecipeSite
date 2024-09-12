@@ -149,3 +149,27 @@ def process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingre
             recipe.ingredient_count = ingredient_count
 
         db.session.commit()
+
+def get_total_time(entries):
+	total_minutes = 0
+	for entry in entries:
+			if entry:
+				n = ''
+				minutes = 0
+				hour_minutes = 0
+				for character in entry:
+						if character.isdigit():
+								n = n+str(character)
+						elif character.upper() == 'H':
+								hour_minutes = int(n)*60
+								n = ''
+						elif character.upper() == 'M':
+								minutes = int(n)
+								n = ''
+				total_minutes = total_minutes + minutes + hour_minutes
+				minutes = total_minutes%60 
+				hours = total_minutes//60
+				hour_str = f'{hours} hr' if hours == 1 else f'{hours} hrs'
+				min_str = f'{minutes} min' if minutes == 1 else f'{minutes} mins'
+				total_time = f'{hour_str} {min_str}' if hours > 0 and minutes > 0 else hour_str if hours > 0 else min_str
+	return total_time

@@ -18,7 +18,7 @@ from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               recipe_view_date)
 
 #import secrets
-from .helpers import (get_sort_reverse, parse_search_query,
+from .helpers import (get_sort_reverse, get_total_time, parse_search_query,
                       process_ingredients, save_file, save_image,
                       search_recipe, search_recipe_ingredient)
 
@@ -348,8 +348,10 @@ def add_recipe():
         selected_cuisine_id = form.cuisinelist.data
         cuisine_id = selected_cuisine_id if selected_cuisine_id != 0 else None
 
+        total_time = get_total_time([prep_time, cook_time, additional_time])
+
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, servings=servings, cuisine_id=cuisine_id)
+        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, total_time=total_time, servings=servings, cuisine_id=cuisine_id)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
