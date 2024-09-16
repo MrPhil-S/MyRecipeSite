@@ -1,4 +1,5 @@
 import configparser
+import os
 import socket
 
 from flask import Flask
@@ -8,8 +9,10 @@ from flask_sqlalchemy import SQLAlchemy
 
 def load_config():
     config = configparser.ConfigParser()
-    config.read('config.ini')
-
+    config_file_path = os.path.join(os.path.dirname(__file__), '..', 'config.ini')
+    config_file_path = os.path.abspath(config_file_path)
+    config.read(config_file_path)
+    
     # Check the hostname to load the appropriate environment config
     if socket.gethostname() == 'raspberrypi':
         return config['prod']
