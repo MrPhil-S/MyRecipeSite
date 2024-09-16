@@ -520,6 +520,7 @@ def edit_recipe(recipe_id):
         recipe.prep_time = request.form['prep_time']
         recipe.cook_time = request.form['cook_time']
         recipe.additional_time = request.form['additional_time']        
+        recipe.total_time = get_total_time([recipe.prep_time, recipe.cook_time, recipe.additional_time])
         if request.form['servings'] != '':
             recipe.servings = request.form['servings']
         else:
