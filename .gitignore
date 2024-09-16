@@ -12,3 +12,4 @@ myrecipes/static/ingredient_images
 myrecipes/static/custom_prints
 *.db
 *.log
+config.ini
