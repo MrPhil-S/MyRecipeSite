@@ -1,19 +1,31 @@
+import configparser
 import socket
 
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
+
+def load_config():
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    # Check the hostname to load the appropriate environment config
+    if socket.gethostname() == 'raspberrypi':
+        return config['prod']
+    else:
+        return config['dev']
+
+
+#initilize the flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'testing - need to replace!'
 
-if socket.gethostname() == 'raspberrypi':
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:password_4_PKS@192.168.1.143:3307/MyRecipes'
-else:
-#    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:pythonproj2@192.168.1.143/MyRecipes_DEV'
-     app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://phil:password_4_PKS@192.168.1.143:3307/MyRecipes_DEV'
+# Load the correct configuration
+env_config = load_config()
 
-
+#set app config
+app.config['SECRET_KEY'] = env_config['secret_key']
+app.config['SQLALCHEMY_DATABASE_URI'] = env_config['db_uri']
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 #app.config['MYSQL_PORT'] = '3307'

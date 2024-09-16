@@ -416,20 +416,20 @@ def update_BA_recipe(current_recipe_id, source_url):
       soup = BeautifulSoup(html_content, 'html.parser')
 
       # 5. Find the div containing the preparation steps using a wildcard match
-      preparation_div = soup.select_one('ol[class*="InstructionGroupWrapper"]')
+      instruction_div = soup.select_one('ol[class*="InstructionGroupWrapper"]')
 
       # Check if the parent div was found
-      if preparation_div is None:
+      if instruction_div is None:
           raise Exception("Could not find the preparation steps container.")
 
-      groups = soup.find_all('div[class*="InstructionGroupHed"]')
+      #groups = soup.find_all('div[class*="InstructionGroupHed"]')
 
       # 6. Extract all the steps within the <ol> tag
-      steps = preparation_div.find_all()
+      source_instruction_steps = instruction_div.find_all()
 
       # 7. Iterate over each step and collect the text
-      instruction_steps = []
-      for seq, step in enumerate(steps, start=1):
+      clean_instruction_steps = []
+      for seq, step in enumerate(source_instruction_steps, start=1):
           if step.name == 'h3':
               is_group_header = True
           elif step.name == 'p':
@@ -437,7 +437,7 @@ def update_BA_recipe(current_recipe_id, source_url):
           else:
             continue
           
-          instruction_steps.append({
+          clean_instruction_steps.append({
               'recipe_id': current_recipe_id,
               'text_contents': step.get_text(),
               'type': 1,
@@ -446,11 +446,23 @@ def update_BA_recipe(current_recipe_id, source_url):
               })
 
       print(f'Adding instructions for recipe_id: {current_recipe_id}')
-      for instruciton_data in instruction_steps:
+      for instruciton_data in clean_instruction_steps:
         instruction = Recipe_Instruction(**instruciton_data)
         db.session.add(instruction)
       db.session.commit()
+        # instruciton_data['text_contents']
+        #print(i[0:10])
 
+      #get ingerdients
+      ingredient_div = soup.select_one('div[class^="List-"]')
+      
+      # Check if the parent div was found
+      if ingredient_div is None:
+          raise Exception("Could not find the preparation steps container.")
+
+      # 6. Extract all the steps within the <ol> tag
+      ingredient_steps = ingredient_div.find_all()
+      print(steps)
 
 
 
