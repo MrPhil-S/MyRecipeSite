@@ -1,6 +1,7 @@
 
 import os
 import re
+from urllib.parse import urlparse
 
 from PIL import Image
 from sqlalchemy import text
@@ -174,3 +175,17 @@ def get_total_time(entries):
             min_str = f'{minutes} min' if minutes == 1 else f'{minutes} mins'
             total_time = f'{hour_str} {min_str}' if hours > 0 and minutes > 0 else hour_str if hours > 0 else min_str
     return total_time
+
+def get_short_url(url):
+    # Parse the URL to extract the netloc (domain)
+    domain = urlparse(url).netloc
+
+    # Remove subdomains like 'www.' or 'my.'
+    domain_parts = domain.split('.')
+    if len(domain_parts) > 2:
+        domain = domain_parts[-2]  # Take the second last part of the domain (main domain)
+    else:
+        domain = domain_parts[0]
+
+    # Return the domain in title case
+    return domain.title()
