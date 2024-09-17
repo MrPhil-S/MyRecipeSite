@@ -18,9 +18,9 @@ from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               recipe_view_date)
 
 #import secrets
-from .helpers import (get_sort_reverse, get_total_time, parse_search_query,
-                      process_ingredients, save_file, save_image,
-                      search_recipe, search_recipe_ingredient)
+from .helpers import (get_short_url, get_sort_reverse, get_total_time,
+                      parse_search_query, process_ingredients, save_file,
+                      save_image, search_recipe, search_recipe_ingredient)
 
 
 @app.route('/setup')
@@ -325,6 +325,7 @@ def add_recipe():
         # Get populted form data
         name = request.form['name']
         source_url = request.form['url']
+        source_url_short = get_short_url(source_url)
         is_ingredient_group = request.form.getlist('is_ingredient_group[]')
 
         is_ingredient_group = [bool(value) for value in is_ingredient_group]
@@ -351,7 +352,7 @@ def add_recipe():
         total_time = get_total_time([prep_time, cook_time, additional_time])
 
         # Add new recipe to DB
-        recipe = Recipe(name=name, source_url=source_url, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, total_time=total_time, servings=servings, cuisine_id=cuisine_id)
+        recipe = Recipe(name=name, source_url=source_url, source_url_short=source_url_short, note_from_user=note_from_user, image_file=image_file, prep_time=prep_time, cook_time=cook_time, additional_time=additional_time, total_time=total_time, servings=servings, cuisine_id=cuisine_id)
         db.session.add(recipe)
         db.session.flush()
         db.session.refresh(recipe)
@@ -516,6 +517,7 @@ def edit_recipe(recipe_id):
 
         recipe.name = request.form['name']
         recipe.source_url = request.form['url']
+        recipe.source_url_short = get_short_url(request.form['url'])
         recipe.note_from_user = request.form['note_from_user']
         recipe.prep_time = request.form['prep_time']
         recipe.cook_time = request.form['cook_time']
