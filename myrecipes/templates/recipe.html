@@ -111,44 +111,48 @@
     
     </div>
   </div>
-  <div class="mb-4">
-    <h2>Ingredients</h2>
-    <ul class="list-group">
-      {% for ingredient in ingredients %}
-      <li class="list-unstyled py-2">
-        <div class="row">
-          {% if not ingredient.is_group_header %}
-            <div class="col-2 col-md-1">
-              <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
-            </div>
-            
-            <div class="col-10 col-md-11">
-              {{ ingredient.name_written }}
-              <br>
-              <small class="text-muted">{{ ingredient.note or '' }}</small>
-            </div>
-          {% else %}  
-            <div class="col-10 col-md-11 h4">
-              {{ ingredient.name_written }}
-              <br>
-              <small class="text-muted">{{ ingredient.note or '' }}</small>
-            </div>
+  <div class="row mb-4">
+
+    <div class="mb-4 col-12 col-md-4 pr-3">
+      <h2>Ingredients</h2>
+      <ul class="list-group">
+        {% for ingredient in ingredients %}
+        <li class="list-unstyled py-2">
+          <div class="row">
+            {% if not ingredient.is_group_header %}
+              <div class="col-2 col-md-2">
+                <img src="{{ url_for('static', filename='ingredient_images/' + ingredient.name_official + '.jpg') }}">
+              </div>
+              
+              <div class="col-10 col-md-10">
+                {{ ingredient.name_written }}
+                <br>
+                <small class="text-muted">{{ ingredient.note or '' }}</small>
+              </div>
+            {% else %}  
+              <div class="col-10 col-md-11 h4">
+                {{ ingredient.name_written }}
+                <br>
+                <small class="text-muted">{{ ingredient.note or '' }}</small>
+              </div>
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="mb-4 col-12 col-md-8 pr-3">
+      <h2 >Instructions</h2>
+        {% for instruction in instructions %}
+          {% if instruction.is_group_header %}
+            <div class="h4">{{ instruction.text_contents }}</div>
+          {% else %}
+            <div class="pl-4 pb-3">{{ instruction.text_contents }}</div>
           {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
+        {% endfor %}
+    </div>
   </div>
-<div class="mb-4">
-  <h2 >Instructions</h2>
-    {% for instruction in instructions %}
-      {% if instruction.is_group_header %}
-        <div class="h4">{{ instruction.text_contents }}</div>
-      {% else %}
-        <div class="pl-4 pb-3">{{ instruction.text_contents }}</div>
-      {% endif %}
-    {% endfor %}
-</div>
+
   {% if source_notes %}
     <h2>Source Notes</h2>
     <ul>
