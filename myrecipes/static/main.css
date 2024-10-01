@@ -325,3 +325,14 @@ background-color: #ccc;
   min-height: 50px;
   overflow: hidden;
 }
+
+/* Initially hide the individual ingredients section */
+#individualIngredients {
+	display: none;
+}
+
+/* The bulk add section will be visible by default */
+#bulkAdd {
+	display: block;
+}
+

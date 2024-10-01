@@ -75,14 +75,50 @@ var scrollingWrapper = document.getElementById('scrollingWrapper');
 var scrollLeftIcon = document.getElementById('scrollLeftIcon');
 var scrollRightIcon = document.getElementById('scrollRightIcon');
 
-// Add event listener for the left arrow icon
-scrollLeftIcon.addEventListener('click', function() {
-	// Scroll the container to the left by a certain amount (adjust as needed)
-	scrollingWrapper.scrollLeft -= 300;
-});
+	if (scrollingWrapper && scrollLeftIcon && scrollRightIcon) {
 
-// Add event listener for the right arrow icon
-scrollRightIcon.addEventListener('click', function() {
-	// Scroll the container to the right by a certain amount (adjust as needed)
-	scrollingWrapper.scrollLeft += 300;
-});
+	// Add event listener for the left arrow icon
+	scrollLeftIcon.addEventListener('click', function() {
+		// Scroll the container to the left by a certain amount (adjust as needed)
+		scrollingWrapper.scrollLeft -= 300;
+	});
+
+	// Add event listener for the right arrow icon
+	scrollRightIcon.addEventListener('click', function() {
+		// Scroll the container to the right by a certain amount (adjust as needed)
+		scrollingWrapper.scrollLeft += 300;
+	});
+}
+
+
+
+
+//Start add/edit recipe radio buttons toggle
+// Get radio buttons and sections
+const individualRadio = document.getElementById('individualMethod');
+const bulkRadio = document.getElementById('bulkMethod');
+const individualSection = document.getElementById('individualIngredients');
+const bulkSection = document.getElementById('bulkAdd');
+
+if (individualRadio && individualSection && bulkSection) {
+
+// Function to toggle visibility based on the selected option
+	function toggleSections() {
+			if (individualRadio.checked) {
+					individualSection.style.display = 'block';
+					bulkSection.style.display = 'none';
+			} else {
+					individualSection.style.display = 'none';
+					bulkSection.style.display = 'block';
+			}
+	}
+
+	// Initial state check
+		toggleSections();
+
+		// Add event listeners for radio buttons
+		individualRadio.addEventListener('change', toggleSections);
+		bulkRadio.addEventListener('change', toggleSections);
+
+		//End add/edit recipe radio buttons toggle
+}

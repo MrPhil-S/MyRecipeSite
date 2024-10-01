@@ -290,35 +290,63 @@
       </div>
     </div> <!--end row -->
 
-    <div class="row">
-      <div class="col-md-8">  
-        <div class="form-row">
-          <div class="col-2 text-center  ">
-            <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i>
-            </label>
-          </div>
-          <div class="col-5">
-            <label>Ingredient</label>
-          </div>
-          <div class="col-5">
-              <label>Ingredient Note</label>
-          </div>
-        </div>
 
-        <div class="form-group">
+    <div class="text-center">
+
+
+
+
+
+
       
-          {% if form.ingredient.errors %}
-            {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.ingredient.errors %}
-                <span>{{ error }}</span>
-              {% endfor %}
-            </div>
-          {% endif %}
-        
-          <div id="additional_ingredients" class="form-group"></div>
-        </div>
+      <div>How do you want to add ingredients?</div>
+      <label>
+        <input type="radio" name="is_bulk_ingredients" value="False" id="individualMethod" onchange="toggleInputMethod()">
+        Individually
+    </label>
+    <label>
+        <input type="radio" name="is_bulk_ingredients" value="True" id="bulkMethod" checked onchange="toggleInputMethod()">
+        Bulk
+    </label>
+    
+    </div>
+
+  <div class="px-3 pb-3">
+      <!-- Individual Ingredients Section -->
+      <div id="individualIngredients">  
+          <div class="form-row">
+              <div class="col-2 text-center">
+                  <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i></label>
+              </div>
+              <div class="col-5">
+                  <label>Ingredient</label>
+              </div>
+              <div class="col-5">
+                  <label>Ingredient Note</label>
+              </div>
+          </div>
+
+          <div class="form-group">
+              {% if form.ingredient.errors %}
+                  {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                      {% for error in form.ingredient.errors %}
+                          <span>{{ error }}</span>
+                      {% endfor %}
+                  </div>
+              {% endif %}
+              <div id="additional_ingredients" class="form-group"></div>
+          </div>
       </div>
+
+      <!-- Bulk Add Section -->
+      <div id="bulkAdd"> 
+          {{ form.ingredient_bulk.label(class="form-control-label") }}  
+          <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
+          {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
+      </div>
+  
+      
     </div>
 
     <div class="form-group">
