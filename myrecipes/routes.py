@@ -399,7 +399,7 @@ def add_recipe():
                         bulk_ingredient_notes.append(ingredient_parsed[1])
                     except:
                         bulk_ingredient_notes.append(None)    
-            process_ingredients(recipe_id, 1, ingredient_groups, bulk_ingredients, bulk_ingredient_notes)
+            process_ingredients(recipe_id, 1, None, bulk_ingredients, bulk_ingredient_notes)
 
         instructions_list = instructions.splitlines()   
         sequence = 0
@@ -493,9 +493,22 @@ def edit_recipe(recipe_id):
         pdf_file = os.path.basename(pdf_file_path)
 
     # Extract the text_contents values and join them with newlines
+    ingredient_list = []
+    for ingredient_line in ingredients:
+        ingredient_name_note = f"{ingredient_line.name_written}{', ' + ingredient_line.note if ingredient_line.note else ''}"
+        if ingredient_line.is_group_header == True:
+            ingredient_line = f">{ingredient_name_note}"
+        else: 
+            ingredient_line = f"{ingredient_name_note}"
+        ingredient_list.append(ingredient_line)
+
+    ingredient_string = "\n".join(ingredient_list)
+    form.ingredient_bulk.data = ingredient_string
+
+
     instructions_list = []
     for instruction_line in instructions:
-        if instruction_line[1] == True:
+        if instruction_line.is_group_header == True:
             instruction_line = ">" + instruction_line[0]
         else: 
             instruction_line = instruction_line[0]
@@ -535,12 +548,41 @@ def edit_recipe(recipe_id):
             #Get the newly inserted recipe to be used to UPDATE with the pdf_file
             #recipe = Recipe.query.get_or_404(recipe_id)
             #recipe.pdf_file = pdf_file
+        is_bulk_ingredients = request.form['is_bulk_ingredients']
+        is_bulk_ingredients = is_bulk_ingredients == 'True'  # Convert to boolean
 
-        #Get new form values for child tables
-        ingredient_groups = request.form.getlist('is_ingredient_group[]')
-        ingredients = request.form.getlist('ingredient[]')
-        ingredient_notes = request.form.getlist('ingredient_note[]')    
+        # Delete existing ingredients first
+        Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
+        if is_bulk_ingredients:
+            ingredient_bulk = request.form['ingredient_bulk']
+            ingredient_groups = None
+            is_bulk_ingredients = 1
+            ingredients = []
+            ingredient_notes = []
+            ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
+            sequence = 0
+            for ingredient_bulk_item in ingredient_bulk_list:
+                if len(ingredient_bulk_item.strip()) > 0:
+                    ingredient_parsed = ingredient_bulk_item.split(',', maxsplit=1)      
+                    ingredients.append(ingredient_parsed[0])
+                    try: 
+                        ingredient_notes.append(ingredient_parsed[1])
+                    except:
+                        ingredient_notes.append(None)    
+        else:
+            #Get new form values for child tables
+            is_bulk_ingredients = 0
+            ingredient_groups = request.form.getlist('is_ingredient_group[]')
+            ingredients = request.form.getlist('ingredient[]')
+            ingredient_notes = request.form.getlist('ingredient_note[]')   
+        process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes)
+
+ 
         
+
+
+
+
         instructions = request.form['instructions']
         source_notes = request.form['source_notes']
         selected_collections = request.form.getlist('collection_list')
@@ -558,11 +600,9 @@ def edit_recipe(recipe_id):
             db.session.execute(insert_recipe_collection)
         db.session.commit()
 
-        # Delete existing ingredients first
-        Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
 
         # Add related ingredients to DB
-        process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
+        #process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
 
         # Delete existing instructions first
         Recipe_Instruction.query.filter_by(recipe_id=recipe_id).delete()
