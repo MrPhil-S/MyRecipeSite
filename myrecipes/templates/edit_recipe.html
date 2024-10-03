@@ -128,10 +128,6 @@
   }
 </script>
 
-
-
-
-
 <div class="content-section">
 
   <div class="pt-3 mb-4">
@@ -140,253 +136,237 @@
     </small>
   </div>
 
-<form method="POST" enctype="multipart/form-data" action="">
-  {{form.hidden_tag()}}
-  <fieldset class="form-group">
-    <legend class="border-bottom mb-4">Edit Recipe - {{ recipe.name }}</legend>
+  <form method="POST" enctype="multipart/form-data" action="">
+    {{form.hidden_tag()}}
+    <fieldset class="form-group">
+      <legend class="border-bottom mb-4">Edit Recipe - {{ recipe.name }}</legend>
 
 
-    <div class="row mb-4">
-      <div class="col d-flex flex-column">
+      <div class="row mb-4">
+        <div class="col d-flex flex-column">
 
-        <div class="form-group">
-          {{ form.name.label(class="form-control-label") }}
-          {% if form.name.errors %}
-            {{ form.name(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-              {% for error in form.name.errors %}
-                <span>{{ error }}</span>
-              {% endfor %}
-            </div>
-          {% else %}
-            {{ form.name(class="form-control form-control-lg") }}
-          {% endif %}
-        </div>
-
-        <div class="form-group">
-          {{ form.url.label(class="form-control-label") }}
-
-          {% if form.url.errors %}
-            {{ form.url(class="form-control form-control-lg is-invalid") }}
+          <div class="form-group">
+            {{ form.name.label(class="form-control-label") }}
+            {% if form.name.errors %}
+              {{ form.name(class="form-control form-control-lg is-invalid") }}
               <div class="invalid-feedback">
-                {% for error in form.url.errors %}
+                {% for error in form.name.errors %}
                   <span>{{ error }}</span>
                 {% endfor %}
               </div>
-          {% else %}
-            {{ form.url(class="form-control form-control-lg") }}
-          {% endif %}
-        </div>
-
-
-        <div class="form-group">
-          {{ form.note_from_user.label(class="form-control-label") }}  
-          {% if form.note_from_user.errors %}
-            {{ form.note_from_user(class="form-control form-control-lg is-invalid") }}
-            <div class="invalid-feedback">
-                {% for error in form.note_from_user.errors %}
-                  <span>{{ error }}</span>
-                {% endfor %}
-            </div>
-          {% else %}
-            {{ form.note_from_user(class="form-control form-control-lg") }}
-          {% endif %}
-        </div>
-
-        <div class="form-row">
-          <div class="form-group col-md-3">
-            <i class="fa-regular fa-clock mr-1"></i>{{ form.prep_time.label(class="form-control-label") }}  
-            {% if form.prep_time.errors %}
-              {{ form.prep_time(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                  {% for error in form.prep_time.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-              </div>
             {% else %}
-              {{ form.prep_time(class="form-control form-control-lg") }}
+              {{ form.name(class="form-control form-control-lg") }}
             {% endif %}
-          </div>
-          <div class="form-group col-md-3">
-            <i class="fa-regular fa-clock mr-1"></i>{{ form.cook_time.label(class="form-control-label") }}  
-            {% if form.cook_time.errors %}
-              {{ form.cook_time(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                  {% for error in form.cook_time.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-              </div>
-            {% else %}
-              {{ form.cook_time(class="form-control form-control-lg") }}
-            {% endif %}
-          </div>
-          <div class="form-group col-md-3">
-            <i class="fa-regular fa-clock mr-1"></i>{{ form.additional_time.label(class="form-control-label") }}  
-            {% if form.additional_time.errors %}
-              {{ form.additional_time(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                  {% for error in form.additional_time.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-              </div>
-            {% else %}
-              {{ form.additional_time(class="form-control form-control-lg") }}
-            {% endif %}
-          </div>
-
-          <div class="form-group col-md-3">
-            <i class="fa-solid fa-people-group ml-2 mr-1"></i>{{ form.servings.label(class="form-control-label") }}  
-            {% if form.servings.errors %}
-              {{ form.servings(class="form-control form-control-lg is-invalid") }}
-              <div class="invalid-feedback">
-                  {% for error in form.servings.errors %}
-                    <span>{{ error }}</span>
-                  {% endfor %}
-              </div>
-            {% else %}
-              {{ form.servings(class="form-control form-control-lg") }}
-            {% endif %}
-          </div>
-        </div>
-        
-        <div class="form-row">
-
-          <div class="form-group dropdown-menu-custom col-sm">
-            {{ form.collection_list.label(class="form-control-label") }}
-            <div>
-            {{ form.collection_list(id="collection_list", class="form-control", multiple="multiple") }}
-            </div>
-          </div>
-
-          <div class="form-group col-sm">
-            {{ form.cuisinelist.label(class="form-control-label") }}  
-            {{ form.cuisinelist(class="form-control form-control-lg") }}
-          </div>
-        </div>
-
-      </div> <!--endcol -->
-
-      <div class="mr-3">
-        <div class="drop-zone">
-          <span class="drop-zone__prompt">Drop file here or click to upload</span>
-          {{ form.image(class="form-control-file drop-zone__input") }} 
-        </div>
-
-        <div class="form-group mt-3">
-          {{ form.pdf.label(class="form-control-label") }}
-          {% if pdf_file %}
-            <div>
-              <span class="text-muted">{{ pdf_file }}</span>
-            </div>
-          {% endif %}
-     
-          {{ form.pdf(class="form-control-file") }}
-          {% if form.pdf.errors %}
-            {% for error in form.pdf.errors %}
-              <span class="text-danger">{{ error }}</span></br>
-            {% endfor %}
-          {% endif %}
-        </div>
-      </div>
-    </div> <!--end row -->
-
-
-    <div class="text-center">
-
-
-
-
-
-
-      
-      <div>How do you want to add ingredients?</div>
-      <label>
-        <input type="radio" name="is_bulk_ingredients" value="False" id="individualMethod" onchange="toggleInputMethod()">
-        Individually
-    </label>
-    <label>
-        <input type="radio" name="is_bulk_ingredients" value="True" id="bulkMethod" checked onchange="toggleInputMethod()">
-        Bulk
-    </label>
-    
-    </div>
-
-  <div class="px-3 pb-3">
-      <!-- Individual Ingredients Section -->
-      <div id="individualIngredients">  
-          <div class="form-row">
-              <div class="col-2 text-center">
-                  <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i></label>
-              </div>
-              <div class="col-5">
-                  <label>Ingredient</label>
-              </div>
-              <div class="col-5">
-                  <label>Ingredient Note</label>
-              </div>
           </div>
 
           <div class="form-group">
-              {% if form.ingredient.errors %}
-                  {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
-                  <div class="invalid-feedback">
-                      {% for error in form.ingredient.errors %}
-                          <span>{{ error }}</span>
-                      {% endfor %}
-                  </div>
-              {% endif %}
-              <div id="additional_ingredients" class="form-group"></div>
+            {{ form.url.label(class="form-control-label") }}
+
+            {% if form.url.errors %}
+              {{ form.url(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                  {% for error in form.url.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+                </div>
+            {% else %}
+              {{ form.url(class="form-control form-control-lg") }}
+            {% endif %}
           </div>
-      </div>
 
-      <!-- Bulk Add Section -->
-      <div id="bulkAdd"> 
-          {{ form.ingredient_bulk.label(class="form-control-label") }}  
-          <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
-          {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
-      </div>
-  
+          <div class="form-group">
+            {{ form.note_from_user.label(class="form-control-label") }}  
+            {% if form.note_from_user.errors %}
+              {{ form.note_from_user(class="form-control form-control-lg is-invalid") }}
+              <div class="invalid-feedback">
+                  {% for error in form.note_from_user.errors %}
+                    <span>{{ error }}</span>
+                  {% endfor %}
+              </div>
+            {% else %}
+              {{ form.note_from_user(class="form-control form-control-lg") }}
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-3">
+              <i class="fa-regular fa-clock mr-1"></i>{{ form.prep_time.label(class="form-control-label") }}  
+              {% if form.prep_time.errors %}
+                {{ form.prep_time(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.prep_time.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+              {% else %}
+                {{ form.prep_time(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+              <i class="fa-regular fa-clock mr-1"></i>{{ form.cook_time.label(class="form-control-label") }}  
+              {% if form.cook_time.errors %}
+                {{ form.cook_time(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.cook_time.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+              {% else %}
+                {{ form.cook_time(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+            <div class="form-group col-md-3">
+              <i class="fa-regular fa-clock mr-1"></i>{{ form.additional_time.label(class="form-control-label") }}  
+              {% if form.additional_time.errors %}
+                {{ form.additional_time(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.additional_time.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+              {% else %}
+                {{ form.additional_time(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+
+            <div class="form-group col-md-3">
+              <i class="fa-solid fa-people-group ml-2 mr-1"></i>{{ form.servings.label(class="form-control-label") }}  
+              {% if form.servings.errors %}
+                {{ form.servings(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.servings.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+              {% else %}
+                {{ form.servings(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="form-row">
+
+            <div class="form-group dropdown-menu-custom col-sm">
+              {{ form.collection_list.label(class="form-control-label") }}
+              <div>
+              {{ form.collection_list(id="collection_list", class="form-control", multiple="multiple") }}
+              </div>
+            </div>
+
+            <div class="form-group col-sm">
+              {{ form.cuisinelist.label(class="form-control-label") }}  
+              {{ form.cuisinelist(class="form-control form-control-lg") }}
+            </div>
+          </div>
+
+        </div> <!--endcol -->
+
+        <div class="mr-3">
+          <div class="drop-zone">
+            <span class="drop-zone__prompt">Drop file here or click to upload</span>
+            {{ form.image(class="form-control-file drop-zone__input") }} 
+          </div>
+
+          <div class="form-group mt-3">
+            {{ form.pdf.label(class="form-control-label") }}
+            {% if pdf_file %}
+              <div>
+                <span class="text-muted">{{ pdf_file }}</span>
+              </div>
+            {% endif %}
       
-    </div>
-
-    <div class="form-group">
-      {{ form.instructions.label(class="form-control-label") }}<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>     
-      {% if form.instructions.errors %}
-        {{ form.instructions(class="form-control form-control-lg is-invalid") }}
-        <div class="invalid-feedback">
-            {% for error in form.instructions.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
+            {{ form.pdf(class="form-control-file") }}
+            {% if form.pdf.errors %}
+              {% for error in form.pdf.errors %}
+                <span class="text-danger">{{ error }}</span></br>
+              {% endfor %}
+            {% endif %}
+          </div>
         </div>
-      {% else %}
-        {{ form.instructions(class="form-control form-control-lg auto-resize") }}
-      {% endif %}
-    </div>
+      </div> <!--end row -->
 
-    <div class="form-group">
-      {{ form.source_notes.label(class="form-control-label") }}  
-      {% if form.source_notes.errors %}
-        {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
-        <div class="invalid-feedback">
-            {% for error in form.source_notes.errors %}
-              <span>{{ error }}</span>
-            {% endfor %}
+      <div class="text-center">
+        <div>How do you want to edit ingredients?</div>
+        <label>
+          <input type="radio" name="is_bulk_ingredients" value="False" id="individualMethod">
+          Individually
+        </label>
+        <label>
+            <input type="radio" name="is_bulk_ingredients" value="True" id="bulkMethod" checked>
+            Bulk
+        </label>
+      </div>
+
+    <div class="pb-3">
+        <!-- Individual Ingredients Section -->
+        <div id="individualIngredients">  
+            <div class="form-row">
+                <div class="col-2 text-center">
+                    <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i></label>
+                </div>
+                <div class="col-5">
+                    <label>Ingredient</label>
+                </div>
+                <div class="col-5">
+                    <label>Ingredient Note</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                {% if form.ingredient.errors %}
+                    {{ form.ingredient(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.ingredient.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div id="additional_ingredients" class="form-group"></div>
+            </div>
         </div>
-      {% else %}
-        {{ form.source_notes(class="form-control form-control-lg  auto-resize") }}
-      {% endif %}
-    </div>
-  
 
+        <!-- Bulk Add Section -->
+        <div id="bulkAdd"> 
+            {{ form.ingredient_bulk.label(class="form-control-label") }}  
+            <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
+            {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
+        </div>
+      </div>
 
-  </fieldset>
-  {{form.submit(class="btn btn-outline-info")}}
-  <a href="/recipes/{{ recipe.recipe_id }}" class="btn btn-outline-secondary ml-3">Cancel</a>
+      <div class="form-group">
+        {{ form.instructions.label(class="form-control-label") }}<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>     
+        {% if form.instructions.errors %}
+          {{ form.instructions(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.instructions.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.instructions(class="form-control form-control-lg auto-resize") }}
+        {% endif %}
+      </div>
 
-  <button type="button" class="btn btn-outline-danger float-right" data-toggle="modal" data-target="#DeleteModalLabel">Delete...</button>
-  
-</form>
+      <div class="form-group">
+        {{ form.source_notes.label(class="form-control-label") }}  
+        {% if form.source_notes.errors %}
+          {{ form.source_notes(class="form-control form-control-lg is-invalid") }}
+          <div class="invalid-feedback">
+              {% for error in form.source_notes.errors %}
+                <span>{{ error }}</span>
+              {% endfor %}
+          </div>
+        {% else %}
+          {{ form.source_notes(class="form-control form-control-lg  auto-resize") }}
+        {% endif %}
+      </div>
+    
+    </fieldset>
+    {{form.submit(class="btn btn-outline-info")}}
+    <a href="/recipes/{{ recipe.recipe_id }}" class="btn btn-outline-secondary ml-3">Cancel</a>
 
+    <button type="button" class="btn btn-outline-danger float-right" data-toggle="modal" data-target="#DeleteModalLabel">Delete...</button>
+  </form>
 </div>
 
 <!-- Modal -->

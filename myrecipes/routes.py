@@ -381,26 +381,38 @@ def add_recipe():
             db.session.execute(insert_recipe_collection)
         db.session.commit()
 
-        # Add related ingredients to DB
-        if ingredients:
-            process_ingredients(recipe_id, 0, ingredient_groups, ingredients, ingredient_notes)
+######
+        is_bulk_ingredients = request.form['is_bulk_ingredients']
+        is_bulk_ingredients = is_bulk_ingredients == 'True'  # Convert to boolean
 
-        # for bulk ingredients 
-        if ingredient_bulk:
-            bulk_ingredients = []
-            bulk_ingredient_notes = []
+        # Delete existing ingredients first
+        Recipe_Ingredient.query.filter_by(recipe_id=recipe_id).delete()
+        if is_bulk_ingredients:
+            ingredient_bulk = request.form['ingredient_bulk']
+            ingredient_groups = None
+            is_bulk_ingredients = 1
+            ingredients = []
+            ingredient_notes = []
             ingredient_bulk_list = ingredient_bulk.splitlines() #TODO: Add split on , for ingredient notes   
             sequence = 0
             for ingredient_bulk_item in ingredient_bulk_list:
                 if len(ingredient_bulk_item.strip()) > 0:
                     ingredient_parsed = ingredient_bulk_item.split(',', maxsplit=1)      
-                    bulk_ingredients.append(ingredient_parsed[0])
+                    ingredients.append(ingredient_parsed[0])
                     try: 
-                        bulk_ingredient_notes.append(ingredient_parsed[1])
+                        ingredient_notes.append(ingredient_parsed[1])
                     except:
-                        bulk_ingredient_notes.append(None)    
-            process_ingredients(recipe_id, 1, None, bulk_ingredients, bulk_ingredient_notes)
+                        ingredient_notes.append(None)    
+        else:
+            #Get new form values for child tables
+            is_bulk_ingredients = 0
+            ingredient_groups = request.form.getlist('is_ingredient_group[]')
+            ingredients = request.form.getlist('ingredient[]')
+            ingredient_notes = request.form.getlist('ingredient_note[]')   
+        process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes)
 
+ 
+######
         instructions_list = instructions.splitlines()   
         sequence = 0
         for instruction in instructions_list:
@@ -576,12 +588,6 @@ def edit_recipe(recipe_id):
             ingredients = request.form.getlist('ingredient[]')
             ingredient_notes = request.form.getlist('ingredient_note[]')   
         process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes)
-
- 
-        
-
-
-
 
         instructions = request.form['instructions']
         source_notes = request.form['source_notes']
