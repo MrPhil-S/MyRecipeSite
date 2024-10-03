@@ -15,6 +15,12 @@ class add_recipe_form(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=200)])
     url = StringField('URL', validators=[Length(max=500)])
     user_note = TextAreaField('Notes')    
+    is_bulk_ingredients = RadioField(
+        'How do you want to add ingredients?',
+        choices=[('False', 'Individually'), ('True', 'Bulk')],
+     #   default='bulk',
+        render_kw={'class': 'inputMethod'}  # Adding a general class if needed
+    )
     is_ingredient_group = BooleanField('Group?', false_values=(False, 'false', 0, '0'))
     ingredient = StringField('Ingredient')#, validators=[Length(min=1, max=100)])
     ingredient_note = StringField('Note')#, validators=[Length(min=1, max=100)]) 
