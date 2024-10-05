@@ -324,8 +324,8 @@ def add_recipe():
     if form.validate_on_submit():
         # Get populted form data
         name = request.form['name']
-        source_url = request.form['url']
-        source_url_short = get_short_url(source_url)
+        source_url = request.form['url'] or None
+        source_url_short = get_short_url(source_url) if source_url else None
         is_ingredient_group = request.form.getlist('is_ingredient_group[]')
 
         is_ingredient_group = [bool(value) for value in is_ingredient_group]
@@ -335,15 +335,12 @@ def add_recipe():
         ingredient_notes = request.form.getlist('ingredient_note[]')    
         ingredient_bulk = request.form['ingredient_bulk']
         instructions = request.form['instructions']
-        note_from_user = request.form['note_from_user']
+        note_from_user = request.form['note_from_user'] or None
         source_notes = request.form['source_notes']
-        prep_time = request.form['prep_time']
-        cook_time = request.form['cook_time']
-        additional_time = request.form['additional_time']
-        if request.form['servings'] != '':
-            servings = request.form['servings']
-        else:
-            servings = None
+        prep_time = request.form['prep_time'] or None
+        cook_time = request.form['cook_time'] or None
+        additional_time = request.form['additional_time'] or None
+        servings = request.form['servings']  or None
         selected_collections = request.form.getlist('collection_list')
 
         selected_cuisine_id = form.cuisinelist.data
@@ -381,7 +378,6 @@ def add_recipe():
             db.session.execute(insert_recipe_collection)
         db.session.commit()
 
-######
         is_bulk_ingredients = request.form['is_bulk_ingredients']
         is_bulk_ingredients = is_bulk_ingredients == 'True'  # Convert to boolean
 
@@ -411,8 +407,6 @@ def add_recipe():
             ingredient_notes = request.form.getlist('ingredient_note[]')   
         process_ingredients(recipe_id, is_bulk_ingredients, ingredient_groups, ingredients, ingredient_notes)
 
- 
-######
         instructions_list = instructions.splitlines()   
         sequence = 0
         for instruction in instructions_list:
@@ -427,7 +421,7 @@ def add_recipe():
                 db.session.add(instruction)
         db.session.commit()
 
-        source_notes_list = source_notes.splitlines()   
+        source_notes_list = source_notes.splitlines() 
         sequence = 0
         for source_note in source_notes_list:
             if len(source_note) > 0:  
@@ -436,26 +430,19 @@ def add_recipe():
                 db.session.add(source_note)
         db.session.commit()
 
-        #return redirect(url_for('recipes'))
         flash(f'{recipe.name} added!', 'success')
-        #return render_template('recipe.html', recipe=recipe, ingredients=ingredients)
         return redirect(url_for('recipe', recipe_id=recipe_id))  #return redirect Per Corey
     return render_template('add_recipe.html', title='Add Recipe', form=form)
 
 @app.route('/add_recipe_api', methods=['POST'])
 def add_recipe_api():
     data =  request.get_json()
-    
     name = data.get("name")
-
     recipe = Recipe(name=name)
 
     db.session.add(recipe)
-    #db.session.flush()
-   # db.session.refresh(recipe)
     db.session.commit()
     return jsonify(data), 201
-
 
 @app.route('/recipes/<int:recipe_id>/edit', methods=['GET', 'POST'])
 def edit_recipe(recipe_id):
@@ -488,6 +475,8 @@ def edit_recipe(recipe_id):
     #populate the retrieved (above) recipe into form
     form.name.data = recipe.name
     form.url.data = recipe.source_url
+    form.whisk_url.data = recipe.whisk_url
+
     form.prep_time.data = recipe.prep_time
     form.cook_time.data = recipe.cook_time
     form.additional_time.data = recipe.additional_time
@@ -541,18 +530,16 @@ def edit_recipe(recipe_id):
             recipe.image_file = image_file
 
         recipe.name = request.form['name']
-        recipe.source_url = request.form['url']
-        recipe.source_url_short = get_short_url(request.form['url'])
-        recipe.note_from_user = request.form['note_from_user']
-        recipe.prep_time = request.form['prep_time']
-        recipe.cook_time = request.form['cook_time']
-        recipe.additional_time = request.form['additional_time']        
+        recipe.source_url = request.form['url'] or None
+        recipe.whisk_url = request.form['whisk_url'] or None
+        recipe.source_url_short = get_short_url(request.form['url']) or None
+        recipe.note_from_user = request.form['note_from_user'] or None
+        recipe.prep_time = request.form['prep_time'] or None
+        recipe.cook_time = request.form['cook_time'] or None
+        recipe.additional_time = request.form['additional_time'] or None      
         recipe.total_time = get_total_time([recipe.prep_time, recipe.cook_time, recipe.additional_time])
-        if request.form['servings'] != '':
-            recipe.servings = request.form['servings']
-        else:
-            recipe.servings = None
-        recipe.cuisine_id = form.cuisinelist.data
+        recipe.servings = request.form['servings'] or None
+        recipe.cuisine_id = form.cuisinelist.data or None
         db.session.commit() 
 
         if form.pdf.data:

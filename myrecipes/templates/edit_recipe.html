@@ -161,7 +161,6 @@
 
           <div class="form-group">
             {{ form.url.label(class="form-control-label") }}
-
             {% if form.url.errors %}
               {{ form.url(class="form-control form-control-lg is-invalid") }}
                 <div class="invalid-feedback">
@@ -173,6 +172,23 @@
               {{ form.url(class="form-control form-control-lg") }}
             {% endif %}
           </div>
+
+          {% if form.whisk_url %}
+            <div class="form-group">
+              {{ form.whisk_url.label(class="form-control-label") }}
+              {% if form.whisk_url.errors %}
+                {{ form.whisk_url(class="form-control form-control-lg is-invalid") }}
+                  <div class="invalid-feedback">
+                    {% for error in form.whisk_url.errors %}
+                      <span>{{ error }}</span>
+                    {% endfor %}
+                  </div>
+              {% else %}
+                {{ form.whisk_url(class="form-control form-control-lg") }}
+              {% endif %}
+            </div>
+          {% endif %} 
+
 
           <div class="form-group">
             {{ form.note_from_user.label(class="form-control-label") }}  
@@ -327,7 +343,7 @@
 
         <!-- Bulk Add Section -->
         <div id="bulkAdd"> 
-            {{ form.ingredient_bulk.label(class="form-control-label") }}  
+            {{ form.ingredient_bulk.label(class="form-control-label") }}    
             {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
         </div>
       </div>
