@@ -29,11 +29,11 @@
       ingredientRow.setAttribute("class", "form-row align-items-center");
 
       let ingredientCol1 = document.createElement("div");
-      ingredientCol1.setAttribute("class", "col-2 text-center d-flex align-items-center justify-content-center");
+      ingredientCol1.setAttribute("class", "col-1 text-center d-flex align-items-center justify-content-center");
       ingredientCol1.appendChild(createIsGroupCheckbox(initialLoad && additionalIngredients.children.length === 0, isGroup));
 
       let ingredientCol2 = document.createElement("div");
-      ingredientCol2.setAttribute("class", "col-5");
+      ingredientCol2.setAttribute("class", "col-6");
       ingredientCol2.appendChild(createIngredientField(initialLoad && additionalIngredients.children.length === 0, name));
 
       let ingredientCol3 = document.createElement("div");
@@ -301,10 +301,10 @@
         <!-- Individual Ingredients Section -->
         <div id="individualIngredients">  
             <div class="form-row">
-                <div class="col-2 text-center">
-                    <label>Group?<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Check to make this a group header"></i></label>
+                <div class="col-1 text-center">
+                    <label>Group</label>
                 </div>
-                <div class="col-5">
+                <div class="col-6">
                     <label>Ingredient</label>
                 </div>
                 <div class="col-5">
@@ -328,13 +328,12 @@
         <!-- Bulk Add Section -->
         <div id="bulkAdd"> 
             {{ form.ingredient_bulk.label(class="form-control-label") }}  
-            <i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>
             {{ form.ingredient_bulk(class="form-control form-control-lg auto-resize") }}
         </div>
       </div>
 
       <div class="form-group">
-        {{ form.instructions.label(class="form-control-label") }}<i class="fas fa-question-circle ml-2" data-toggle="tooltip" title="Start a line with > to make it a group"></i>     
+        {{ form.instructions.label(class="form-control-label") }}     
         {% if form.instructions.errors %}
           {{ form.instructions(class="form-control form-control-lg is-invalid") }}
           <div class="invalid-feedback">
