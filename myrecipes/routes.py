@@ -641,7 +641,7 @@ def edit_recipe(recipe_id):
 
         flash(f'{recipe.name} updated!', 'success')
         return redirect(url_for('recipe', recipe_id=recipe_id))
-    return render_template('edit_recipe.html', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collections_data=collections_data, selected_collection_ids=selected_collection_ids, pdf_file=pdf_file)
+    return render_template('edit_recipe.html', title='Edit Recipe', recipe=recipe, ingredients=ingredients, instructions=instructions, source_notes=source_notes, form=form, image_file=image_file, collections_data=collections_data, selected_collection_ids=selected_collection_ids, pdf_file=pdf_file)
 
 
 @app.route('/recipes/<int:recipe_id>/delete', methods=['POST'])
