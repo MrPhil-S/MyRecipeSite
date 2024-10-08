@@ -5,17 +5,19 @@
     <h1>Search Recipes</h1>
     <form method="post">
         <div class="form-group">
-            <input type="search" list="browsers" class="form-control" id="search_for" name="search_for" autocomplete="off"
-                placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
-                
-            {% if old_query_history %}
-            <!-- TODO: Change out the method of dropdown to have consistent UI with other fields (collection and Cuisine)-->    
-            <datalist id="browsers" >
-                {% for query in old_query_history %}
-                    <option value="{{ query.query_text }}">
-                {% endfor %}
-            </datalist>
-            {% endif %}
+            <div class="dropdown">
+
+                <input type="search" class="form-control typeahead-input" id="pageInput" name="search_for" autocomplete="off" aria-labelledby="dropdownMenuButton" aria_autocomplete="list"
+                    placeholder="Search by recipe name or ingredient. Keyword NOT can be used to exclude results." value="{{ query }}">
+
+                {% if old_query_history %}
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        {% for query in old_query_history %}
+                            <div class="dropdown-item" data-value="{{ query.query_text }}">{{ query.query_text }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
         </div>        
         <div class="d-flex">
             <div class="mr-auto" >

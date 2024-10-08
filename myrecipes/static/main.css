@@ -336,3 +336,7 @@ background-color: #ccc;
 	display: block;
 }
 
+.dropdown-menu {
+  max-height: 200px; /* Set max height for dropdown */
+  overflow-y: auto; /* Enable scrolling if necessary */
+}
