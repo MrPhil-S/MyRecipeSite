@@ -258,9 +258,9 @@ def recipe(recipe_id):
     view_count = recipe_view_date.query.filter_by(recipe_id=recipe_id).count()
     cook_count = recipe_cooked_date.query.filter_by(recipe_id=recipe.recipe_id).count()
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
-    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence).filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
-    source_notes = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
+    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence, Recipe_Ingredient.recipe_ingredient_id).filter_by(recipe_id=recipe_id).all()
+    instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence, Recipe_Instruction.recipe_instruction_id).filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence, Recipe_Instruction.recipe_instruction_id).filter_by(recipe_id=recipe_id, type=2).all()
     cuisine_name = Cuisine.query.filter_by(cuisine_id=recipe.cuisine_id).first()
     collections = recipe.collections
     
@@ -449,9 +449,9 @@ def edit_recipe(recipe_id):
     recipe = Recipe.query.get_or_404(recipe_id)
     form = edit_recipe_form(cuisinelist = recipe.cuisine_id)
 
-    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence).filter_by(recipe_id=recipe_id).all()
-    instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents, Recipe_Instruction.is_group_header).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=1).all()
-    source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence).filter_by(recipe_id=recipe_id, type=2).all()
+    ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence, Recipe_Ingredient.recipe_ingredient_id).filter_by(recipe_id=recipe_id).all()
+    instructions = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents, Recipe_Instruction.is_group_header).order_by(Recipe_Instruction.sequence, Recipe_Instruction.recipe_instruction_id).filter_by(recipe_id=recipe_id, type=1).all()
+    source_notes = Recipe_Instruction.query.with_entities(Recipe_Instruction.text_contents).order_by(Recipe_Instruction.sequence, Recipe_Instruction.recipe_instruction_id).filter_by(recipe_id=recipe_id, type=2).all()
     #collections = recipe_collection.query.order_by(recipe_collection.collecton_id).filter_by(recipe_id=recipe_id).all()
 
     #populate form with all collection choices
