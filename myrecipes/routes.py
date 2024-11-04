@@ -154,17 +154,30 @@ def home():
     rvd = db.aliased(recipe_view_date)
     rcd = db.aliased(recipe_cooked_date)
     rc = db.aliased(recipe_collection)
-    
+    ri = aliased(
+            db.session.query(
+            Recipe_Ingredient.recipe_id,
+            func.count().label('count')
+        )
+        .filter(func.coalesce(Recipe_Ingredient.is_group_header, 0) != 1)
+        .group_by(Recipe_Ingredient.recipe_id)
+        .subquery()
+    )
 
     # query
-    all_results = db.session.query(Recipe, rp,
+    all_results = db.session.query(
+        Recipe, 
+        rp,
+
         func.coalesce(func.max(rvd.recipe_view_dt), Recipe.create_dt).label('max_recipe_view_dt'),
         func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt).label('max_recipe_cooked_dt'),
+        func.coalesce(ri.c.count, 0).label('ingredient_count_new')  
     ).\
         outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
         outerjoin(rvd, Recipe.recipe_id == rvd.recipe_id).\
         outerjoin(rcd, Recipe.recipe_id == rcd.recipe_id).\
-        join(rc, Recipe.recipe_id == rc.c.recipe_id, isouter=True).\
+        outerjoin(rc, Recipe.recipe_id == rc.c.recipe_id, isouter=True).\
+        outerjoin(ri, Recipe.recipe_id == ri.c.recipe_id) .\
         filter(Recipe.recipe_id.in_(all_recipe_ids), rc.c.collection_id == collection_id_filter if collection_id_filter is not None else True).\
         group_by(Recipe.recipe_id).\
         order_by(Recipe.recipe_id.desc()).\
@@ -257,6 +270,8 @@ def recipe(recipe_id):
 
     view_count = recipe_view_date.query.filter_by(recipe_id=recipe_id).count()
     cook_count = recipe_cooked_date.query.filter_by(recipe_id=recipe.recipe_id).count()
+    ingredient_count = Recipe_Ingredient.query.filter_by(recipe_id=recipe.recipe_id).count()
+
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence, Recipe_Ingredient.recipe_ingredient_id).filter_by(recipe_id=recipe_id).all()
     instructions = Recipe_Instruction.query.order_by(Recipe_Instruction.sequence, Recipe_Instruction.recipe_instruction_id).filter_by(recipe_id=recipe_id, type=1).all()
