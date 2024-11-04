@@ -605,7 +605,7 @@ def edit_recipe(recipe_id):
         sequence = 0
         for instruction in instructions_list:
             if len(instruction.strip()) > 0:
-                sequence =+ 1
+                sequence += 1
                 if instruction.strip()[0] == '>':
                     is_group_header = 1
                     instruction = instruction.strip()[1:]
@@ -621,7 +621,7 @@ def edit_recipe(recipe_id):
         sequence = 0
         for source_note in source_notes_list:
             if len(source_note) > 0:  
-                sequence =+ 1
+                sequence += 1
                 source_note = Recipe_Instruction(text_contents=source_note.strip(), sequence=sequence, type=2, recipe_id=recipe.recipe_id)
                 db.session.add(source_note)
         db.session.commit()
