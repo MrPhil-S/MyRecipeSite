@@ -95,6 +95,10 @@
         {% for result in all_results|sort(attribute=session_sort_order, reverse = sort_reverse) %}
             {% set recipe = result[0] %}
             {% set recipe_plan_date = result[1] %}
+            {% set max_recipe_view_dt = result[2] %}
+            {% set max_recipe_cooked_dt = result[3] %}
+            {% set ingredient_count_new = result[4] %}
+
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class="card">
                 <a href="/recipes/{{ recipe.recipe_id }}">    
@@ -119,9 +123,7 @@
                                     </button>
                                     
                                 </form>
-
                             {% endif %}
-
                         </div>
                         <div class="card-img-title">
                             <p class="card-text mt-auto">
@@ -133,11 +135,10 @@
                         {% if recipe.total_time %} 
                             <i class="fa-regular fa-clock mr-1 fa-sm" data-toggle="tooltip" data-placement="top" title="Totel cooking time"></i>{{recipe.total_time}} 
                         {% endif %}
-                        {% if recipe.ingredient_count %} 
-                            <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{recipe.ingredient_count}}
+                        {% if ingredient_count_new %} 
+                        <i class="fa-solid fa-lemon ml-2 mr-1 fa-sm" alt="Ingredients" data-toggle="tooltip" data-placement="top" title="Ingredient count"></i>{{ingredient_count_new}}  
                         {% endif %}
-
-                        </div>                    
+                    </div>                    
                 </a>
             </div>
             <small class="recipe-card-source text-muted ">
