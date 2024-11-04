@@ -8,7 +8,7 @@ from sqlalchemy import desc, func, text
 from sqlalchemy.orm import aliased
 
 from myrecipes import (  # <<<disable get_recipies if not using; get_recipies
-    app, db)
+    app, db, scrapers)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
                              edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
@@ -799,5 +799,8 @@ def process_recipes(option):
             for recipe in recipes:
                 get_recipies.update_BA_recipe(recipe.recipe_id, recipe.source_url)  
             flash('BA recipes updated', 'success')     
+    elif option == 5:
+        total_recipe_count, recipe_scrape_count = scrapers.scrape()
+        flash(f'Completed scraping {recipe_scrape_count} of {total_recipe_count} recipes', 'success')
     return redirect(url_for('import_recipes'))
 
