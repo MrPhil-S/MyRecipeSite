@@ -171,7 +171,7 @@ def home():
 
         func.coalesce(func.max(rvd.recipe_view_dt), Recipe.create_dt).label('max_recipe_view_dt'),
         func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt).label('max_recipe_cooked_dt'),
-        func.coalesce(ri.c.count, 0).label('ingredient_count_new')  
+        func.coalesce(ri.c.count, 0).label('ingredient_count')  
     ).\
         outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
         outerjoin(rvd, Recipe.recipe_id == rvd.recipe_id).\
