@@ -271,6 +271,7 @@ def recipe(recipe_id):
     view_count = recipe_view_date.query.filter_by(recipe_id=recipe_id).count()
     cook_count = recipe_cooked_date.query.filter_by(recipe_id=recipe.recipe_id).count()
     ingredient_count = Recipe_Ingredient.query.filter_by(recipe_id=recipe.recipe_id).count()
+    instruction_count = Recipe_Instruction.query.filter_by(recipe_id=recipe.recipe_id, is_group_header=0).count()
 
     image_file = url_for('static', filename='recipe_images/' + recipe.image_file)
     ingredients = Recipe_Ingredient.query.order_by(Recipe_Ingredient.sequence, Recipe_Ingredient.recipe_ingredient_id).filter_by(recipe_id=recipe_id).all()
@@ -290,14 +291,18 @@ def recipe(recipe_id):
     
     number = 0
     instructions_numbered = []
+    instruction_count = len([instruction for instruction in instructions if instruction.is_group_header == 0])
     for instruction in instructions:
         if instruction.is_group_header:
             instructions_numbered.append(instruction)
             number = 0
         else:
-            number += 1
-            instruction.text_contents = f"{number}. {instruction.text_contents}"
-            instructions_numbered.append(instruction)
+            if instruction_count > 1:
+                number += 1
+                instruction.text_contents = f"{number}. {instruction.text_contents}"
+                instructions_numbered.append(instruction)
+            else:
+                instructions_numbered.append(instruction)
 
     recipe_pdf = None
     for file in os.listdir(os.path.join(current_app.root_path, 'static/custom_prints/')):  
@@ -309,6 +314,8 @@ def recipe(recipe_id):
                            note_from_user_list=note_from_user_list, 
                            ingredients=ingredients, 
                            instructions=instructions_numbered, 
+                           ingredient_count=ingredient_count, 
+                           instruction_count=instruction_count,
                            source_notes=source_notes, 
                            title=recipe.name, 
                            image_file=image_file, 
