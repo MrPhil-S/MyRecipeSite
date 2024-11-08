@@ -163,6 +163,14 @@ def home():
         .group_by(Recipe_Ingredient.recipe_id)
         .subquery()
     )
+    rcc = aliased(
+            db.session.query(
+            recipe_cooked_date.recipe_id,
+            func.count().label('count')
+        )
+        .group_by(recipe_cooked_date.recipe_id)
+        .subquery()
+    )
 
     # query
     all_results = db.session.query(
@@ -170,14 +178,17 @@ def home():
         rp,
 
         func.coalesce(func.max(rvd.recipe_view_dt), Recipe.create_dt).label('max_recipe_view_dt'),
-        func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt).label('max_recipe_cooked_dt'),
-        func.coalesce(ri.c.count, 0).label('ingredient_count')  
+        func.date(func.coalesce(func.max(rcd.recipe_cooked_dt), Recipe.create_dt)).label('max_recipe_cooked_dt'),
+        func.coalesce(ri.c.count, 0).label('ingredient_count'),  
+        func.coalesce(rcc.c.count, 0).label('cook_count')
+
     ).\
         outerjoin(rp, (Recipe.recipe_id == rp.recipe_id) & (rp.removed_dt.is_(None))).\
         outerjoin(rvd, Recipe.recipe_id == rvd.recipe_id).\
         outerjoin(rcd, Recipe.recipe_id == rcd.recipe_id).\
         outerjoin(rc, Recipe.recipe_id == rc.c.recipe_id, isouter=True).\
         outerjoin(ri, Recipe.recipe_id == ri.c.recipe_id) .\
+        outerjoin(rcc, Recipe.recipe_id == rcc.c.recipe_id) .\
         filter(Recipe.recipe_id.in_(all_recipe_ids), rc.c.collection_id == collection_id_filter if collection_id_filter is not None else True).\
         group_by(Recipe.recipe_id).\
         order_by(Recipe.recipe_id.desc()).\

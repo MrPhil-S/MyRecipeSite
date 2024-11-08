@@ -98,6 +98,7 @@
             {% set max_recipe_view_dt = result[2] %}
             {% set max_recipe_cooked_dt = result[3] %}
             {% set ingredient_count = result[4] %}
+            {% set cook_count = result[5] %}
 
         <div class="col px-2"><!--<div class="col-sm-3 d-flex align-items-stretch"></div><div class="col-md-3">     col-lg-4 col-md-6 col-sm-12-->
             <div class="card">
@@ -125,6 +126,11 @@
                                 </form>
                             {% endif %}
                         </div>
+                        {% if cook_count > 0 %}
+                            <div class="position-absolute bg-dark p-1 text-small " style="top: 0; left: 0; opacity: 0.5;" data-toggle="tooltip" data-placement="top" title="Last cooked on {{max_recipe_cooked_dt}}">
+                                <i class="fa-solid fa-utensils text-white"></i> {{ cook_count }}
+                            </div>
+                        {% endif %}
                         <div class="card-img-title">
                             <p class="card-text mt-auto">
                                 {{ recipe.name }}
