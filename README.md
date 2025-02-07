@@ -40,5 +40,12 @@ This project aims to create a central, mobile-friendly site that serves as a lon
 
 📌 This project ensures that your recipes are always accessible, well-organized, and independent of unreliable cloud services.
 
+![image](https://github.com/user-attachments/assets/213cd7e8-0de6-4630-8d6a-88ef10ff4265)
+![image](https://github.com/user-attachments/assets/90371f3c-a25f-4c71-a02a-ac79af9b06de)
+![image](https://github.com/user-attachments/assets/b1aa3e3e-0313-48e3-99d0-2f0a4c16eaac)
+
+
+
+
 
 
