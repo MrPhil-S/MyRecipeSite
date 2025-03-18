@@ -23,9 +23,9 @@ This project aims to create a central, mobile-friendly site that serves as a lon
 ### Search & Ingredient Management
 
 - 🔍 **Search** recipes by ingredient.
-- 🔄 **Support synonyms** for ingredients to improve search accuracy (e.g., searching for `green onion`, `spring onion`, or `scallion` returns the same results).
+- 🔄 **Support synonyms** for ingredients to improve search accuracy (e.g., searching for `green onion`, `spring onion`, or `scallion` returns the same results) .
 - 📌 **Store recent searches** for quick lookup of historical searches.
-- 😎 **AI-powered** ingredient recognition and suggestion system
+- 😎 **AI-powered** ingredient recognition and suggestion system (future implementation)
 
 ### Meal Planning
 
