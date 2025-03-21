@@ -41,7 +41,7 @@
                         <div class="col px-0">
                             <a href="{{ url_for('home', collection_id_filter=collection.collection_id, collection_name_filter=collection.collection_name) }}">
                                 <div class="collection-img-container card-img-top row border rounded m-2 overflow-hidden">
-                                    <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="img-fluid" alt="Thumbnail">
+                                    <img src="{{ url_for('static', filename='recipe_images/' + collection.latest_image_file) }}" class="card-img-top" alt="Thumbnail">
                                     <div class="position-absolute top-0 left-0 w-100 h-100" style="background: rgba(0, 0, 0, 0.5);">
                                         <div class="collection-img-title">
                                         {{ collection.collection_name }}
