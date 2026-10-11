@@ -4,3 +4,4 @@
 recipe_app_v2/.venv/
 recipe_app_v2/**/__pycache__/
 recipe_app_v2/tests/
+recipe_app_v2/.browser-tools/

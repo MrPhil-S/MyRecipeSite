@@ -18,3 +18,4 @@ recipe_app_v2/.venv/
 !recipe_app_v2/migrations/**
 __pycache__/
 *.pyc
+recipe_app_v2/.browser-tools/

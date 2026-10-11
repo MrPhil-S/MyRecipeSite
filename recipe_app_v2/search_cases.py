@@ -1,0 +1,20 @@
+"""Independent expected tokens for live search verification."""
+CASES = [
+    ('', [], []),
+    ('ground turkey', ['ground', 'turkey'], []),
+    ('"ground turkey"', ['ground turkey'], []),
+    ('lamb', ['lamb'], []),
+    ('heavy', ['heavy'], []),
+    ('cinnamon', ['cinnamon'], []),
+    ('broil', ['broil'], []),
+    ('cilantro', ['cilantro'], []),
+    ('CHICKEN', ['CHICKEN'], []),
+    ('chicken NOT cream', ['chicken'], ['cream']),
+    ('NOT beef', [], ['beef']),
+    ('"ground turkey" NOT "heavy cream"', ['ground turkey'], ['heavy cream']),
+    ('zzunmatchedtestword turkey', ['zzunmatchedtestword', 'turkey'], []),
+    ('turkey zzunmatchedtestword', ['turkey', 'zzunmatchedtestword'], []),
+    ('%', ['%'], []),
+    ('_', ['_'], []),
+    ('"ground tur', ['ground tur'], []),
+]

@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlencode
 
 from fastapi import Depends, FastAPI, Path as PathParameter, Query, Request
 from fastapi.responses import HTMLResponse
@@ -14,6 +15,7 @@ from .config import ROOT, dev_database_url
 from .database import get_session
 from .models import Recipe, Recipe_Ingredient, recipe_cooked_date
 from .recipes import detail_context
+from .search import search_filters
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -29,6 +31,16 @@ for route, folder in (("ingredient-images", "ingredient_images"), ("source-pdfs"
     if directory.is_dir():
         app.mount("/" + route, StaticFiles(directory=directory), name=folder)
 templates = Jinja2Templates(directory=PACKAGE / "templates")
+
+
+def list_url(page, sort, q=""):
+    values = {"page": page, "sort": sort}
+    if q:
+        values["q"] = q
+    return "/?" + urlencode(values)
+
+
+templates.env.globals["list_url"] = list_url
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -49,10 +61,12 @@ def recipe_list(
     request: Request,
     page: int = Query(1, ge=1),
     sort: Literal["recent", "name"] = "recent",
+    q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
 ):
     page_size = 24
-    total = session.scalar(select(func.count()).select_from(Recipe))
+    filters = search_filters(session, q)
+    total = session.scalar(select(func.count()).select_from(Recipe).where(*filters))
     pages = max(1, (total + page_size - 1) // page_size)
     page = min(page, pages)
     ingredients = (
@@ -72,11 +86,11 @@ def recipe_list(
                func.coalesce(cooked.c.cook_count, 0).label("cook_count"))
         .outerjoin(ingredients, Recipe.recipe_id == ingredients.c.recipe_id)
         .outerjoin(cooked, Recipe.recipe_id == cooked.c.recipe_id)
-        .order_by(*ordering).offset((page - 1) * page_size).limit(page_size)
+        .where(*filters).order_by(*ordering).offset((page - 1) * page_size).limit(page_size)
     )
     rows = session.execute(query).all()
     # Do not link to legacy detail routes: they record visits in the database.
-    context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort}
+    context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort, "q": q}
     partial = (request.headers.get("HX-Request") == "true"
                and request.headers.get("HX-History-Restore-Request") != "true")
     template = "_recipes.html" if partial else "index.html"
@@ -89,11 +103,12 @@ def recipe_detail(
     recipe_id: int = PathParameter(ge=1),
     page: int = Query(1, ge=1),
     sort: Literal["recent", "name"] = "recent",
+    q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
 ):
     context = detail_context(session, recipe_id)
     if context is None:
         return templates.TemplateResponse(request=request, name="not_found.html",
-                                          context={"page": page, "sort": sort}, status_code=404)
-    context.update(page=page, sort=sort)
+                                          context={"page": page, "sort": sort, "q": q}, status_code=404)
+    context.update(page=page, sort=sort, q=q)
     return templates.TemplateResponse(request=request, name="detail.html", context=context)

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}{{ recipe.name }} · My Recipes{% endblock %}
 {% block content %}
-<a class="back-link" href="/?page={{ page }}&amp;sort={{ sort }}">← Back to recipes</a>
+<a class="back-link" href="{{ list_url(page, sort, q) }}">← Back to {% if q %}search results{% else %}recipes{% endif %}</a>
 <article class="recipe-detail" data-recipe-id="{{ recipe.recipe_id }}">
   <div class="detail-intro">
     <div>

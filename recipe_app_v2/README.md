@@ -1,8 +1,8 @@
 # FastAPI migration: read-only preview
 
-A parallel, read-only recipe list and detail view. Legacy Flask source and its existing local
+A parallel, read-only recipe list, detail view, and search. Legacy Flask source and its existing local
 edits are preserved. No production deployment, traffic routing, schema changes,
-database writes, or search migration are included.
+or database writes are included.
 
 ## Run locally in two PowerShell terminals
 
@@ -117,6 +117,7 @@ Existing Flask, Nginx, uWSGI, and Raspberry Pi configuration remain untouched.
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_dev
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_http
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_details
+.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_search
 ```
 
 Unit tests use an in-memory SQLite database. The other checks read only the dev
@@ -148,7 +149,8 @@ Validated October 11, 2026:
 - HTTP parity against the actual container passes for all 453 recipe cards
   across 19 pages alongside unchanged Flask on 8080. Health, static assets,
   sample images, HTMX partials, and rejection of POST requests pass.
-- No browser visual/interaction check or Raspberry Pi deployment was performed.
+- No browser visual/interaction check was performed for the first milestone;
+  search interaction checks are documented below. Raspberry Pi deployment remains deferred.
 
 For subsequent starts, open Docker Desktop and wait for its engine to become
 ready. From the repository root, run:
@@ -201,5 +203,58 @@ names are normalized only in temporary display objects for rendering; mapped
 objects and database values are untouched. It does not print recipe content or
 credentials to the terminal.
 
-The second milestone is complete. Review the detail page before moving to the
-next prescribed feature: search. Manual browser visual testing remains pending.
+The second milestone is complete. Search follows in the third milestone below.
+Manual browser visual review remains pending.
+
+## Third milestone: read-only search
+
+Search uses GET requests and matches title, ingredient names and notes,
+instructions, source notes, and user notes. Matching is case-insensitive and
+uses literal substrings: `%` and `_` are text, not SQL wildcards. Every required
+term must match. Double quotes group a phrase; uppercase, unquoted `NOT`
+excludes subsequent terms or phrases. An unfinished quoted phrase is accepted
+while typing. Exclusion-only searches start from all recipes. Ingredient
+synonyms expand both directions by one step, matching the legacy synonym rules.
+Nullable ingredient notes no longer hide ingredient matches, and an unmatched
+required term no longer resets the intersection to later matches.
+
+HTMX updates results after a 350 ms typing pause. The input retains focus and
+spaces while results update; newer requests replace older ones. Search, sort,
+pagination, recipe links, back links, and browser history preserve the query.
+The normal GET forms also work without JavaScript. No search-history or recipe
+visit records are written, and no schema changes are needed.
+
+Validated October 11, 2026:
+
+- All **13 unit tests** pass, including field coverage, synonyms, nullable notes,
+  required/excluded terms, quoted phrases, literal wildcards, query limits,
+  escaping, navigation state, and unchanged history records.
+- **17 live-data queries**, both sort modes, and every result page match an
+  independent reference calculation. Search history and visit counts are unchanged.
+- Compared with Flask, `ground turkey` finds four additional valid matches and
+  `heavy` finds twenty. A search with an unmatched required term no longer
+  incorrectly returns ten recipes matching only its later term.
+- Existing list parity still passes for all 453 recipes, and the rebuilt
+  read-only Docker service is healthy on port 8001 alongside Flask on 8080.
+- Headless Chrome verifies live typing (including trailing spaces), retained
+  focus, partial updates without reloading, sorting, pagination, detail/back
+  navigation, clearing, browser back/forward, and forms with JavaScript disabled.
+
+`verify_search.py` captures legacy read-only queries privately through
+`legacy_search_snapshot.py`, compares old results, and independently calculates
+expected results from the dev snapshot. It does not print recipe content or
+credentials. The browser check is optional and uses the existing legacy
+environment's Selenium installation:
+
+```powershell
+.\MyRecipesVenv\Scripts\python.exe -m recipe_app_v2.verify_search_browser
+```
+
+It requires installed Chrome, downloads its matching ChromeDriver from Google's
+official Chrome for Testing service, and uses a temporary browser profile.
+The driver cache and profiles under `.browser-tools/` are excluded from Git and
+Docker builds; Selenium is not an application dependency.
+
+The third milestone is complete. The next prescribed feature is create/edit
+recipe forms. Database writes remain disabled under the current read-only scope;
+enabling dev writes requires explicit authorization before that feature can save.
