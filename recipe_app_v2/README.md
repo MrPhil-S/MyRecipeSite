@@ -134,8 +134,21 @@ Validated October 11, 2026:
 - HTMX partials, CSS, both local JavaScript files, health endpoint, and a sample
   legacy image return successfully. POST to the list returns 405.
 - Alembic baseline SQL renders offline; online migrations are explicitly blocked.
-- Docker startup is **unverified**: Docker is absent from this PC. No browser
-  visual/interaction check or Raspberry Pi deployment was performed.
+- Docker Desktop 4.94.0 is installed for the current user (Docker CLI 29.8.2,
+  Compose 5.5.1). `docker compose -f compose.fastapi.yml config --quiet` passes.
+  WSL was updated successfully, and Virtual Machine Platform was enabled with
+  automatic restart suppressed. Windows reports that a **restart is required**.
+  Container build/startup and container HTTP parity remain unverified until
+  that restart. No browser visual/interaction check or Pi deployment was performed.
 
-The remaining first-milestone check is Docker Compose startup in an environment
-with Docker. Review this list before proceeding to recipe detail migration.
+After saving work and restarting Windows, start Docker Desktop and wait for its
+engine to become ready. From the repository root, run:
+
+```powershell
+docker compose -f compose.fastapi.yml up --build -d --wait
+docker compose -f compose.fastapi.yml ps
+```
+
+Then run the localhost parity checks above with the legacy Flask preview on
+8080. The remaining first-milestone check is the actual container build/startup
+and HTTP verification. Review this list before proceeding to recipe details.
