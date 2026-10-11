@@ -1,0 +1,35 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: recipe_app_v2/Dockerfile
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      RECIPE_CONFIG: /app/config.ini
+    volumes:
+      - type: bind
+        source: ./config.ini
+        target: /app/config.ini
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./myrecipes/static/recipe_images
+        target: /app/myrecipes/static/recipe_images
+        read_only: true
+        bind:
+          create_host_path: false
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=20)"]
+      interval: 30s
+      timeout: 25s
+      start_period: 15s
+      retries: 3

@@ -13,3 +13,8 @@ myrecipes/static/custom_prints
 *.db
 *.log
 config.ini
+recipe_app_v2/.venv/
+!recipe_app_v2/migrations/
+!recipe_app_v2/migrations/**
+__pycache__/
+*.pyc

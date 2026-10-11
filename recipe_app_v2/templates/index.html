@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Recipes</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <script defer src="{{ url_for('static', path='vendor/htmx.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='vendor/alpine.min.js') }}"></script>
+</head>
+<body>
+  <header><a href="/">My Recipes</a><span>Preview</span></header>
+  <main>
+    <h1>Your recipe collection</h1>
+    <div x-data="{ open: false }" class="notice">
+      <button type="button" @click="open = !open" :aria-expanded="open">About this preview</button>
+      <p x-show="open" x-cloak>Browse your recipes here. Editing and recipe details will arrive in later milestones.</p>
+      <noscript><p>Browse your recipes here. Editing and recipe details will arrive in later milestones.</p></noscript>
+    </div>
+    {% include '_recipes.html' %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<section id="recipes" aria-label="Recipe list" aria-live="polite">
+  <div class="toolbar">
+    <p>{{ total }} recipes</p>
+    <form action="/" method="get" hx-get="/" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true">
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort">
+        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recently added</option>
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
+      </select>
+      <button type="submit">Apply</button>
+    </form>
+  </div>
+  <div class="grid">
+    {% for row in recipes %}
+    {% set recipe = row.Recipe %}
+    <article class="card" data-recipe-id="{{ recipe.recipe_id }}">
+      <div class="picture">
+        {% if recipe.image_file %}
+        <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
+        {% endif %}
+      </div>
+      <div class="card-content">
+        <h2>{{ recipe.name }}</h2>
+        <p class="meta">{{ row.ingredient_count }} ingredients{% if recipe.total_time %} · {{ recipe.total_time }}{% endif %}</p>
+        {% if row.cook_count %}<p class="meta">Cooked {{ row.cook_count }} times</p>{% endif %}
+        {% if recipe.source_url_short %}<p class="source">{{ recipe.source_url_short }}</p>{% endif %}
+      </div>
+    </article>
+    {% else %}<p>No recipes found.</p>{% endfor %}
+  </div>
+  <nav aria-label="Recipe pages" class="pagination">
+    {% if page > 1 %}<a href="/?page={{ page - 1 }}&amp;sort={{ sort }}" hx-get="/?page={{ page - 1 }}&amp;sort={{ sort }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a href="/?page={{ page + 1 }}&amp;sort={{ sort }}" hx-get="/?page={{ page + 1 }}&amp;sort={{ sort }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true">Next</a>{% endif %}
+  </nav>
+</section>
