@@ -24,13 +24,17 @@
       <button type="button" @click="open = !open" :aria-expanded="open">Show/hide collections</button>
       <div class="collection-choices" x-show="open">{% for collection in collection_choices %}<label><input type="checkbox" name="collection_ids" value="{{ collection.collection_id }}"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}</label>{% else %}<p>No collections available.</p>{% endfor %}</div>
     </fieldset>
-    <fieldset><legend>Ingredients</legend>
-      <label>Input method<select name="ingredient_mode"><option value="rows"{% if values.ingredient_mode == 'rows' %} selected{% endif %}>Individual rows</option><option value="bulk"{% if values.ingredient_mode == 'bulk' %} selected{% endif %}>Bulk paste (replaces the rows below)</option></select></label>
-      <p class="meta">Choose which input to use. In bulk paste, enter one ingredient per line; separate its note with a comma. Start a group heading with &gt;.</p>
-      <div id="ingredient-rows">{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
-      <button type="button" hx-get="/editor/ingredient-row" hx-target="#ingredient-rows" hx-swap="beforeend">Add ingredient row</button>
-      <noscript><p>Use bulk paste to add more ingredients without JavaScript.</p></noscript>
-      <label>Bulk ingredients<textarea name="ingredient_bulk" rows="6" maxlength="60000">{{ values.ingredient_bulk }}</textarea></label>
+    <fieldset id="ingredient-inputs" x-data="{ mode: {{ ('bulk' if values.ingredient_mode == 'bulk' else 'rows') | tojson | forceescape }} }"><legend>Ingredients</legend>
+      <label>Input method<select name="ingredient_mode" x-model="mode"><option value="rows"{% if values.ingredient_mode == 'rows' %} selected{% endif %}>Individual rows</option><option value="bulk"{% if values.ingredient_mode == 'bulk' %} selected{% endif %}>Bulk paste</option></select></label>
+      <div x-show="mode === 'rows'" x-cloak>
+        <div id="ingredient-rows">{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
+        <button type="button" hx-get="/editor/ingredient-row" hx-target="#ingredient-rows" hx-swap="beforeend">Add ingredient row</button>
+      </div>
+      <div x-show="mode === 'bulk'" x-cloak>
+        <p class="meta">Enter one ingredient per line; separate its note with a comma. Start a group heading with &gt;. Bulk paste replaces the individual rows when you save.</p>
+        <label>Bulk ingredients<textarea name="ingredient_bulk" rows="6" maxlength="60000">{{ values.ingredient_bulk }}</textarea></label>
+      </div>
+      <noscript><style>#ingredient-inputs [x-cloak]{display:block!important}</style><p>Choose which input method to use above. Use bulk paste to add more ingredients.</p></noscript>
     </fieldset>
     <label>Instructions<textarea name="instructions" rows="10" maxlength="60000">{{ values.instructions }}</textarea></label>
     <p class="meta">One step per line, up to 1,000 characters per step. Start a group heading with &gt;.</p>
