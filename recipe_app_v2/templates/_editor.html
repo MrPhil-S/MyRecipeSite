@@ -39,10 +39,15 @@
     <p class="meta">One step per line, up to 1,000 characters per step. Start a group heading with &gt;.</p>
     <label>Source notes<textarea name="source_notes" rows="5" maxlength="60000">{{ values.source_notes }}</textarea></label>
     <label>Your notes<textarea name="note_from_user" rows="5" maxlength="1000">{{ values.note_from_user }}</textarea></label>
-    {% if recipe and recipe.image_file %}<p class="meta">Current image: {{ recipe.image_file }}. Leave uploads empty to keep existing files.</p>{% endif %}
     {% if writes_enabled %}
     <div class="form-grid">
-      <label>Recipe image<input type="file" name="image" accept="image/jpeg,image/png"><span class="meta">JPEG or PNG, up to 8 MB.</span></label>
+      <div>
+        {% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %}
+        <p>Current image</p>
+        <img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}" style="display:block;max-width:100%;width:200px;max-height:160px;object-fit:contain;border-radius:.4rem">
+        {% elif recipe %}<p class="meta">No image uploaded.</p>{% endif %}
+        <label>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}<input type="file" name="image" accept="image/jpeg,image/png"><span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span></label>
+      </div>
       <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
     </div>
     {% if errors %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
