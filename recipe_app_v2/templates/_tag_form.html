@@ -1,0 +1,14 @@
+<section id="tag-form" class="recipe-editor" hx-on::before-swap="if([422,409,503,403].includes(event.detail.xhr.status)){event.detail.shouldSwap = true; event.detail.isError = false;}">
+<a class="back-link" href="/tags/{{ kind }}">← Back to {{ kind }}</a>
+<h1>{{ 'Delete' if action == 'delete' else 'Edit' if tag else 'Add' }} {{ singular }}</h1>
+{% if error %}<p class="form-errors" role="alert">{{ error }}</p>{% endif %}
+{% if not writes_enabled %}<p>Dev saves are disabled.</p>{% endif %}
+{% set target = '/tags/' ~ kind ~ ('/' ~ tag_id ~ '/' ~ action if tag else '/new') %}
+<form method="post" action="{{ target }}" hx-post="{{ target }}" hx-target="#tag-form" hx-swap="outerHTML">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="version" value="{{ version }}">
+{% if action == 'delete' %}
+<p>Delete <strong>{% for name, label, limit in fields %}{{ values[name] }}{% if not loop.last %} ↔ {% endif %}{% endfor %}</strong>?</p>
+{% if kind != 'synonyms' %}<p>This removes {{ assigned }} recipe assignment{{ 's' if assigned != 1 else '' }}. The recipes are kept.</p>{% else %}<p>This removes the synonym from ingredient search expansion.</p>{% endif %}
+{% else %}{% for name, label, limit in fields %}<label>{{ label }}<input name="{{ name }}" required maxlength="{{ limit }}" value="{{ values[name] }}"></label>{% endfor %}{% endif %}
+<div class="form-actions"><button type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Delete ' ~ singular if action == 'delete' else 'Save changes' if tag else 'Add ' ~ singular }}</button><a href="/tags/{{ kind }}">Cancel</a></div>
+</form></section>

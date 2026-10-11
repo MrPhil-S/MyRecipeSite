@@ -20,6 +20,7 @@ from .recipes import detail_context
 from .search import search_filters
 from .editor_routes import router as editor_router, COOKIE, check_token, new_token, token_valid
 from .search_history import recent_searches, remember_search
+from .tags import router as tag_router
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -65,6 +66,7 @@ def list_url(page, sort, q=""):
 
 templates.env.globals["list_url"] = list_url
 app.include_router(editor_router)
+app.include_router(tag_router)
 
 
 @app.exception_handler(SQLAlchemyError)

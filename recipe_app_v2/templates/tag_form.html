@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Delete' if action == 'delete' else 'Edit' if tag else 'Add' }} {{ singular }} · My Recipes{% endblock %}
+{% block content %}{% include '_tag_form.html' %}{% endblock %}

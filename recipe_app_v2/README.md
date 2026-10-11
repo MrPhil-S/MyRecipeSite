@@ -1,8 +1,10 @@
 # FastAPI migration preview
 
-Phase 4 features 1–4 are implemented: recipe list, details, search, and create/edit.
-Tag management and meal planning are next. Existing cuisine/collection assignment
-is available in the recipe form; managing those tags is a separate feature.
+Phase 4 features 1–5 are implemented: recipe list, details, search, create/edit,
+and tag management. Meal planning is next. Use **Manage tags** in the header to
+create/edit/delete collections, cuisines and synonyms. Deleting a collection or
+cuisine confirms the assignment count, removes that tag's assignments and keeps
+the recipes. Existing schema and synonym search behavior are preserved.
 
 The user authorized **dev-only saves** on October 11, 2026. FastAPI always reads
 `[dev] db_uri` from `config.ini` and accepts only
@@ -90,11 +92,13 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 24 tests passed; all 453 edit forms matched Flask;
+Validated October 11, 2026: 30 tests passed; all 453 edit forms matched Flask;
 live dev create/edit and stale-edit rejection passed; the fixture was removed,
 with all 12 tables' data unchanged. Browser checks covered HTMX row addition,
 error rendering, create/edit, image/PDF uploads and JavaScript disabled.
 List/detail parity also passed for 453 recipes, with 1,181 referenced assets loading.
+Tag lists matched Flask; tag CRUD, assignments, synonym search and browser checks
+passed. All 12 dev tables matched their pre-test data after fixture cleanup.
 Earlier list/detail/search verification remains in Git history and the existing
 verification scripts. No production contact was needed for this feature.
 

@@ -11,7 +11,7 @@
   <script defer src="{{ url_for('static', path='vendor/alpine.min.js') }}"></script>
 </head>
 <body>
-  <header><a href="/">My Recipes</a><span>Preview</span></header>
+  <header><a href="/">My Recipes</a><nav aria-label="Main navigation"><a href="/tags/collections">Manage tags</a><span>Preview</span></nav></header>
   <main>{% block content %}{% endblock %}</main>
 </body>
 </html>

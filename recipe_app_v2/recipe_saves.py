@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_write_engine, writes_enabled
 from .editor import choices, recipe_rows, total_time, validate, version_for
-from .models import Collection, Recipe, Recipe_Ingredient, Recipe_Instruction
+from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Instruction
 from .uploads import StagedUploads
 
 
@@ -30,6 +30,14 @@ def save_recipe(recipe_id, values, image=None, pdf=None):
     staged = StagedUploads()
     with Session(get_write_engine(), autoflush=False) as session:
         try:
+            # Hold referenced tags until commit, including cuisine's legacy
+            # non-FK column, so a concurrent tag deletion cannot leave dangling IDs.
+            if values['cuisine_id'].isdigit():
+                session.scalar(select(Cuisine).where(Cuisine.cuisine_id == int(values['cuisine_id'])).with_for_update(read=True))
+            collection_ids = [int(value) for value in values['collection_ids'] if value.isdigit()]
+            if collection_ids:
+                session.scalars(select(Collection).where(Collection.collection_id.in_(collection_ids))
+                    .order_by(Collection.collection_id).with_for_update(read=True)).all()
             recipe = None
             old_ingredients, old_steps = [], []
             if recipe_id is not None:
