@@ -20,6 +20,18 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      - type: bind
+        source: ./myrecipes/static/ingredient_images
+        target: /app/myrecipes/static/ingredient_images
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./myrecipes/static/custom_prints
+        target: /app/myrecipes/static/custom_prints
+        read_only: true
+        bind:
+          create_host_path: false
     read_only: true
     tmpfs:
       - /tmp

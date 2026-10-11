@@ -1,8 +1,8 @@
-# FastAPI migration: first milestone
+# FastAPI migration: read-only preview
 
-A parallel, read-only recipe list. Legacy Flask source and its existing local
+A parallel, read-only recipe list and detail view. Legacy Flask source and its existing local
 edits are preserved. No production deployment, traffic routing, schema changes,
-database writes, search migration, or recipe detail routes are included.
+database writes, or search migration are included.
 
 ## Run locally in two PowerShell terminals
 
@@ -51,16 +51,17 @@ the validated database target.
 Every new database connection sets `SET SESSION TRANSACTION READ ONLY`.
 Application SQL is restricted to read queries, ORM flushes are blocked, and
 request sessions roll back on completion. No tables are created on startup.
-GET requests neither save search history nor record recipe visits. Details,
-forms, and plan buttons are deferred to later milestones.
+GET requests neither save search history nor record recipe visits. Forms and
+actions that change meal plans or cooking history are deferred to later milestones.
 
 Recipe cards count ingredients excluding group headers and count cooked-date
 rows, following Flask's logic. The default sort is creation date descending,
 with recipe ID as a stable tie breaker. A to Z and 24-card pagination use GET
 requests, server-rendered HTML, and HTMX partial updates. Alpine handles the
 preview information toggle. Browser history restoration returns a full page.
-Page navigation works without JavaScript. Only the legacy recipe image directory
-is mounted as static content; legacy templates and write routes are not reused.
+Page navigation works without JavaScript. The explicit legacy recipe image,
+ingredient image, and source PDF directories are mounted read-only as static
+content; the app does not reuse legacy templates or write routes.
 
 HTMX 2.0.4 and Alpine 3.14.9 are vendored with their licenses in `static/vendor`.
 Normal browsing requires no CDN connection. `download_vendor.py` is the optional
@@ -104,8 +105,8 @@ docker compose -f compose.fastapi.yml down
 
 Stop the locally running Uvicorn process first if it already occupies 8001.
 Compose starts **only the app**, binds host port 8001 to loopback, and uses the
-external dev database. `config.ini` and recipe images are mounted read-only;
-neither is sent in the Docker build context. The container runs as a non-root
+external dev database. `config.ini`, recipe images, ingredient images, and source
+PDFs are mounted read-only; none are sent in the Docker build context. The container runs as a non-root
 user with a read-only filesystem and a health check at `/health`.
 Existing Flask, Nginx, uWSGI, and Raspberry Pi configuration remain untouched.
 
@@ -115,6 +116,7 @@ Existing Flask, Nginx, uWSGI, and Raspberry Pi configuration remain untouched.
 .\recipe_app_v2\.venv\Scripts\python.exe -m unittest discover -s recipe_app_v2\tests -v
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_dev
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_http
+.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_details
 ```
 
 Unit tests use an in-memory SQLite database. The other checks read only the dev
@@ -158,5 +160,46 @@ docker compose -f compose.fastapi.yml ps
 
 The first milestone is complete, including container build/startup and HTTP
 verification. Both previews are available on their original ports. Review the
-recipe list before proceeding to recipe detail migration; production cutover
-and all database writes remain deferred.
+preview before proceeding to another feature; production cutover and all
+database writes remain deferred.
+
+## Second milestone: recipe details
+
+Recipe cards open `/recipes/{recipe_id}`. Details include ordered ingredients
+and ingredient notes, instruction groups with the legacy numbering behavior,
+source notes, user notes, cuisine, collections, all recorded times, servings,
+recipe/ingredient images, external source links, and available source PDFs.
+Existing cooking/view counts and meal-plan status are displayed without changing
+them. The back link preserves the list page and sort order. Unknown recipes show
+an HTML 404 page. Source links accept only HTTP/HTTPS URLs, and stored text is
+escaped. No recipe fields or mapped instruction objects are modified.
+
+The detail ingredient count excludes group headers, consistent with the new
+list; Flask's detail heading included group headers in its count. Total time is
+also displayed when recorded, even if individual time fields are empty. These
+are presentation changes; database values are unchanged.
+
+Validated October 11, 2026:
+
+- All ten unit tests pass, including grouped instruction numbering, stable
+  sequence ordering, single/empty instructions, notes, escaping, missing recipes,
+  preserved list navigation, and blocked POST requests.
+- The rebuilt Docker container is healthy on loopback port 8001, alongside
+  unchanged Flask on 8080. Additional asset mounts remain read-only.
+- All **453 detail pages** match the legacy queries and safely rendered Flask
+  templates for ingredient/instruction/source-note ordering and content, cuisine,
+  collections, time fields, notes, cooking counts, and existing visit counts.
+- All **1,181 distinct referenced image/PDF assets** return HTTP 200.
+- Visit-history row count remains unchanged after the full comparison. The
+  existing recipe-list parity check still passes for all 453 cards.
+
+`verify_details.py` runs `legacy_detail_snapshot.py` with the legacy interpreter
+and compares its captured output with FastAPI HTTP responses. The snapshot uses
+dev-only, read-only connections and renders `recipe.html` directly. It **never
+calls Flask's detail route**, which would commit a visit record. Nullable image
+names are normalized only in temporary display objects for rendering; mapped
+objects and database values are untouched. It does not print recipe content or
+credentials to the terminal.
+
+The second milestone is complete. Review the detail page before moving to the
+next prescribed feature: search. Manual browser visual testing remains pending.

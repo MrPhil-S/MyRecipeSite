@@ -13,7 +13,8 @@ from sqlalchemy.pool import StaticPool
 from recipe_app_v2.config import dev_database_url
 from recipe_app_v2.database import ReadOnlySession, get_session, guard_statement
 from recipe_app_v2.main import app
-from recipe_app_v2.models import Base, Recipe, Recipe_Ingredient, recipe_cooked_date
+from recipe_app_v2.models import (Base, Collection, Cuisine, Recipe, Recipe_Ingredient,
+                                 Recipe_Instruction, recipe_cooked_date)
 
 
 class SafetyTests(unittest.TestCase):
@@ -101,7 +102,8 @@ class ListTests(unittest.TestCase):
         for path in ["/?page=0", "/?sort=invalid"]:
             self.assertEqual(self.client.get(path).status_code, 422)
         self.assertEqual(self.client.post("/").status_code, 405)
-        self.assertEqual(self.client.get("/recipes/26").status_code, 404)
+        self.assertEqual(self.client.get("/recipes/26").status_code, 200)
+        self.assertEqual(self.client.post("/recipes/26").status_code, 405)
         with Session(self.engine) as session:
             self.assertEqual(len(session.scalars(select(Recipe)).all()), 26)
             self.assertEqual(session.scalar(text("SELECT count(*) FROM recipe_view_date")), 0)
@@ -118,6 +120,53 @@ class ListTests(unittest.TestCase):
         body = self.client.get("/").text
         self.assertIn("No recipes found.", body)
         self.assertIn("Page 1 of 1", body)
+
+    def test_detail_group_order_numbering_notes_and_navigation(self):
+        with Session(self.engine) as session:
+            recipe = session.get(Recipe, 26)
+            recipe.note_from_user = 'First line\n<script>unsafe</script>'
+            recipe.source_url = 'javascript:alert(1)'
+            recipe.cuisine_id = 1
+            session.add(Cuisine(cuisine_id=1, cuisine_name='Test cuisine'))
+            recipe.collections.append(Collection(collection_name='Favorites'))
+            session.add_all([
+                Recipe_Instruction(recipe_instruction_id=11, recipe_id=26, type=1, sequence=1, text_contents='Sauce', is_group_header=True),
+                Recipe_Instruction(recipe_instruction_id=13, recipe_id=26, type=1, sequence=2, text_contents='Simmer', is_group_header=False),
+                Recipe_Instruction(recipe_instruction_id=12, recipe_id=26, type=1, sequence=2, text_contents='Stir', is_group_header=False),
+                Recipe_Instruction(recipe_instruction_id=14, recipe_id=26, type=1, sequence=3, text_contents='Serve', is_group_header=True),
+                Recipe_Instruction(recipe_instruction_id=15, recipe_id=26, type=1, sequence=4, text_contents='Plate', is_group_header=False),
+                Recipe_Instruction(recipe_instruction_id=16, recipe_id=26, type=2, sequence=1, text_contents='Source advice'),
+            ])
+            session.commit()
+        body = self.client.get('/recipes/26?page=2&sort=name').text
+        self.assertIn('/?page=2&amp;sort=name', body)
+        self.assertIn('Ingredients (2)', body)
+        self.assertIn('1. Stir', body)
+        self.assertIn('2. Simmer', body)
+        self.assertIn('1. Plate', body)
+        self.assertLess(body.index('1. Stir'), body.index('2. Simmer'))
+        for value in ['Test cuisine', 'Favorites', 'Source advice', '&lt;script&gt;']:
+            self.assertIn(value, body)
+        self.assertNotIn('javascript:', body)
+        with Session(self.engine) as session:
+            self.assertEqual(session.get(Recipe_Instruction, 12).text_contents, 'Stir')
+            self.assertEqual(session.scalar(text('SELECT count(*) FROM recipe_view_date')), 0)
+
+    def test_detail_missing_empty_and_single_instruction(self):
+        response = self.client.get('/recipes/99999')
+        self.assertEqual(response.status_code, 404)
+        self.assertIn('Recipe not found', response.text)
+        body = self.client.get('/recipes/1').text
+        self.assertIn('No ingredients recorded.', body)
+        self.assertIn('No instructions recorded.', body)
+        self.assertNotIn('None', body)
+        with Session(self.engine) as session:
+            session.add(Recipe_Instruction(recipe_id=1, type=1, text_contents='Combine everything', is_group_header=False))
+            session.commit()
+        body = self.client.get('/recipes/1').text
+        self.assertIn('Combine everything', body)
+        self.assertNotIn('1. Combine everything', body)
+        self.assertEqual(self.client.get('/recipes/0').status_code, 422)
 
 
 if __name__ == "__main__":

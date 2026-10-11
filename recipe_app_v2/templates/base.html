@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}My Recipes{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <script defer src="{{ url_for('static', path='vendor/htmx.min.js') }}"></script>
+  <script defer src="{{ url_for('static', path='vendor/alpine.min.js') }}"></script>
+</head>
+<body>
+  <header><a href="/">My Recipes</a><span>Preview</span></header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

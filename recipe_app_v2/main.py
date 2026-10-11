@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Literal
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Path as PathParameter, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -13,16 +13,21 @@ from sqlalchemy.orm import Session
 from .config import ROOT, dev_database_url
 from .database import get_session
 from .models import Recipe, Recipe_Ingredient, recipe_cooked_date
+from .recipes import detail_context
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
 dev_database_url()
 app = FastAPI(title="My Recipes preview", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=PACKAGE / "static"), name="static")
-# Mount only recipe pictures, never the legacy package or its write routes.
+# Serve explicit legacy asset directories, never templates or write routes.
 images = ROOT / "myrecipes" / "static" / "recipe_images"
 if images.is_dir():
     app.mount("/recipe-images", StaticFiles(directory=images), name="recipe_images")
+for route, folder in (("ingredient-images", "ingredient_images"), ("source-pdfs", "custom_prints")):
+    directory = ROOT / "myrecipes" / "static" / folder
+    if directory.is_dir():
+        app.mount("/" + route, StaticFiles(directory=directory), name=folder)
 templates = Jinja2Templates(directory=PACKAGE / "templates")
 
 
@@ -76,3 +81,19 @@ def recipe_list(
                and request.headers.get("HX-History-Restore-Request") != "true")
     template = "_recipes.html" if partial else "index.html"
     return templates.TemplateResponse(request=request, name=template, context=context)
+
+
+@app.get("/recipes/{recipe_id}", response_class=HTMLResponse)
+def recipe_detail(
+    request: Request,
+    recipe_id: int = PathParameter(ge=1),
+    page: int = Query(1, ge=1),
+    sort: Literal["recent", "name"] = "recent",
+    session: Session = Depends(get_session),
+):
+    context = detail_context(session, recipe_id)
+    if context is None:
+        return templates.TemplateResponse(request=request, name="not_found.html",
+                                          context={"page": page, "sort": sort}, status_code=404)
+    context.update(page=page, sort=sort)
+    return templates.TemplateResponse(request=request, name="detail.html", context=context)
