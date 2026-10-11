@@ -10,6 +10,34 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="version" value="{{ values.version }}">
     <label>Recipe name<input name="name" maxlength="200" required value="{{ values.name }}"></label>
+    {% if writes_enabled %}
+    <div class="recipe-image-section" x-data="imageUpload">
+      <div class="image-preview" x-show="previewUrl || {{ 'true' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'false' }}">
+        {% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %}
+        <div x-show="!previewUrl">
+          <p>Current image</p>
+          <img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}">
+        </div>
+        {% endif %}
+        <div x-show="previewUrl" x-cloak>
+          <p>Selected image</p>
+          <img :src="previewUrl || undefined" alt="Selected recipe image">
+        </div>
+      </div>
+      <div class="image-upload-control">
+        {% if recipe and (not recipe.image_file or recipe.image_file == 'default.jpg') %}<p class="meta">No image uploaded.</p>{% endif %}
+        <label class="image-drop-zone" :class="{ 'is-dragging': dragging }"
+               @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
+               @drop.prevent.stop="drop($event)">
+          <span>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}</span>
+          <span class="meta">Drop an image here or click to choose.</span>
+          <input type="file" name="image" accept="image/jpeg,image/png" x-ref="image" @change="choose($event.target.files)">
+          <span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span>
+        </label>
+        <p class="upload-error" role="alert" x-show="error" x-text="error" x-cloak></p>
+      </div>
+    </div>
+    {% endif %}
     <div class="form-grid">
       <label>Source URL<input type="url" name="source_url" maxlength="255" value="{{ values.source_url }}"></label>
       <label>Whisk URL<input type="url" name="whisk_url" maxlength="255" value="{{ values.whisk_url }}"></label>
@@ -54,26 +82,7 @@
     <label>Source notes<textarea name="source_notes" rows="5" maxlength="60000">{{ values.source_notes }}</textarea></label>
     <label>Your notes<textarea name="note_from_user" rows="5" maxlength="1000">{{ values.note_from_user }}</textarea></label>
     {% if writes_enabled %}
-    <div class="form-grid">
-      <div>
-        {% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %}
-        <p>Current image</p>
-        <img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}" style="display:block;max-width:100%;width:200px;max-height:160px;object-fit:contain;border-radius:.4rem">
-        {% elif recipe %}<p class="meta">No image uploaded.</p>{% endif %}
-        <div x-data="imageUpload">
-          <label class="image-drop-zone" :class="{ 'is-dragging': dragging }"
-                 @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
-                 @drop.prevent.stop="drop($event)">
-            <span>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}</span>
-            <span class="meta">Drop an image here or click to choose.</span>
-            <input type="file" name="image" accept="image/jpeg,image/png" x-ref="image" @change="choose($event.target.files)">
-            <span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span>
-          </label>
-          <p class="upload-error" role="alert" x-show="error" x-text="error" x-cloak></p>
-        </div>
-      </div>
       <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
-    </div>
     {% if errors %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
     {% endif %}
     <div class="form-actions"><button type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Save changes' if recipe else 'Create recipe' }}</button><a href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">Cancel</a></div>

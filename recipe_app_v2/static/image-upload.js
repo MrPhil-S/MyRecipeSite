@@ -2,9 +2,18 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('imageUpload', () => ({
     dragging: false,
     error: '',
+    previewUrl: '',
+    clearPreview() {
+      if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+      this.previewUrl = '';
+    },
+    destroy() {
+      this.clearPreview();
+    },
     choose(files, dropped = false) {
       const input = this.$refs.image;
       this.error = '';
+      this.clearPreview();
       input.setCustomValidity('');
       if (!files.length) return;
       const file = files[0];
@@ -26,6 +35,7 @@ document.addEventListener('alpine:init', () => {
         transfer.items.add(file);
         input.files = transfer.files;
       }
+      this.previewUrl = URL.createObjectURL(file);
     },
     drop(event) {
       this.dragging = false;
