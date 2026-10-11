@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit recipe' if recipe else 'Create recipe' }} · My Recipes{% endblock %}
+{% block content %}{% include '_editor.html' %}{% endblock %}

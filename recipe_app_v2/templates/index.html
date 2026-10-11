@@ -3,8 +3,9 @@
     <h1>Your recipe collection</h1>
     <div x-data="{ open: false }" class="notice">
       <button type="button" @click="open = !open" :aria-expanded="open">About this preview</button>
-      <p x-show="open" x-cloak>Browse recipes and their details. Editing will arrive in a later milestone.</p>
-      <noscript><p>Browse recipes and their details. Editing will arrive in a later milestone.</p></noscript>
+      <p x-show="open" x-cloak>Browse recipes and use the create/edit forms. This preview uses the development database.</p>
+      <noscript><p>Browse recipes and use the create/edit forms. This preview uses the development database.</p></noscript>
     </div>
+    <p><a href="/recipes/new">Create recipe</a></p>
     {% include '_recipes.html' %}
 {% endblock %}

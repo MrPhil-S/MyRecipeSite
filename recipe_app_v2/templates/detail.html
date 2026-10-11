@@ -6,6 +6,7 @@
   <div class="detail-intro">
     <div>
       <h1>{{ recipe.name }}</h1>
+      <p><a href="/recipes/{{ recipe.recipe_id }}/edit">Edit recipe</a></p>
       {% if cuisine %}<p class="cuisine">{{ cuisine.cuisine_name }}</p>{% endif %}
       {% if collections %}<ul class="tags" aria-label="Collections">{% for collection in collections %}<li>{{ collection.collection_name }}</li>{% endfor %}</ul>{% endif %}
       <div class="source-links">

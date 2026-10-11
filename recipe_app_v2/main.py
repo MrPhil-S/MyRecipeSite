@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlencode
 
-from fastapi import Depends, FastAPI, Path as PathParameter, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, HTTPException, Path as PathParameter, Query, Request
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
@@ -12,10 +12,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from .config import ROOT, dev_database_url
-from .database import get_session
+from .database import get_session, writes_enabled
+from .uploads import upload_root
 from .models import Recipe, Recipe_Ingredient, recipe_cooked_date
 from .recipes import detail_context
 from .search import search_filters
+from .editor_routes import router as editor_router
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -24,9 +26,28 @@ app = FastAPI(title="My Recipes preview", docs_url=None, redoc_url=None, openapi
 app.mount("/static", StaticFiles(directory=PACKAGE / "static"), name="static")
 # Serve explicit legacy asset directories, never templates or write routes.
 images = ROOT / "myrecipes" / "static" / "recipe_images"
-if images.is_dir():
-    app.mount("/recipe-images", StaticFiles(directory=images), name="recipe_images")
-for route, folder in (("ingredient-images", "ingredient_images"), ("source-pdfs", "custom_prints")):
+@app.get('/recipe-images/{filename}')
+def recipe_image(filename: str):
+    if any(c in filename for c in ('/', '\\', ':')) or filename in ('.', '..'):
+        raise HTTPException(404)
+    for directory in (upload_root() / 'images', images):
+        target = directory / filename
+        if target.is_file():
+            return FileResponse(target)
+    raise HTTPException(404)
+
+
+@app.get('/source-pdfs/{recipe_id}.pdf')
+def source_pdf(recipe_id: int):
+    for directory in (upload_root() / 'pdfs', ROOT / 'myrecipes/static/custom_prints'):
+        target = directory / f'{recipe_id}.pdf'
+        if target.is_file():
+            return FileResponse(target, media_type='application/pdf',
+                                headers={'Content-Disposition': f'attachment; filename="{recipe_id}.pdf"'})
+    raise HTTPException(404)
+
+
+for route, folder in (("ingredient-images", "ingredient_images"),):
     directory = ROOT / "myrecipes" / "static" / folder
     if directory.is_dir():
         app.mount("/" + route, StaticFiles(directory=directory), name=folder)
@@ -41,6 +62,7 @@ def list_url(page, sort, q=""):
 
 
 templates.env.globals["list_url"] = list_url
+app.include_router(editor_router)
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -53,7 +75,8 @@ async def database_unavailable(request: Request, exc: SQLAlchemyError):
 @app.get("/health")
 def health(session: Session = Depends(get_session)):
     session.execute(select(1)).scalar_one()
-    return {"status": "ok", "database": "MyRecipes_DEV", "read_only": True}
+    return {"status": "ok", "database": "MyRecipes_DEV", "read_only": not writes_enabled(),
+            "browse_read_only": True, "dev_saves_enabled": writes_enabled()}
 
 
 @app.get("/", response_class=HTMLResponse)

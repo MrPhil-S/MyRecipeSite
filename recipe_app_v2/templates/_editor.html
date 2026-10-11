@@ -1,0 +1,49 @@
+<section id="editor" class="recipe-editor"
+         hx-on::before-swap="if([422,409,503].includes(event.detail.xhr.status)){event.detail.shouldSwap = true; event.detail.isError = false;}">
+  <a class="back-link" href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">← Cancel</a>
+  <h1>{{ 'Edit recipe' if recipe else 'Create recipe' }}</h1>
+  {% if not writes_enabled %}<p class="notice">Form preview: you can review your changes. Saving is disabled.</p>{% endif %}
+  {% if reviewed %}<p class="success" role="status">Your changes passed validation. Nothing has been saved.</p>{% endif %}
+  {% if errors %}<div class="form-errors" role="alert"><h2>Please fix these fields</h2><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+  <form method="post" enctype="multipart/form-data" action="{{ '/recipes/' ~ recipe.recipe_id ~ '/edit' if recipe else '/recipes/new' }}"
+        hx-post="{{ '/recipes/' ~ recipe.recipe_id ~ '/edit' if recipe else '/recipes/new' }}"
+        hx-target="#editor" hx-swap="outerHTML">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="version" value="{{ values.version }}">
+    <label>Recipe name<input name="name" maxlength="200" required value="{{ values.name }}"></label>
+    <div class="form-grid">
+      <label>Source URL<input type="url" name="source_url" maxlength="255" value="{{ values.source_url }}"></label>
+      <label>Whisk URL<input type="url" name="whisk_url" maxlength="255" value="{{ values.whisk_url }}"></label>
+      {% for key, title in [('prep_time', 'Prep time'), ('cook_time', 'Cook time'), ('additional_time', 'Additional time')] %}
+      <label>{{ title }}<input name="{{ key }}" maxlength="20" placeholder="1 hr 30 mins" value="{{ values[key] }}"></label>
+      {% endfor %}
+      <label>Servings<input type="number" name="servings" min="1" max="2147483647" value="{{ values.servings }}"></label>
+      <label>Cuisine<select name="cuisine_id"><option value="">None</option>{% for cuisine in cuisines %}<option value="{{ cuisine.cuisine_id }}"{% if cuisine.cuisine_id|string == values.cuisine_id %} selected{% endif %}>{{ cuisine.cuisine_name }}</option>{% endfor %}</select></label>
+    </div>
+    <fieldset x-data="{ open: true }"><legend>Collections</legend>
+      <button type="button" @click="open = !open" :aria-expanded="open">Show/hide collections</button>
+      <div class="collection-choices" x-show="open">{% for collection in collection_choices %}<label><input type="checkbox" name="collection_ids" value="{{ collection.collection_id }}"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}</label>{% else %}<p>No collections available.</p>{% endfor %}</div>
+    </fieldset>
+    <fieldset><legend>Ingredients</legend>
+      <label>Input method<select name="ingredient_mode"><option value="rows"{% if values.ingredient_mode == 'rows' %} selected{% endif %}>Individual rows</option><option value="bulk"{% if values.ingredient_mode == 'bulk' %} selected{% endif %}>Bulk paste (replaces the rows below)</option></select></label>
+      <p class="meta">Choose which input to use. In bulk paste, enter one ingredient per line; separate its note with a comma. Start a group heading with &gt;.</p>
+      <div id="ingredient-rows">{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
+      <button type="button" hx-get="/editor/ingredient-row" hx-target="#ingredient-rows" hx-swap="beforeend">Add ingredient row</button>
+      <noscript><p>Use bulk paste to add more ingredients without JavaScript.</p></noscript>
+      <label>Bulk ingredients<textarea name="ingredient_bulk" rows="6" maxlength="60000">{{ values.ingredient_bulk }}</textarea></label>
+    </fieldset>
+    <label>Instructions<textarea name="instructions" rows="10" maxlength="60000">{{ values.instructions }}</textarea></label>
+    <p class="meta">One step per line, up to 1,000 characters per step. Start a group heading with &gt;.</p>
+    <label>Source notes<textarea name="source_notes" rows="5" maxlength="60000">{{ values.source_notes }}</textarea></label>
+    <label>Your notes<textarea name="note_from_user" rows="5" maxlength="1000">{{ values.note_from_user }}</textarea></label>
+    {% if recipe and recipe.image_file %}<p class="meta">Current image: {{ recipe.image_file }}. Leave uploads empty to keep existing files.</p>{% endif %}
+    {% if writes_enabled %}
+    <div class="form-grid">
+      <label>Recipe image<input type="file" name="image" accept="image/jpeg,image/png"><span class="meta">JPEG or PNG, up to 8 MB.</span></label>
+      <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
+    </div>
+    {% if errors or reviewed %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
+    {% endif %}
+    <div class="form-actions"><button type="submit" name="intent" value="{{ 'save' if writes_enabled else 'review' }}">{{ 'Save changes' if writes_enabled and recipe else 'Create recipe' if writes_enabled else 'Review changes' }}</button>{% if writes_enabled %}<button type="submit" name="intent" value="review">Review changes</button>{% endif %}<a href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">Cancel</a></div>
+  </form>
+</section>

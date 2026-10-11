@@ -19,3 +19,4 @@ recipe_app_v2/.venv/
 __pycache__/
 *.pyc
 recipe_app_v2/.browser-tools/
+recipe_app_v2/uploads/

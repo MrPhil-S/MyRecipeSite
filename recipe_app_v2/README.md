@@ -1,260 +1,100 @@
-# FastAPI migration: read-only preview
+# FastAPI migration preview
 
-A parallel, read-only recipe list, detail view, and search. Legacy Flask source and its existing local
-edits are preserved. No production deployment, traffic routing, schema changes,
-or database writes are included.
+Phase 4 features 1–4 are implemented: recipe list, details, search, and create/edit.
+Tag management and meal planning are next. Existing cuisine/collection assignment
+is available in the recipe form; managing those tags is a separate feature.
 
-## Run locally in two PowerShell terminals
+The user authorized **dev-only saves** on October 11, 2026. FastAPI always reads
+`[dev] db_uri` from `config.ini` and accepts only
+`mysql+pymysql` at `192.168.1.14:3307/MyRecipes_DEV`, without URL query overrides.
+Production deployment, routing and schema changes remain deferred.
 
-Run all commands from `C:\projects\MyRecipeSite`.
+[Current migration status](../migration_audit_2026-10-11.md) ·
+[Phase 1 backup evidence](../phase1_backup_completed_2026-10-11.md)
 
-Create the **separate** FastAPI environment once (the existing Python 3.9 works):
+## Run locally
+
+Run from `C:\projects\MyRecipeSite`. Keep the environments separate:
 
 ```powershell
 .\MyRecipesVenv\Scripts\python.exe -m venv recipe_app_v2\.venv
 .\recipe_app_v2\.venv\Scripts\python.exe -m pip install -r recipe_app_v2\requirements.txt
 ```
 
-Terminal 1: run the unchanged Flask app on **8080** through the safe local
-validation launcher. It verifies the dev target before importing Flask, binds
-only to loopback, disables the reloader, and makes its database connections
-read-only for comparison. Edit and other write actions will fail in this mode.
+Flask comparison preview on **8080**, unchanged source with writes blocked:
 
 ```powershell
 .\MyRecipesVenv\Scripts\python.exe recipe_app_v2\run_flask_preview.py
 ```
 
-The existing `python run_dev.py` launcher remains unchanged for normal Flask
-development; it binds to all network interfaces and permits writes. It was not
-used for read-only milestone validation.
-
-Terminal 2: FastAPI on **8001**:
+FastAPI on **8001**, with authorized dev saves:
 
 ```powershell
+$env:RECIPE_DEV_WRITES = "1"
 .\recipe_app_v2\.venv\Scripts\python.exe -m uvicorn recipe_app_v2.main:app --host 127.0.0.1 --port 8001
 ```
 
-Open [Flask](http://localhost:8080/) and [FastAPI](http://localhost:8001/).
-Stop either local process with Ctrl+C. Stopping FastAPI has no effect on Flask.
-Do not install the new requirements into `MyRecipesVenv`.
+Omit the variable, or set it to `0`, for form previews without saves. Browsing
+always uses a separate server-enforced read-only connection; GETs do not record
+visits or search history. Saves use a separate dev-only connection pool.
 
-## Configuration and read-only behavior
-
-The new app reads `config.ini` from the repository root, or the file path in
-`RECIPE_CONFIG`. It reads **only `[dev] db_uri`**, regardless of hostname. The
-driver and target must be `mysql+pymysql`, `192.168.1.14:3307`, `MyRecipes_DEV`.
-Other targets are rejected before connecting. Credentials are not committed,
-printed, or embedded in the container image.
-URL query overrides are also rejected, so driver options cannot silently change
-the validated database target.
-
-Every new database connection sets `SET SESSION TRANSACTION READ ONLY`.
-Application SQL is restricted to read queries, ORM flushes are blocked, and
-request sessions roll back on completion. No tables are created on startup.
-GET requests neither save search history nor record recipe visits. Forms and
-actions that change meal plans or cooking history are deferred to later milestones.
-
-Recipe cards count ingredients excluding group headers and count cooked-date
-rows, following Flask's logic. The default sort is creation date descending,
-with recipe ID as a stable tie breaker. A to Z and 24-card pagination use GET
-requests, server-rendered HTML, and HTMX partial updates. Alpine handles the
-preview information toggle. Browser history restoration returns a full page.
-Page navigation works without JavaScript. The explicit legacy recipe image,
-ingredient image, and source PDF directories are mounted read-only as static
-content; the app does not reuse legacy templates or write routes.
-
-HTMX 2.0.4 and Alpine 3.14.9 are vendored with their licenses in `static/vendor`.
-Normal browsing requires no CDN connection. `download_vendor.py` is the optional
-maintenance utility for fetching those pinned upstream versions.
-
-## Schema and Alembic
-
-`models.py` mirrors all 11 legacy model tables, including actual Flask names such
-as `recipe__ingredient`, `recipe__plan__date`, and `ingredient__synonym`. Existing
-fields, nullable columns, foreign keys, and uniqueness are retained.
-
-`migrations/baseline_schema.py` is a frozen snapshot for revision `0001`, separate
-from the live models. The revision describes creating the existing schema in an
-empty database, and can be rendered for **offline review only**:
+Alternatively, Docker Desktop must be running:
 
 ```powershell
-.\recipe_app_v2\.venv\Scripts\python.exe -m alembic -c recipe_app_v2\alembic.ini upgrade head --sql
+New-Item -ItemType Directory -Force recipe_app_v2/uploads/images, recipe_app_v2/uploads/pdfs | Out-Null
+docker compose -f compose.fastapi.yml up --build -d --wait
 ```
 
-This prints SQL and does not connect to a database. **Do not apply that SQL to
-the existing dev database.** All online Alembic commands, including `stamp`, are
-disabled in this milestone; even stamping would write migration history. Before
-any future migration milestone, verify backups and restore capability, recheck
-schema parity, and use the configured `recipe_v2_alembic_version` migration
-history table to avoid the legacy Flask `alembic_version` table. No backup,
-restore, tag of production, or
-production access was performed in this milestone.
+Compose enables dev saves and binds only `127.0.0.1:8001`. It runs the app as a
+non-root user with a read-only root filesystem. Configuration and legacy assets
+are mounted read-only. The separate `recipe_app_v2/uploads/` folder is writable,
+excluded from Git/builds, and persists when the container is replaced. Include
+this folder in future backups. Stop FastAPI with `docker compose -f compose.fastapi.yml down`.
 
-## Docker Compose
+Open [FastAPI](http://localhost:8001/) or [Create recipe](http://localhost:8001/recipes/new).
+Each recipe detail page links to its edit form.
 
-Docker Desktop with Linux containers and the Compose plugin must be installed.
-The same service supports a 64-bit ARM Raspberry Pi via the multi-architecture
-Python image, but deployment to the Pi is deferred.
+## Create/edit behavior
 
-```powershell
-docker compose -f compose.fastapi.yml config
-docker compose -f compose.fastapi.yml up --build -d
-docker compose -f compose.fastapi.yml ps
-docker compose -f compose.fastapi.yml down
-```
+Forms support ingredient rows or bulk paste, group headings, ingredient notes,
+instructions, source/user notes, times, servings, source/Whisk URLs, existing
+cuisines and multiple collections. Start bulk ingredient/instruction headings
+with `>`; bulk ingredient notes follow the first comma. Blank lines are skipped.
+Individual rows preserve commas in names. Bulk input replaces the displayed rows.
 
-Stop the locally running Uvicorn process first if it already occupies 8001.
-Compose starts **only the app**, binds host port 8001 to loopback, and uses the
-external dev database. `config.ini`, recipe images, ingredient images, and source
-PDFs are mounted read-only; none are sent in the Docker build context. The container runs as a non-root
-user with a read-only filesystem and a health check at `/health`.
-Existing Flask, Nginx, uWSGI, and Raspberry Pi configuration remain untouched.
+Validation follows existing column limits and retains entered text on errors.
+Review changes validates without saving. Saves commit the recipe and its children
+in one transaction, preserve hidden metadata/history, and reject stale edits.
+Forms require a signed CSRF token and work with or without JavaScript.
+
+Images accept JPEG/PNG up to 8 MB and 20 million pixels, re-encoded to a maximum
+1000×1000 JPEG. PDFs accept up to 8 MB with header/end-marker checks. Uploads use
+the separate dev folder; leaving them blank preserves existing files. Normal
+save failures roll back database and staged files. Database/filesystem changes
+are not crash-atomic; prior images and replaced dev PDFs are retained for recovery.
 
 ## Validation
 
 ```powershell
-.\recipe_app_v2\.venv\Scripts\python.exe -m unittest discover -s recipe_app_v2\tests -v
+.\recipe_app_v2\.venv\Scripts\python.exe -m unittest discover -s recipe_app_v2/tests -v
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_dev
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_http
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_details
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_search
+.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_editor
 ```
 
-Unit tests use an in-memory SQLite database. The other checks read only the dev
-database; HTTP parity requires both localhost apps running.
+`verify_editor` compares edit fields with local Flask. Add `--save` with
+`RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
+table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026:
+Validated October 11, 2026: 20 tests passed; all 453 edit forms matched Flask;
+live dev create/edit and stale-edit rejection passed; the fixture was removed,
+with all 12 tables' data unchanged. Browser checks covered HTMX row addition,
+review/error rendering, create/edit, image/PDF uploads and JavaScript disabled.
+List/detail parity also passed for 453 recipes, with 1,181 referenced assets loading.
+Earlier list/detail/search verification remains in Git history and the existing
+verification scripts. No production contact was needed for this feature.
 
-- Eight automated tests pass: target rejection, percent-encoded credentials,
-  write guards, pagination and sorting, group-header exclusion, cooking counts,
-  partials and history restoration, escaping, empty lists, missing write routes,
-  and the online Alembic guard tested without a database connection.
-- Dev database reports session read-only enabled; all 11 mapped tables match
-  column names, types, nullability, primary keys, foreign keys, and uniqueness.
-- Flask on 8080 and FastAPI on 8001 both return HTTP 200.
-- All **453 recipes** across **19 pages** match Flask's recipe set, with correct
-  ingredient and cooked counts and no duplicate or missing recipe IDs.
-- HTMX partials, CSS, both local JavaScript files, health endpoint, and a sample
-  legacy image return successfully. POST to the list returns 405.
-- Alembic baseline SQL renders offline; online migrations are explicitly blocked.
-- Docker Desktop 4.94.0 is installed for the current user (Docker CLI 29.8.2,
-  Compose 5.5.1). `docker compose -f compose.fastapi.yml config --quiet` passes.
-  After the Windows restart, the Linux engine runs successfully.
-- `docker compose -f compose.fastapi.yml up --build -d --wait` builds the image
-  and starts `myrecipesite-fastapi-1` with **healthy** status, bound only to
-  `127.0.0.1:8001`. The container runs as `recipes`, with its root filesystem,
-  config mount, and recipe-image mount verified read-only.
-- The container connects to `MyRecipes_DEV` with session read-only enabled;
-  schema verification passes for all 11 tables, and `pip check` passes.
-- HTTP parity against the actual container passes for all 453 recipe cards
-  across 19 pages alongside unchanged Flask on 8080. Health, static assets,
-  sample images, HTMX partials, and rejection of POST requests pass.
-- No browser visual/interaction check was performed for the first milestone;
-  search interaction checks are documented below. Raspberry Pi deployment remains deferred.
-
-For subsequent starts, open Docker Desktop and wait for its engine to become
-ready. From the repository root, run:
-
-```powershell
-docker compose -f compose.fastapi.yml up --build -d --wait
-docker compose -f compose.fastapi.yml ps
-```
-
-The first milestone is complete, including container build/startup and HTTP
-verification. Both previews are available on their original ports. Review the
-preview before proceeding to another feature; production cutover and all
-database writes remain deferred.
-
-## Second milestone: recipe details
-
-Recipe cards open `/recipes/{recipe_id}`. Details include ordered ingredients
-and ingredient notes, instruction groups with the legacy numbering behavior,
-source notes, user notes, cuisine, collections, all recorded times, servings,
-recipe/ingredient images, external source links, and available source PDFs.
-Existing cooking/view counts and meal-plan status are displayed without changing
-them. The back link preserves the list page and sort order. Unknown recipes show
-an HTML 404 page. Source links accept only HTTP/HTTPS URLs, and stored text is
-escaped. No recipe fields or mapped instruction objects are modified.
-
-The detail ingredient count excludes group headers, consistent with the new
-list; Flask's detail heading included group headers in its count. Total time is
-also displayed when recorded, even if individual time fields are empty. These
-are presentation changes; database values are unchanged.
-
-Validated October 11, 2026:
-
-- All ten unit tests pass, including grouped instruction numbering, stable
-  sequence ordering, single/empty instructions, notes, escaping, missing recipes,
-  preserved list navigation, and blocked POST requests.
-- The rebuilt Docker container is healthy on loopback port 8001, alongside
-  unchanged Flask on 8080. Additional asset mounts remain read-only.
-- All **453 detail pages** match the legacy queries and safely rendered Flask
-  templates for ingredient/instruction/source-note ordering and content, cuisine,
-  collections, time fields, notes, cooking counts, and existing visit counts.
-- All **1,181 distinct referenced image/PDF assets** return HTTP 200.
-- Visit-history row count remains unchanged after the full comparison. The
-  existing recipe-list parity check still passes for all 453 cards.
-
-`verify_details.py` runs `legacy_detail_snapshot.py` with the legacy interpreter
-and compares its captured output with FastAPI HTTP responses. The snapshot uses
-dev-only, read-only connections and renders `recipe.html` directly. It **never
-calls Flask's detail route**, which would commit a visit record. Nullable image
-names are normalized only in temporary display objects for rendering; mapped
-objects and database values are untouched. It does not print recipe content or
-credentials to the terminal.
-
-The second milestone is complete. Search follows in the third milestone below.
-Manual browser visual review remains pending.
-
-## Third milestone: read-only search
-
-Search uses GET requests and matches title, ingredient names and notes,
-instructions, source notes, and user notes. Matching is case-insensitive and
-uses literal substrings: `%` and `_` are text, not SQL wildcards. Every required
-term must match. Double quotes group a phrase; uppercase, unquoted `NOT`
-excludes subsequent terms or phrases. An unfinished quoted phrase is accepted
-while typing. Exclusion-only searches start from all recipes. Ingredient
-synonyms expand both directions by one step, matching the legacy synonym rules.
-Nullable ingredient notes no longer hide ingredient matches, and an unmatched
-required term no longer resets the intersection to later matches.
-
-HTMX updates results after a 350 ms typing pause. The input retains focus and
-spaces while results update; newer requests replace older ones. Search, sort,
-pagination, recipe links, back links, and browser history preserve the query.
-The normal GET forms also work without JavaScript. No search-history or recipe
-visit records are written, and no schema changes are needed.
-
-Validated October 11, 2026:
-
-- All **13 unit tests** pass, including field coverage, synonyms, nullable notes,
-  required/excluded terms, quoted phrases, literal wildcards, query limits,
-  escaping, navigation state, and unchanged history records.
-- **17 live-data queries**, both sort modes, and every result page match an
-  independent reference calculation. Search history and visit counts are unchanged.
-- Compared with Flask, `ground turkey` finds four additional valid matches and
-  `heavy` finds twenty. A search with an unmatched required term no longer
-  incorrectly returns ten recipes matching only its later term.
-- Existing list parity still passes for all 453 recipes, and the rebuilt
-  read-only Docker service is healthy on port 8001 alongside Flask on 8080.
-- Headless Chrome verifies live typing (including trailing spaces), retained
-  focus, partial updates without reloading, sorting, pagination, detail/back
-  navigation, clearing, browser back/forward, and forms with JavaScript disabled.
-
-`verify_search.py` captures legacy read-only queries privately through
-`legacy_search_snapshot.py`, compares old results, and independently calculates
-expected results from the dev snapshot. It does not print recipe content or
-credentials. The browser check is optional and uses the existing legacy
-environment's Selenium installation:
-
-```powershell
-.\MyRecipesVenv\Scripts\python.exe -m recipe_app_v2.verify_search_browser
-```
-
-It requires installed Chrome, downloads its matching ChromeDriver from Google's
-official Chrome for Testing service, and uses a temporary browser profile.
-The driver cache and profiles under `.browser-tools/` are excluded from Git and
-Docker builds; Selenium is not an application dependency.
-
-The third milestone is complete. The next prescribed feature is create/edit
-recipe forms. Database writes remain disabled under the current read-only scope;
-enabling dev writes requires explicit authorization before that feature can save.
+Models retain the existing schema. Alembic revision `0001` is an offline baseline
+for an empty database; online upgrade/stamp and destructive downgrade remain
+blocked. No tables are created on application startup. Pi/ARM deployment and
+full application rollback rehearsal remain untested.

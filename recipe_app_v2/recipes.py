@@ -4,6 +4,7 @@ from urllib.parse import quote, urlsplit
 from sqlalchemy import func, select
 
 from .config import ROOT
+from .uploads import upload_root
 from .models import (Collection, Cuisine, Recipe, Recipe_Ingredient,
                      Recipe_Instruction, Recipe_Plan_Date, recipe_collection,
                      recipe_cooked_date, recipe_view_date)
@@ -71,4 +72,5 @@ def detail_context(session, recipe_id):
             "ingredient_count": sum(not item["is_group_header"] for item in items),
             "view_count": history[0], "cook_count": history[1], "planned": history[2],
             "source_link": web_link(recipe.source_url), "whisk_link": web_link(recipe.whisk_url),
-            "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() else None}
+            "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() or
+                (upload_root() / 'pdfs' / f'{recipe_id}.pdf').is_file() else None}
