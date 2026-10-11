@@ -1,24 +1,6 @@
 <section id="recipes" aria-label="Recipe list" aria-live="polite">
-  <form class="search-form" action="/" method="get" hx-get="/" hx-trigger="submit, input changed delay:350ms from:#search-query" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipes:replace">
-    <label for="search-query">Search recipes</label>
-    <div class="search-controls">
-      <input id="search-query" type="search" name="q" value="{{ q }}" maxlength="200" placeholder="Search titles, ingredients, instructions, or notes" aria-describedby="search-help">
-      <input type="hidden" name="sort" value="{{ sort }}">
-      <button type="submit">Search</button>
-    </div>
-    <p class="meta" id="search-help">Use quotes for a phrase and NOT to exclude terms. Example: chicken NOT cream</p>
-  </form>
   <div class="toolbar">
     <p>{{ total }} recipes{% if q %} matching “{{ q }}” · <a href="{{ list_url(1, sort) }}">Clear search</a>{% endif %}</p>
-    <form action="/" method="get" hx-get="/" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipes:replace">
-      <input type="hidden" name="q" value="{{ q }}">
-      <label for="sort">Sort by</label>
-      <select id="sort" name="sort">
-        <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recently added</option>
-        <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
-      </select>
-      <button type="submit">Apply</button>
-    </form>
   </div>
   <div class="grid">
     {% for row in recipes %}
@@ -41,8 +23,8 @@
     {% else %}<p>No recipes found.</p>{% endfor %}
   </div>
   <nav aria-label="Recipe pages" class="pagination">
-    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q) }}" hx-get="{{ list_url(page - 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipes:replace">Previous</a>{% endif %}
+    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q) }}" hx-get="{{ list_url(page - 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Previous</a>{% endif %}
     <span>Page {{ page }} of {{ pages }}</span>
-    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q) }}" hx-get="{{ list_url(page + 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipes:replace">Next</a>{% endif %}
+    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q) }}" hx-get="{{ list_url(page + 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Next</a>{% endif %}
   </nav>
 </section>

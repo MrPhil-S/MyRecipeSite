@@ -1,6 +1,7 @@
 """Optional headless Chrome check. Run with the legacy Selenium environment."""
 import json
 import subprocess
+import time
 import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -84,6 +85,23 @@ def verify():
             assert browser.find_element(By.ID, 'search-query').get_attribute('value') == ''
             errors = [e for e in browser.get_log('browser') if e['level'] == 'SEVERE' and 'favicon.ico' not in e['message']]
             assert not errors, 'Browser reported JavaScript or network errors'
+            # A response can arrive after another keystroke but before the next
+            # debounced request starts. It must never replace the search input.
+            browser.get('http://127.0.0.1:8001/')
+            browser.execute_script("window.slowSearchStarted = false; window.searchInput = document.getElementById('search-query'); document.body.addEventListener('htmx:beforeRequest', () => window.slowSearchStarted = true)")
+            browser.execute_cdp_cmd('Network.enable', {})
+            browser.execute_cdp_cmd('Network.emulateNetworkConditions', {
+                'offline': False, 'latency': 700, 'downloadThroughput': -1, 'uploadThroughput': -1})
+            query_input = browser.find_element(By.ID, 'search-query')
+            query_input.send_keys('chicken')
+            wait.until(lambda b: b.execute_script('return window.slowSearchStarted'))
+            time.sleep(.5)
+            query_input.send_keys(' ')
+            wait.until(lambda b: parse_qs(urlsplit(b.current_url).query).get('q') == ['chicken '])
+            assert query_input.get_attribute('value') == 'chicken '
+            assert browser.execute_script("return window.searchInput === document.getElementById('search-query')")
+            browser.execute_cdp_cmd('Network.emulateNetworkConditions', {
+                'offline': False, 'latency': 0, 'downloadThroughput': -1, 'uploadThroughput': -1})
             browser.execute_cdp_cmd('Emulation.setScriptExecutionDisabled', {'value': True})
             browser.get('http://127.0.0.1:8001/')
             browser.find_element(By.ID, 'search-query').send_keys('ground turkey')
@@ -95,7 +113,8 @@ def verify():
             assert parse_qs(urlsplit(browser.current_url).query)['q'] == ['ground turkey']
             print(json.dumps({'live_typing': 'ok', 'focus_preserved': True, 'htmx_without_reload': True,
                               'sort_pagination_detail_back': 'ok', 'clear_search': 'ok',
-                              'browser_history': 'ok', 'without_javascript': 'ok'}))
+                              'browser_history': 'ok', 'slow_response_typing': 'ok',
+                              'without_javascript': 'ok'}))
         finally:
             browser.quit()
 

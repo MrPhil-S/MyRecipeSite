@@ -19,9 +19,23 @@
       <label>Servings<input type="number" name="servings" min="1" max="2147483647" value="{{ values.servings }}"></label>
       <label>Cuisine<select name="cuisine_id"><option value="">None</option>{% for cuisine in cuisines %}<option value="{{ cuisine.cuisine_id }}"{% if cuisine.cuisine_id|string == values.cuisine_id %} selected{% endif %}>{{ cuisine.cuisine_name }}</option>{% endfor %}</select></label>
     </div>
-    <fieldset x-data="{ open: true }"><legend>Collections</legend>
-      <button type="button" @click="open = !open" :aria-expanded="open">Show/hide collections</button>
-      <div class="collection-choices" x-show="open">{% for collection in collection_choices %}<label><input type="checkbox" name="collection_ids" value="{{ collection.collection_id }}"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}</label>{% else %}<p>No collections available.</p>{% endfor %}</div>
+    <fieldset class="collection-select" x-data="{ open: false, search: '', selected: {{ values.collection_ids | tojson | forceescape }} }"
+              @keydown.escape="open = false; $refs.trigger.focus()"><legend>Collections</legend>
+      <button class="collection-trigger" type="button" x-ref="trigger" @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
+              :aria-expanded="open" aria-controls="collection-options">
+        <span x-text="selected.length ? selected.length + ' collection' + (selected.length === 1 ? '' : 's') + ' selected' : 'Choose collections'">Choose collections</span><span aria-hidden="true">▾</span>
+      </button>
+      <div id="collection-options" class="collection-dropdown" x-show="open" x-cloak @click.outside="open = false">
+        <label>Find a collection<input type="search" x-ref="search" x-model="search" placeholder="Search collections"></label>
+        <div class="collection-options">
+          {% for collection in collection_choices %}
+          <label x-show="{{ collection.collection_name | lower | tojson | forceescape }}.includes(search.trim().toLowerCase())">
+            <input type="checkbox" name="collection_ids" value="{{ collection.collection_id }}" x-model="selected"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}
+          </label>
+          {% else %}<p>No collections available.</p>{% endfor %}
+        </div>
+      </div>
+      <noscript><style>.collection-select .collection-trigger{display:none}.collection-select [x-cloak]{display:block!important}.collection-select .collection-dropdown{position:static;box-shadow:none}</style></noscript>
     </fieldset>
     <fieldset id="ingredient-inputs" x-data="{ mode: {{ ('bulk' if values.ingredient_mode == 'bulk' else 'rows') | tojson | forceescape }} }"><legend>Ingredients</legend>
       <label>Input method<select name="ingredient_mode" x-model="mode"><option value="rows"{% if values.ingredient_mode == 'rows' %} selected{% endif %}>Individual rows</option><option value="bulk"{% if values.ingredient_mode == 'bulk' %} selected{% endif %}>Bulk paste</option></select></label>
@@ -46,7 +60,17 @@
         <p>Current image</p>
         <img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}" style="display:block;max-width:100%;width:200px;max-height:160px;object-fit:contain;border-radius:.4rem">
         {% elif recipe %}<p class="meta">No image uploaded.</p>{% endif %}
-        <label>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}<input type="file" name="image" accept="image/jpeg,image/png"><span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span></label>
+        <div x-data="imageUpload">
+          <label class="image-drop-zone" :class="{ 'is-dragging': dragging }"
+                 @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
+                 @drop.prevent.stop="drop($event)">
+            <span>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}</span>
+            <span class="meta">Drop an image here or click to choose.</span>
+            <input type="file" name="image" accept="image/jpeg,image/png" x-ref="image" @change="choose($event.target.files)">
+            <span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span>
+          </label>
+          <p class="upload-error" role="alert" x-show="error" x-text="error" x-cloak></p>
+        </div>
       </div>
       <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
     </div>

@@ -7,5 +7,23 @@
       <noscript><p>Browse recipes and use the create/edit forms. This preview uses the development database.</p></noscript>
     </div>
     <p><a href="/recipes/new">Create recipe</a></p>
+    <form id="recipe-search" class="search-form" action="/" method="get" hx-get="/"
+          hx-trigger="submit, input changed delay:350ms from:#search-query" hx-target="#recipes"
+          hx-swap="outerHTML" hx-push-url="true" hx-sync="this:replace">
+      <label for="search-query">Search recipes</label>
+      <div class="search-controls">
+        <input id="search-query" type="search" name="q" value="{{ q }}" maxlength="200" placeholder="Search titles, ingredients, instructions, or notes" aria-describedby="search-help">
+        <button type="submit">Search</button>
+      </div>
+      <p class="meta" id="search-help">Use quotes for a phrase and NOT to exclude terms. Example: chicken NOT cream</p>
+      <div class="sort-controls">
+        <label for="sort">Sort by</label>
+        <select id="sort" name="sort">
+          <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recently added</option>
+          <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
+        </select>
+        <button type="submit">Apply</button>
+      </div>
+    </form>
     {% include '_recipes.html' %}
 {% endblock %}
