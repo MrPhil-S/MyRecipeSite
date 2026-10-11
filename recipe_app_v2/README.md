@@ -136,19 +136,27 @@ Validated October 11, 2026:
 - Alembic baseline SQL renders offline; online migrations are explicitly blocked.
 - Docker Desktop 4.94.0 is installed for the current user (Docker CLI 29.8.2,
   Compose 5.5.1). `docker compose -f compose.fastapi.yml config --quiet` passes.
-  WSL was updated successfully, and Virtual Machine Platform was enabled with
-  automatic restart suppressed. Windows reports that a **restart is required**.
-  Container build/startup and container HTTP parity remain unverified until
-  that restart. No browser visual/interaction check or Pi deployment was performed.
+  After the Windows restart, the Linux engine runs successfully.
+- `docker compose -f compose.fastapi.yml up --build -d --wait` builds the image
+  and starts `myrecipesite-fastapi-1` with **healthy** status, bound only to
+  `127.0.0.1:8001`. The container runs as `recipes`, with its root filesystem,
+  config mount, and recipe-image mount verified read-only.
+- The container connects to `MyRecipes_DEV` with session read-only enabled;
+  schema verification passes for all 11 tables, and `pip check` passes.
+- HTTP parity against the actual container passes for all 453 recipe cards
+  across 19 pages alongside unchanged Flask on 8080. Health, static assets,
+  sample images, HTMX partials, and rejection of POST requests pass.
+- No browser visual/interaction check or Raspberry Pi deployment was performed.
 
-After saving work and restarting Windows, start Docker Desktop and wait for its
-engine to become ready. From the repository root, run:
+For subsequent starts, open Docker Desktop and wait for its engine to become
+ready. From the repository root, run:
 
 ```powershell
 docker compose -f compose.fastapi.yml up --build -d --wait
 docker compose -f compose.fastapi.yml ps
 ```
 
-Then run the localhost parity checks above with the legacy Flask preview on
-8080. The remaining first-milestone check is the actual container build/startup
-and HTTP verification. Review this list before proceeding to recipe details.
+The first milestone is complete, including container build/startup and HTTP
+verification. Both previews are available on their original ports. Review the
+recipe list before proceeding to recipe detail migration; production cutover
+and all database writes remain deferred.
