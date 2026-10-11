@@ -2,8 +2,7 @@
          hx-on::before-swap="if([422,409,503].includes(event.detail.xhr.status)){event.detail.shouldSwap = true; event.detail.isError = false;}">
   <a class="back-link" href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">← Cancel</a>
   <h1>{{ 'Edit recipe' if recipe else 'Create recipe' }}</h1>
-  {% if not writes_enabled %}<p class="notice">Form preview: you can review your changes. Saving is disabled.</p>{% endif %}
-  {% if reviewed %}<p class="success" role="status">Your changes passed validation. Nothing has been saved.</p>{% endif %}
+  {% if not writes_enabled %}<p class="notice">Saving is disabled.</p>{% endif %}
   {% if errors %}<div class="form-errors" role="alert"><h2>Please fix these fields</h2><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
   <form method="post" enctype="multipart/form-data" action="{{ '/recipes/' ~ recipe.recipe_id ~ '/edit' if recipe else '/recipes/new' }}"
         hx-post="{{ '/recipes/' ~ recipe.recipe_id ~ '/edit' if recipe else '/recipes/new' }}"
@@ -46,8 +45,8 @@
       <label>Recipe image<input type="file" name="image" accept="image/jpeg,image/png"><span class="meta">JPEG or PNG, up to 8 MB.</span></label>
       <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
     </div>
-    {% if errors or reviewed %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
+    {% if errors %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
     {% endif %}
-    <div class="form-actions"><button type="submit" name="intent" value="{{ 'save' if writes_enabled else 'review' }}">{{ 'Save changes' if writes_enabled and recipe else 'Create recipe' if writes_enabled else 'Review changes' }}</button>{% if writes_enabled %}<button type="submit" name="intent" value="review">Review changes</button>{% endif %}<a href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">Cancel</a></div>
+    <div class="form-actions"><button type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Save changes' if recipe else 'Create recipe' }}</button><a href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">Cancel</a></div>
   </form>
 </section>

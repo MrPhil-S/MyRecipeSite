@@ -63,7 +63,7 @@ with `>`; bulk ingredient notes follow the first comma. Blank lines are skipped.
 Individual rows preserve commas in names. Bulk input replaces the displayed rows.
 
 Validation follows existing column limits and retains entered text on errors.
-Review changes validates without saving. Saves commit the recipe and its children
+Create/Save validates entries and commits the recipe and its children
 in one transaction, preserve hidden metadata/history, and reject stale edits.
 Forms require a signed CSRF token and work with or without JavaScript.
 
@@ -89,7 +89,7 @@ table's data before/after. It does not edit existing recipes. Unit tests use SQL
 Validated October 11, 2026: 20 tests passed; all 453 edit forms matched Flask;
 live dev create/edit and stale-edit rejection passed; the fixture was removed,
 with all 12 tables' data unchanged. Browser checks covered HTMX row addition,
-review/error rendering, create/edit, image/PDF uploads and JavaScript disabled.
+error rendering, create/edit, image/PDF uploads and JavaScript disabled.
 List/detail parity also passed for 453 recipes, with 1,181 referenced assets loading.
 Earlier list/detail/search verification remains in Git history and the existing
 verification scripts. No production contact was needed for this feature.

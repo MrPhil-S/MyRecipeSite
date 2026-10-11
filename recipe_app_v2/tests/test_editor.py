@@ -131,7 +131,7 @@ class EditorTests(unittest.TestCase):
         with Session(self.engine) as session:
             self.assertEqual(session.get(Recipe, recipe_id).name, 'Changed elsewhere')
 
-    def test_csrf_disabled_saves_and_review(self):
+    def test_csrf_and_disabled_saves(self):
         data = self.values()
         data['name'] = 'Safe preview'
         original = data['csrf_token']
@@ -142,12 +142,11 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(self.client.post('/recipes/new', data=data,
             headers={'Origin': 'https://other.example'}).status_code, 403)
         with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '0'}):
-            data['intent'] = 'save'
             self.assertEqual(self.client.post('/recipes/new', data=data).status_code, 403)
-            data['intent'] = 'review'
-            response = self.client.post('/recipes/new', data=data)
+            response = self.client.get('/recipes/new')
             self.assertEqual(response.status_code, 200)
-            self.assertIn('Nothing has been saved', response.text)
+            self.assertIn('disabled>Create recipe', response.text)
+            self.assertNotIn('Review changes', response.text)
         with Session(self.engine) as session:
             self.assertEqual(session.scalar(text('SELECT count(*) FROM recipe')), 0)
 

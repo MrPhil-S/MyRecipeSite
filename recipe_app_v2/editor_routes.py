@@ -47,13 +47,13 @@ def check_token(request, token):
         raise HTTPException(403, 'Submit the form from this application.')
 
 
-def render(request, session, recipe, values=None, errors=None, reviewed=False, token=None, status=200):
+def render(request, session, recipe, values=None, errors=None, token=None, status=200):
     from .main import templates
     cookie = request.cookies.get(COOKIE, '')
     token = token or (cookie if token_valid(cookie) else new_token())
     context = choices(session)
     context.update(recipe=recipe, values=values if values is not None else form_values(session, recipe),
-                   errors=errors or [], reviewed=reviewed, csrf_token=token,
+                   errors=errors or [], csrf_token=token,
                    row=empty_row(), writes_enabled=writes_enabled())
     partial = request.headers.get('HX-Request') == 'true'
     response = templates.TemplateResponse(request=request,
@@ -100,6 +100,10 @@ async def submit(request, session, recipe):
     async with request.form(max_files=2, max_fields=2000, max_part_size=60000) as form:
         token = str(form.get('csrf_token', ''))
         check_token(request, token)
+        if not writes_enabled():
+            raise HTTPException(403, 'Saving to the dev database is disabled.')
+        if form.get('intent') not in (None, 'save'):
+            raise HTTPException(400, 'This form has changed. Reload it before submitting.')
         try:
             values = submitted_values(form)
         except ValueError as exc:
@@ -119,10 +123,7 @@ async def submit(request, session, recipe):
                         pdf = validated
                 except ValueError as exc:
                     errors.append(str(exc))
-        intent = str(form.get('intent', 'save' if writes_enabled() else 'review'))
-        if intent == 'save' and not writes_enabled():
-            raise HTTPException(403, 'Saving to the dev database is disabled.')
-        if not errors and intent == 'save':
+        if not errors:
             try:
                 recipe_id = await run_in_threadpool(save_recipe,
                     recipe.recipe_id if recipe else None, values, image, pdf)
@@ -143,7 +144,7 @@ async def submit(request, session, recipe):
                 return Response(status_code=200, headers={'HX-Redirect': target})
             return RedirectResponse(target, status_code=303)
         return render(request, session, recipe, values=values, errors=errors,
-                      reviewed=not errors, token=token, status=422 if errors else 200)
+                      token=token, status=422)
 
 
 @router.post('/recipes/new')
