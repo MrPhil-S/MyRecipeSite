@@ -7,3 +7,12 @@ document.addEventListener('htmx:historyRestore', () => {
   if (input) input.value = params.get('q') || '';
   if (sort) sort.value = params.get('sort') || 'recent';
 });
+
+document.addEventListener('click', (event) => {
+  const suggestion = event.target.closest('[data-history-query]');
+  if (!suggestion) return;
+  const input = document.getElementById('search-query');
+  const form = document.getElementById('recipe-search');
+  input.value = suggestion.dataset.historyQuery;
+  form.requestSubmit(document.getElementById('submit-search'));
+});

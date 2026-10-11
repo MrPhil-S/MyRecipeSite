@@ -37,6 +37,10 @@ $env:RECIPE_DEV_WRITES = "1"
 Omit the variable, or set it to `0`, for form previews without saves. Browsing
 always uses a separate server-enforced read-only connection; GETs do not record
 visits or search history. Saves use a separate dev-only connection pool.
+Search history is saved only on Enter, Search or selection of a previous query;
+typing, sorting and pagination do not save. Suggestions show distinct recent
+queries. Queries over the existing 100-character history limit are not truncated
+or saved; live search still accepts 200 characters.
 
 Alternatively, Docker Desktop must be running:
 
@@ -86,7 +90,7 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 20 tests passed; all 453 edit forms matched Flask;
+Validated October 11, 2026: 24 tests passed; all 453 edit forms matched Flask;
 live dev create/edit and stale-edit rejection passed; the fixture was removed,
 with all 12 tables' data unchanged. Browser checks covered HTMX row addition,
 error rendering, create/edit, image/PDF uploads and JavaScript disabled.

@@ -1,4 +1,5 @@
 <section id="recipes" aria-label="Recipe list" aria-live="polite">
+  {% if history_notice %}<p class="meta" role="status">{{ history_notice }}</p>{% endif %}
   <div class="toolbar">
     <p>{{ total }} recipes{% if q %} matching “{{ q }}” · <a href="{{ list_url(1, sort) }}">Clear search</a>{% endif %}</p>
   </div>

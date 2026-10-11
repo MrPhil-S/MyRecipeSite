@@ -1,0 +1,4 @@
+{% if search_history %}
+<p class="meta">Recent searches</p>
+<ul>{% for previous in search_history %}<li><button type="button" data-history-query="{{ previous }}">{{ previous }}</button></li>{% endfor %}</ul>
+{% else %}<p class="meta">{{ 'No matching recent searches.' if history_query else 'No recent searches yet.' }}</p>{% endif %}

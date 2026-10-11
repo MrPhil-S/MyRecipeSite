@@ -4,12 +4,13 @@ from typing import Literal
 from urllib.parse import urlencode
 
 from fastapi import Depends, FastAPI, HTTPException, Path as PathParameter, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from .config import ROOT, dev_database_url
 from .database import get_session, writes_enabled
@@ -17,7 +18,8 @@ from .uploads import upload_root
 from .models import Recipe, Recipe_Ingredient, recipe_cooked_date
 from .recipes import detail_context
 from .search import search_filters
-from .editor_routes import router as editor_router
+from .editor_routes import router as editor_router, COOKIE, check_token, new_token, token_valid
+from .search_history import recent_searches, remember_search
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -113,11 +115,62 @@ def recipe_list(
     )
     rows = session.execute(query).all()
     # Do not link to legacy detail routes: they record visits in the database.
-    context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort, "q": q}
+    context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort, "q": q,
+               "history_notice": getattr(request.state, 'history_notice', None)}
     partial = (request.headers.get("HX-Request") == "true"
                and request.headers.get("HX-History-Restore-Request") != "true")
     template = "_recipes.html" if partial else "index.html"
-    return templates.TemplateResponse(request=request, name=template, context=context)
+    if not partial:
+        cookie = request.cookies.get(COOKIE, '')
+        context['csrf_token'] = cookie if token_valid(cookie) else new_token()
+        context.update(search_history=recent_searches(session, q), history_query=q)
+    response = templates.TemplateResponse(request=request, name=template, context=context)
+    if not partial:
+        response.set_cookie(COOKIE, context['csrf_token'], httponly=True, samesite='strict',
+                            max_age=7200, secure=request.url.scheme == 'https')
+        response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
+@app.get('/search/history', response_class=HTMLResponse)
+def search_history_suggestions(request: Request, q: str = Query('', max_length=200),
+                               session: Session = Depends(get_session)):
+    response = templates.TemplateResponse(request=request, name='_search_history.html',
+        context={'search_history': recent_searches(session, q), 'history_query': q})
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
+@app.post('/search', response_class=HTMLResponse)
+async def explicit_search(request: Request, session: Session = Depends(get_session)):
+    size, chunks = 0, []
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > 8192:
+            raise HTTPException(413, 'Search form is too large.')
+        chunks.append(chunk)
+    request._body = b''.join(chunks)
+    if request._body.count(b'&') > 10:
+        raise HTTPException(413, 'Too many search fields.')
+    async with request.form(max_files=0, max_fields=10) as form:
+        check_token(request, str(form.get('csrf_token', '')))
+        q, sort = str(form.get('q', '')).strip(), str(form.get('sort', 'recent'))
+        intent = str(form.get('intent', 'search'))
+        if len(q) > 200 or sort not in ('recent', 'name') or intent not in ('search', 'sort'):
+            raise HTTPException(422, 'Invalid search form.')
+        notice = None
+        if intent == 'search':
+            try:
+                notice = await run_in_threadpool(remember_search, q)
+            except SQLAlchemyError as exc:
+                logging.getLogger(__name__).error('Search history save failed (%s)', type(exc).__name__)
+                notice = 'Search history could not be saved.'
+        if request.headers.get('HX-Request') != 'true':
+            return RedirectResponse(list_url(1, sort, q), status_code=303)
+        request.state.history_notice = notice
+        response = await run_in_threadpool(recipe_list, request, 1, sort, q, session)
+        response.headers['HX-Push-Url'] = list_url(1, sort, q)
+        return response
 
 
 @app.get("/recipes/{recipe_id}", response_class=HTMLResponse)

@@ -1,5 +1,7 @@
 """Optional headless Chrome check. Run with the legacy Selenium environment."""
 import json
+import os
+import secrets
 import subprocess
 import time
 import zipfile
@@ -13,12 +15,16 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select, WebDriverWait
+from sqlalchemy import delete
+from recipe_app_v2.database import get_write_engine
+from recipe_app_v2.models import Query_History
 
 ROOT = Path(__file__).resolve().parent.parent
 CHROME = Path('C:/Program Files/Google/Chrome/Application/chrome.exe')
 
 
 def verify():
+    test_query = 'ground turkey NOT "v2-history-test-' + secrets.token_hex(6) + '"'
     version = subprocess.check_output(['powershell', '-NoProfile', '-Command',
         f"(Get-Item '{CHROME}').VersionInfo.ProductVersion"], text=True).strip()
     target = ROOT / 'recipe_app_v2/.browser-tools'
@@ -88,7 +94,7 @@ def verify():
             # A response can arrive after another keystroke but before the next
             # debounced request starts. It must never replace the search input.
             browser.get('http://127.0.0.1:8001/')
-            browser.execute_script("window.slowSearchStarted = false; window.searchInput = document.getElementById('search-query'); document.body.addEventListener('htmx:beforeRequest', () => window.slowSearchStarted = true)")
+            browser.execute_script("window.slowSearchStarted = false; window.searchInput = document.getElementById('search-query'); document.body.addEventListener('htmx:beforeRequest', e => { if (e.detail.requestConfig.verb === 'get' && e.detail.requestConfig.path === '/') window.slowSearchStarted = true; })")
             browser.execute_cdp_cmd('Network.enable', {})
             browser.execute_cdp_cmd('Network.emulateNetworkConditions', {
                 'offline': False, 'latency': 700, 'downloadThroughput': -1, 'uploadThroughput': -1})
@@ -104,19 +110,29 @@ def verify():
                 'offline': False, 'latency': 0, 'downloadThroughput': -1, 'uploadThroughput': -1})
             browser.execute_cdp_cmd('Emulation.setScriptExecutionDisabled', {'value': True})
             browser.get('http://127.0.0.1:8001/')
-            browser.find_element(By.ID, 'search-query').send_keys('ground turkey')
-            browser.find_element(By.CSS_SELECTOR, '.search-form button').click()
-            wait.until(lambda b: parse_qs(urlsplit(b.current_url).query).get('q') == ['ground turkey'])
+            browser.find_element(By.ID, 'search-query').send_keys(test_query)
+            browser.find_element(By.ID, 'submit-search').click()
+            wait.until(lambda b: parse_qs(urlsplit(b.current_url).query).get('q') == [test_query])
             Select(browser.find_element(By.ID, 'sort')).select_by_value('name')
             browser.find_element(By.ID, 'sort').find_element(By.XPATH, '..').find_element(By.TAG_NAME, 'button').click()
             wait.until(lambda b: parse_qs(urlsplit(b.current_url).query).get('sort') == ['name'])
-            assert parse_qs(urlsplit(browser.current_url).query)['q'] == ['ground turkey']
+            assert parse_qs(urlsplit(browser.current_url).query)['q'] == [test_query]
             print(json.dumps({'live_typing': 'ok', 'focus_preserved': True, 'htmx_without_reload': True,
                               'sort_pagination_detail_back': 'ok', 'clear_search': 'ok',
                               'browser_history': 'ok', 'slow_response_typing': 'ok',
                               'without_javascript': 'ok'}))
         finally:
             browser.quit()
+            original = os.environ.get('RECIPE_DEV_WRITES')
+            try:
+                os.environ['RECIPE_DEV_WRITES'] = '1'
+                with get_write_engine().begin() as connection:
+                    connection.execute(delete(Query_History).where(Query_History.query_text == test_query))
+            finally:
+                if original is None:
+                    os.environ.pop('RECIPE_DEV_WRITES', None)
+                else:
+                    os.environ['RECIPE_DEV_WRITES'] = original
 
 
 if __name__ == '__main__':
