@@ -1,0 +1,1 @@
+{% for header in headers %}<th scope="col" aria-sort="{{ header.aria_sort }}"><a href="{{ header.url }}"{% if header.key == 'image' %} title="Sort by image availability"{% endif %}>{{ header.label }}{% if header.aria_sort != 'none' %}<span aria-hidden="true"> {{ '↑' if header.aria_sort == 'ascending' else '↓' }}</span>{% endif %}</a></th>{% endfor %}<th scope="col">Actions</th>

@@ -4,13 +4,13 @@
 <h1>Manage tags</h1>
 <nav class="tag-navigation" aria-label="Tag types">{% for category in ['collections', 'cuisines', 'synonyms'] %}<a href="/tags/{{ category }}"{% if category == kind %} aria-current="page"{% endif %}>{{ category | capitalize }}</a>{% endfor %}</nav>
 <div class="toolbar"><h2>{{ kind | capitalize }} ({{ total }})</h2>{% if writes_enabled %}<a href="/tags/{{ kind }}/new">Add {{ singular }}</a>{% endif %}</div>
-<form class="tag-filter" method="get" action="/tags/{{ kind }}"><label for="tag-filter">Find {{ kind }}</label><input id="tag-filter" type="search" name="q" value="{{ q }}" maxlength="200"><button type="submit">Find</button>{% if q %}<a href="/tags/{{ kind }}">Clear</a>{% endif %}</form>
+<form class="tag-filter" method="get" action="/tags/{{ kind }}"><input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="direction" value="{{ direction }}"><label for="tag-filter">Find {{ kind }}</label><input id="tag-filter" type="search" name="q" value="{{ q }}" maxlength="200"><button type="submit">Find</button>{% if q %}<a href="/tags/{{ kind }}?sort={{ sort }}&amp;direction={{ direction }}">Clear</a>{% endif %}</form>
 {% if kind == 'synonyms' %}
 <p>Connected names form a group: searching any name also finds ingredients using the others.</p>
 {% if synonym_groups %}<details><summary>View synonym groups</summary><ul>{% for group in synonym_groups %}<li>{{ group | join(' ↔ ') }}</li>{% endfor %}</ul></details>{% endif %}
 <h2>Synonym links</h2>
 {% endif %}
-<div class="tag-table-wrap"><table class="tag-table"><thead><tr>{% for name, label, limit in fields %}<th scope="col">{{ label }}</th>{% endfor %}{% if kind != 'synonyms' %}<th scope="col">Recipes</th>{% endif %}<th scope="col">Actions</th></tr></thead><tbody>
+<div class="tag-table-wrap"><table class="tag-table"><thead><tr>{% include '_table_headers.html' %}</tr></thead><tbody>
 {% for row in rows %}<tr data-tag-id="{{ row.id }}">{% for value in row['values'] %}<td>{{ value }}</td>{% endfor %}{% if kind != 'synonyms' %}<td>{{ row.assigned }}</td>{% endif %}<td>{% if writes_enabled %}<a href="/tags/{{ kind }}/{{ row.id }}/edit">Edit</a> · <a href="/tags/{{ kind }}/{{ row.id }}/delete">Delete</a>{% else %}Read only{% endif %}</td></tr>{% else %}<tr><td colspan="4">No {{ kind }} found.</td></tr>{% endfor %}
 </tbody></table></div>
 <nav class="pagination" aria-label="Tag pages">{% if page > 1 %}<a href="/tags/{{ kind }}?page={{ page - 1 }}&amp;{{ query_string }}">Previous</a>{% endif %}<span>Page {{ page }} of {{ pages }}</span>{% if page < pages %}<a href="/tags/{{ kind }}?page={{ page + 1 }}&amp;{{ query_string }}">Next</a>{% endif %}</nav>

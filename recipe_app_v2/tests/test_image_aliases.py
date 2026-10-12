@@ -59,6 +59,20 @@ class ImageAliasTests(unittest.TestCase):
                 self.assertEqual(image_url(value), '/ingredient-images/default_ingredient.jpg')
             self.assertEqual(image_url('mint'), '/ingredient-images/mint.jpg')
 
+    def test_table_sorting_applies_before_pagination_and_preserves_filters(self):
+        entries = {f'ingredient_{i:02d}': [f'alias {59-i:02d}'] for i in range(60)}
+        with patch('recipe_app_v2.image_alias_routes.load_catalogue', return_value=entries):
+            response = self.client.get('/image-aliases?sort=name&direction=desc&q=ingredient')
+            self.assertEqual(response.context['rows'][0]['name'], 'ingredient_59')
+            self.assertIn('aria-sort="descending"', response.text)
+            self.assertIn('sort=name', response.text)
+            self.assertIn('direction=desc', response.text)
+            self.assertEqual(self.client.get('/image-aliases?sort=name&direction=desc&page=2').context['rows'][0]['name'], 'ingredient_09')
+            self.assertEqual(self.client.get('/image-aliases?sort=aliases&direction=asc').context['rows'][0]['name'], 'ingredient_59')
+            with patch('recipe_app_v2.image_alias_routes.image_url', side_effect=lambda n:
+                       '/ingredient-images/mint.jpg' if n == 'ingredient_59' else '/ingredient-images/default_ingredient.jpg'):
+                self.assertEqual(self.client.get('/image-aliases?sort=image&direction=asc').context['rows'][0]['name'], 'ingredient_59')
+
     def test_atomic_catalogue_edits_conflicts_and_stale_versions(self):
         start = load_catalogue()
         version = revision(start)

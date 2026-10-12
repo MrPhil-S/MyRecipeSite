@@ -41,6 +41,29 @@ class TagTests(unittest.TestCase):
         return {key: re.search(f'name="{key}" value="([^"]*)"', response.text)[1]
                 for key in ('csrf_token', 'version')}
 
+    def test_table_sorting_counts_secondary_names_and_pagination(self):
+        with Session(self.engine) as session:
+            collections = [Collection(collection_name=f'Collection {i:02d}') for i in range(60)]
+            cuisines = [Cuisine(cuisine_id=1, cuisine_name='Zulu'), Cuisine(cuisine_id=2, cuisine_name='Alpha')]
+            session.add_all(collections + cuisines)
+            session.flush()
+            session.add_all([Recipe(name='One', cuisine_id=1, collections=[collections[-1]]),
+                             Recipe(name='Two', cuisine_id=1, collections=[collections[-1]])])
+            session.add_all([Ingredient_Synonym(primary_term='Zulu', secondary_term='Alpha'),
+                             Ingredient_Synonym(primary_term='Alpha', secondary_term='Zulu')])
+            session.commit()
+            last_id = collections[-1].collection_id
+        response = self.client.get('/tags/collections?sort=recipes&direction=desc&q=Collection')
+        self.assertEqual(response.context['rows'][0]['id'], last_id)
+        self.assertEqual(response.context['rows'][0]['assigned'], 2)
+        self.assertIn('aria-sort="descending"', response.text)
+        self.assertIn('page=2', response.text)
+        self.assertIn('direction=desc', response.text)
+        self.assertEqual(len(self.client.get('/tags/collections?sort=name&direction=desc&page=2').context['rows']), 10)
+        self.assertEqual(self.client.get('/tags/cuisines?sort=recipes&direction=desc').context['rows'][0]['values'], ['Zulu'])
+        self.assertEqual(self.client.get('/tags/synonyms?sort=secondary_term&direction=desc').context['rows'][0]['values'], ['Alpha', 'Zulu'])
+        self.assertEqual(self.client.get('/tags/synonyms?sort=recipes').status_code, 422)
+
     def create(self, kind, values):
         response = self.client.post(f'/tags/{kind}/new', data=dict(self.form(f'/tags/{kind}/new'), **values),
                                     follow_redirects=False)

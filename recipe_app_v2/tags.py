@@ -16,6 +16,7 @@ from .database import get_session, get_write_engine, writes_enabled
 from .editor_routes import COOKIE, check_token, new_token, token_valid
 from .models import Collection, Cuisine, Ingredient_Synonym, Recipe, recipe_collection
 from .search import synonym_groups
+from .sorting import table_headers
 
 Kind = Literal['collections', 'cuisines', 'synonyms']
 Action = Literal['edit', 'delete']
@@ -143,16 +144,31 @@ def tags_home():
 
 @router.get('/tags/{kind}')
 def tag_list(request: Request, kind: Kind, q: str = Query('', max_length=200),
-             page: int = Query(1, ge=1), session: Session = Depends(get_session)):
+             page: int = Query(1, ge=1), session: Session = Depends(get_session),
+             sort: Literal['name', 'recipes', 'secondary_term'] = 'name',
+             direction: Literal['asc', 'desc'] = 'asc'):
     from .main import templates
     model, id_field, fields, singular = SPECS[kind]
+    columns = [('name', fields[0][1])]
+    columns.append(('secondary_term', 'Synonym') if kind == 'synonyms' else ('recipes', 'Recipes'))
+    if sort not in dict(columns):
+        raise HTTPException(422, 'Invalid sort column for this table.')
+    if sort == 'recipes' and kind == 'collections':
+        ordering = select(func.count(func.distinct(recipe_collection.c.recipe_id))).where(
+            recipe_collection.c.collection_id == Collection.collection_id).scalar_subquery()
+    elif sort == 'recipes':
+        ordering = select(func.count()).select_from(Recipe).where(
+            Recipe.cuisine_id == Cuisine.cuisine_id).scalar_subquery()
+    else:
+        ordering = getattr(model, fields[0][0] if sort == 'name' else sort)
+    order = lambda expression: expression.asc() if direction == 'asc' else expression.desc()
     filters = [or_(*(func.lower(getattr(model, field)).contains(q.strip().lower(), autoescape=True)
                     for field, _, _ in fields))] if q.strip() else []
     total = session.scalar(select(func.count()).select_from(model).where(*filters))
     pages = max(1, (total + 49) // 50)
     page = min(page, pages)
     tags = session.scalars(select(model).where(*filters).order_by(
-        *(getattr(model, field).asc() for field, _, _ in fields), getattr(model, id_field).asc()
+        order(ordering), *(order(getattr(model, field)) for field, _, _ in fields), order(getattr(model, id_field))
     ).offset((page - 1) * 50).limit(50)).all()
     ids = [getattr(tag, id_field) for tag in tags]
     counts = {}
@@ -167,7 +183,10 @@ def tag_list(request: Request, kind: Kind, q: str = Query('', max_length=200),
              'assigned': counts.get(getattr(tag, id_field), 0)} for tag in tags]
     response = templates.TemplateResponse(request=request, name='tags.html', context={
         'kind': kind, 'singular': singular, 'fields': fields, 'rows': rows, 'q': q,
-        'page': page, 'pages': pages, 'total': total, 'query_string': urlencode({'q': q}),
+        'page': page, 'pages': pages, 'total': total,
+        'query_string': urlencode({'q': q, 'sort': sort, 'direction': direction}),
+        'sort': sort, 'direction': direction,
+        'headers': table_headers('/tags/' + kind, columns, sort, direction, {'q': q}),
         'writes_enabled': writes_enabled(),
         'synonym_groups': [group for group in synonym_groups(session)
                            if not q.strip() or any(q.strip().lower() in name for name in group)] if kind == 'synonyms' else []})

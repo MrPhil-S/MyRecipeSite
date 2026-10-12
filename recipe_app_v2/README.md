@@ -100,6 +100,8 @@ leaves tied matches unresolved. It preserves fresh/dried and other conflicting
 variants. New or renamed ingredient rows use the catalogue; unchanged rows retain
 their existing mappings. No bulk remapping has been applied.
 Missing ingredient images always use `default_ingredient.jpg`.
+Image-alias and tag table headers sort both ways across all pages; filters retain
+the chosen order. The Image column sorts by image availability.
 
 The packaged `image_alias_seed.json` seeds image names and reviewed initial aliases.
 Edits persist separately in `uploads/ingredient-image-aliases.json`, using a lock,
@@ -126,7 +128,7 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 12, 2026: 45 tests passed. Separate image-alias CRUD, stale saves,
+Validated October 12, 2026: 47 tests passed. Separate image-alias CRUD, stale saves,
 recipe matching and fallback checks passed using owned dev fixtures; all 12 tables
 matched their original data after cleanup. Against the saved production audit,
 269 of 429 default rows receive proposed matches and 160 remain unresolved; these
