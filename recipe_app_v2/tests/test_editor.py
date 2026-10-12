@@ -40,6 +40,8 @@ class EditorTests(unittest.TestCase):
         self.environment.start()
         self.writer = patch('recipe_app_v2.recipe_saves.get_write_engine', return_value=self.engine)
         self.writer.start()
+        self.activity_writer = patch('recipe_app_v2.activity.get_write_engine', return_value=self.engine)
+        self.activity_writer.start()
 
         def sessions():
             with ReadOnlySession(self.engine, autoflush=False) as session:
@@ -51,6 +53,7 @@ class EditorTests(unittest.TestCase):
         self.client.close()
         app.dependency_overrides.clear()
         self.writer.stop()
+        self.activity_writer.stop()
         self.environment.stop()
         self.folder.cleanup()
         self.engine.dispose()

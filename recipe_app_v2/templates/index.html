@@ -17,7 +17,7 @@
           <input id="search-query" type="search" name="q" value="{{ q }}" maxlength="200" placeholder="Search titles, ingredients, instructions, or notes" aria-describedby="search-help"
                  autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true"
                  :aria-expanded="historyOpen" aria-controls="search-history"
-                 hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort" hx-params="q,sort" hx-sync="#recipe-search:replace">
+                 hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort,#collection-filter" hx-params="q,sort,collection_id" hx-sync="#recipe-search:replace">
           <div class="search-history" x-show="historyOpen" x-cloak>
             <div id="search-history" hx-get="/search/history" hx-trigger="focus from:#search-query, input changed delay:150ms from:#search-query"
                  hx-include="#search-query" hx-params="q" hx-target="this" hx-swap="innerHTML" hx-push-url="false" hx-sync="this:replace">
@@ -33,9 +33,12 @@
         <select id="sort" name="sort">
           <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recently added</option>
           <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
+          <option value="cooked" {% if sort == 'cooked' %}selected{% endif %}>Recently cooked</option>
+          <option value="visited" {% if sort == 'visited' %}selected{% endif %}>Recently visited</option>
         </select>
         <button type="submit" name="intent" value="sort">Apply</button>
       </div>
+      <div class="sort-controls"><label for="collection-filter">Collection</label><select id="collection-filter" name="collection_id"><option value="0">All collections</option>{% for collection in collection_choices %}<option value="{{ collection.collection_id }}"{% if collection.collection_id == collection_id %} selected{% endif %}>{{ collection.collection_name }}</option>{% endfor %}</select><button type="submit" name="intent" value="sort">Apply</button></div>
     </form>
     {% include '_recipes.html' %}
 {% endblock %}

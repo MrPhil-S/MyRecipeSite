@@ -1,13 +1,13 @@
 <section id="recipes" aria-label="Recipe list" aria-live="polite">
   {% if history_notice %}<p class="meta" role="status">{{ history_notice }}</p>{% endif %}
   <div class="toolbar">
-    <p>{{ total }} recipes{% if q %} matching “{{ q }}” · <a href="{{ list_url(1, sort) }}">Clear search</a>{% endif %}</p>
+    <p>{{ total }} recipes{% if q %} matching “{{ q }}” · <a href="{{ list_url(1, sort, '', collection_id) }}">Clear search</a>{% endif %}</p>
   </div>
   <div class="grid">
     {% for row in recipes %}
     {% set recipe = row.Recipe %}
     <article class="card" data-recipe-id="{{ recipe.recipe_id }}">
-      <a class="recipe-link" href="/recipes/{{ recipe.recipe_id }}{{ list_url(page, sort, q)[1:] }}">
+      <a class="recipe-link" href="/recipes/{{ recipe.recipe_id }}{{ list_url(page, sort, q, collection_id)[1:] }}">
       <div class="picture">
         {% if recipe.image_file %}
         <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
@@ -20,12 +20,13 @@
         {% if recipe.source_url_short %}<p class="source">{{ recipe.source_url_short }}</p>{% endif %}
       </div>
       </a>
+      {% if writes_enabled %}<div class="card-actions"><form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ list_url(page, sort, q, collection_id) }}"><button type="submit">{{ 'Remove from plan' if row.planned else 'Add to plan' }}</button></form></div>{% endif %}
     </article>
     {% else %}<p>No recipes found.</p>{% endfor %}
   </div>
   <nav aria-label="Recipe pages" class="pagination">
-    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q) }}" hx-get="{{ list_url(page - 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Previous</a>{% endif %}
+    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q, collection_id) }}" hx-get="{{ list_url(page - 1, sort, q, collection_id) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Previous</a>{% endif %}
     <span>Page {{ page }} of {{ pages }}</span>
-    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q) }}" hx-get="{{ list_url(page + 1, sort, q) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Next</a>{% endif %}
+    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q, collection_id) }}" hx-get="{{ list_url(page + 1, sort, q, collection_id) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Next</a>{% endif %}
   </nav>
 </section>

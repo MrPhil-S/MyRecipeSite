@@ -37,7 +37,7 @@ def verify():
     assets = set()
     with httpx.Client(timeout=30) as client:
         for recipe in snapshot['recipes']:
-            response = client.get(f"http://127.0.0.1:8001/recipes/{recipe['id']}?page=2&sort=name")
+            response = client.get(f"http://127.0.0.1:8001/recipes/{recipe['id']}?page=2&sort=name&log_visit=false")
             response.raise_for_status()
             actual = PageText(response.text).value()
             previous = PageText(recipe['legacy_html']).value()

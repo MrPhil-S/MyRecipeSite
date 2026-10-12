@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}{{ recipe.name }} · My Recipes{% endblock %}
 {% block content %}
-<a class="back-link" href="{{ list_url(page, sort, q) }}">← Back to {% if q %}search results{% else %}recipes{% endif %}</a>
+<a class="back-link" href="{{ '/plan' if from_plan else list_url(page, sort, q, collection_id) }}">← Back to {% if from_plan %}meal plan{% elif q %}search results{% else %}recipes{% endif %}</a>
 <article class="recipe-detail" data-recipe-id="{{ recipe.recipe_id }}">
   <div class="detail-intro">
     <div>
@@ -20,6 +20,12 @@
         {% endfor %}
       </dl>
       <p class="meta">Cooked {{ cook_count }} times · {{ view_count }} recorded views{% if planned %} · In meal plan{% endif %}</p>
+      {% if writes_enabled %}<div class="recipe-actions">
+      {% for action, label in [('cooked', 'Mark cooked'), ('plan-remove' if planned else 'plan-add', 'Remove from plan' if planned else 'Add to plan')] %}
+      <form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ action }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit">{{ label }}</button></form>
+      {% endfor %}
+      <a href="/recipes/{{ recipe.recipe_id }}/delete{{ '?from_plan=true' if from_plan else list_url(page, sort, q, collection_id)[1:] }}">Delete recipe</a>
+      </div>{% endif %}
     </div>
     {% if recipe.image_file %}<img class="detail-image" src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="{{ recipe.name }}">{% endif %}
   </div>

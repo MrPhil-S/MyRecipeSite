@@ -75,7 +75,7 @@ def verify(save=False):
     try:
         with httpx.Client(base_url='http://127.0.0.1:8001', timeout=30) as client:
             health = client.get('/health').json()
-            assert health['database'] == 'MyRecipes_DEV' and health['browse_read_only']
+            assert health['database'] == 'MyRecipes_DEV' and health['read_connections_read_only']
             with Session(get_engine()) as session:
                 ids = session.scalars(select(Recipe.recipe_id).order_by(Recipe.recipe_id)).all()
             # Compare every persisted legacy edit field with the new form.

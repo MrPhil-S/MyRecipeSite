@@ -1,7 +1,8 @@
 # FastAPI migration preview
 
-Phase 4 features 1–5 are implemented: recipe list, details, search, create/edit,
-and tag management. Meal planning is next. Use **Manage tags** in the header to
+Phase 4 features 1–6 are implemented: recipe list, details, search, create/edit,
+tag management and meal planning. The user chose production's plan list grouped
+by date added; calendar scheduling is outside this agreed scope. Use **Manage tags** in the header to
 create/edit/delete collections, cuisines and synonyms. Deleting a collection or
 cuisine confirms the assignment count, removes that tag's assignments and keeps
 the recipes. The existing schema is retained.
@@ -40,8 +41,10 @@ $env:RECIPE_DEV_WRITES = "1"
 ```
 
 Omit the variable, or set it to `0`, for form previews without saves. Browsing
-always uses a separate server-enforced read-only connection; GETs do not record
-visits or search history. Saves use a separate dev-only connection pool.
+uses a separate server-enforced read-only connection. With dev saves enabled,
+opening a recipe detail records a visit through the dev write pool, matching
+Flask. Verification uses `log_visit=false` to preserve existing visit history.
+GETs never record search history. Saves use a separate dev-only connection pool.
 Search history is saved only on Enter, Search or selection of a previous query;
 typing, sorting and pagination do not save. Suggestions show distinct recent
 queries. Queries over the existing 100-character history limit are not truncated
@@ -62,6 +65,14 @@ this folder in future backups. Stop FastAPI with `docker compose -f compose.fast
 
 Open [FastAPI](http://localhost:8001/) or [Create recipe](http://localhost:8001/recipes/new).
 Each recipe detail page links to its edit form.
+
+Use **Meal plan** in the header, or Add/Remove from plan on recipe cards and
+details. Plan changes update with HTMX and also work without JavaScript.
+**Mark cooked** is on recipe details and plan cards. Details show the recorded
+cooked/view counts. The home page adds collection filtering and Recently cooked /
+Recently visited sorts, preserving search and collection context through actions.
+Deleting a recipe requires confirmation, rejects changed recipes/history and
+removes all child records in one transaction; image/PDF files remain for recovery.
 
 ## Create/edit behavior
 
@@ -89,13 +100,19 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_dev
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_http
 .\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_editor
+.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_activity
 ```
 
 `verify_editor` compares edit fields with local Flask. Add `--save` with
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 33 tests passed; all 453 edit forms matched Flask;
+Validated October 11, 2026: 38 tests passed. Activity/plan/deletion checks used
+owned dev fixtures, including HTMX and JavaScript-disabled browser checks;
+all 12 tables matched their original data after cleanup. Current list/detail
+parity passed for 454 recipes and 1,182 assets; 17 search queries matched the
+reference behavior. The plan matched existing active recipes and local Flask.
+Earlier validation: all 453 edit forms matched Flask;
 live dev create/edit and stale-edit rejection passed; the fixture was removed,
 with all 12 tables' data unchanged. Browser checks covered HTMX row addition,
 error rendering, create/edit, image/PDF uploads and JavaScript disabled.

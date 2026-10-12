@@ -1,0 +1,138 @@
+import os
+import re
+import unittest
+from datetime import datetime
+from unittest.mock import patch
+
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, func, select
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import StaticPool
+
+from recipe_app_v2.database import ReadOnlySession, get_session
+from recipe_app_v2.main import app
+from recipe_app_v2.models import (Base, Collection, Recipe, Recipe_Ingredient, Recipe_Instruction,
+    Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date)
+
+
+class ActivityTests(unittest.TestCase):
+    def setUp(self):
+        self.engine = create_engine('sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool)
+        Base.metadata.create_all(self.engine)
+        with Session(self.engine) as session:
+            collection = Collection(collection_id=1, collection_name='Favorites')
+            recipe = Recipe(recipe_id=1, name='Chicken soup', create_dt=datetime(2025, 1, 1))
+            recipe.collections.append(collection)
+            session.add_all([recipe, Recipe(recipe_id=2, name='Bread', create_dt=datetime(2025, 1, 2)),
+                Recipe_Ingredient(recipe_id=1, name_written='Chicken'),
+                Recipe_Instruction(recipe_id=1, type=1, text_contents='Simmer')])
+            session.commit()
+        def sessions():
+            with ReadOnlySession(self.engine, autoflush=False) as session:
+                yield session
+        app.dependency_overrides[get_session] = sessions
+        self.environment = patch.dict(os.environ, {'RECIPE_DEV_WRITES': '1'})
+        self.environment.start()
+        self.writer = patch('recipe_app_v2.activity.get_write_engine', return_value=self.engine)
+        self.writer.start()
+        self.client = TestClient(app)
+
+    def tearDown(self):
+        self.client.close()
+        app.dependency_overrides.clear()
+        self.writer.stop()
+        self.environment.stop()
+        self.engine.dispose()
+
+    def form(self, path='/'):
+        body = self.client.get(path).text
+        return {key: re.search(f'name="{key}" value="([^"]*)"', body)[1]
+                for key in ('csrf_token', 'version') if f'name="{key}"' in body}
+
+    def count(self, model):
+        with Session(self.engine) as session:
+            return session.scalar(select(func.count()).select_from(model))
+
+    def test_visits_cooking_readonly_mode_and_verification_optout(self):
+        self.assertIn('1 recorded views', self.client.get('/recipes/1').text)
+        self.assertEqual(self.count(recipe_view_date), 1)
+        self.client.get('/recipes/1?log_visit=false')
+        self.assertEqual(self.count(recipe_view_date), 1)
+        data = self.form()
+        target = '/recipes/1?sort=visited&q=chicken&collection_id=1'
+        response = self.client.post('/recipes/1/actions/cooked', data=dict(data, return_to=target), follow_redirects=False)
+        self.assertEqual(response.headers['location'], target)
+        self.assertEqual(self.count(recipe_cooked_date), 1)
+        with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '0'}):
+            self.client.get('/recipes/1')
+            self.assertEqual(self.count(recipe_view_date), 1)
+            self.assertEqual(self.client.post('/recipes/1/actions/cooked', data=data).status_code, 403)
+
+    def test_plan_idempotence_grouping_soft_removal_and_back_navigation(self):
+        data = self.form()
+        for _ in range(2):
+            self.assertEqual(self.client.post('/recipes/1/actions/plan-add', data=dict(data, return_to='/plan'), follow_redirects=False).status_code, 303)
+        self.assertEqual(self.count(Recipe_Plan_Date), 1)
+        body = self.client.get('/plan').text
+        self.assertIn('data-plan-recipe-id="1"', body)
+        self.assertIn('Added ', body)
+        self.assertIn('Back to meal plan', self.client.get('/recipes/1?from_plan=true&log_visit=false').text)
+        with Session(self.engine) as session:
+            session.add(Recipe_Plan_Date(recipe_id=1))
+            session.commit()
+        self.assertEqual(self.client.get('/plan').text.count('data-plan-recipe-id="1"'), 1)
+        self.client.post('/recipes/1/actions/plan-remove', data=data)
+        with Session(self.engine) as session:
+            plans = session.scalars(select(Recipe_Plan_Date)).all()
+            self.assertEqual(len(plans), 2)
+            self.assertTrue(all(p.removed_dt is not None for p in plans))
+        self.assertIn('Your plan is empty', self.client.get('/plan').text)
+
+    def test_collection_search_sort_and_context_preservation(self):
+        with Session(self.engine) as session:
+            session.add(recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2026, 1, 1)))
+            session.add(recipe_view_date(recipe_id=1, recipe_view_dt=datetime(2026, 2, 1)))
+            session.commit()
+        for sort in ('cooked', 'visited'):
+            body = self.client.get('/?sort=' + sort).text
+            self.assertLess(body.index('data-recipe-id="1"'), body.index('data-recipe-id="2"'))
+        body = self.client.get('/?collection_id=1&q=chicken&sort=visited').text
+        self.assertIn('data-recipe-id="1"', body)
+        self.assertNotIn('data-recipe-id="2"', body)
+        self.assertIn('collection_id=1', body)
+        response = self.client.post('/search', data=dict(self.form(), q='chicken', sort='cooked',
+            collection_id='1', intent='sort'), headers={'HX-Request': 'true'})
+        self.assertEqual(response.headers['HX-Push-Url'], '/?page=1&sort=cooked&q=chicken&collection_id=1')
+        self.assertEqual(self.client.get('/?collection_id=999').status_code, 404)
+
+    def test_delete_removes_related_rows_but_preserves_other_recipes_and_tags(self):
+        with Session(self.engine) as session:
+            session.add_all([Recipe_Plan_Date(recipe_id=1), recipe_view_date(recipe_id=1), recipe_cooked_date(recipe_id=1)])
+            session.commit()
+        data = self.form('/recipes/1/delete?collection_id=1')
+        response = self.client.post('/recipes/1/delete', data=dict(data, return_to='/?collection_id=1'), follow_redirects=False)
+        self.assertEqual(response.headers['location'], '/?collection_id=1')
+        for model in (Recipe_Ingredient, Recipe_Instruction, Recipe_Plan_Date, recipe_view_date, recipe_cooked_date):
+            self.assertEqual(self.count(model), 0)
+        with Session(self.engine) as session:
+            self.assertIsNone(session.get(Recipe, 1))
+            self.assertIsNotNone(session.get(Recipe, 2))
+            self.assertIsNotNone(session.get(Collection, 1))
+            self.assertEqual(session.scalar(select(func.count()).select_from(recipe_collection)), 0)
+
+    def test_csrf_return_location_stale_confirmation_and_rollback(self):
+        data = self.form()
+        self.assertEqual(self.client.post('/recipes/1/actions/cooked', data={'csrf_token': 'bad'}).status_code, 403)
+        for target in ('https://example.com', '//example.com', '/tags/collections'):
+            self.assertEqual(self.client.post('/recipes/1/actions/cooked', data=dict(data, return_to=target)).status_code, 422)
+        data = self.form('/recipes/1/delete')
+        with Session(self.engine) as session:
+            session.add(recipe_cooked_date(recipe_id=1))
+            session.commit()
+        self.assertIn('Reload confirmation', self.client.post('/recipes/1/delete', data=data).text)
+        data = self.form('/recipes/1/delete')
+        from sqlalchemy.exc import OperationalError
+        with patch('recipe_app_v2.activity.Session.commit', side_effect=OperationalError('test', {}, Exception())):
+            self.assertEqual(self.client.post('/recipes/1/delete', data=data).status_code, 503)
+        self.assertEqual(self.count(Recipe), 2)
+        self.assertEqual(self.count(Recipe_Ingredient), 1)
