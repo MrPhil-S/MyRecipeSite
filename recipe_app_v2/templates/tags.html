@@ -10,8 +10,8 @@
 {% if synonym_groups %}<details><summary>View synonym groups</summary><ul>{% for group in synonym_groups %}<li>{{ group | join(' ↔ ') }}</li>{% endfor %}</ul></details>{% endif %}
 <h2>Synonym links</h2>
 {% endif %}
-<div class="tag-table-wrap"><table class="tag-table"><thead><tr>{% include '_table_headers.html' %}</tr></thead><tbody>
-{% for row in rows %}<tr data-tag-id="{{ row.id }}">{% for value in row['values'] %}<td>{{ value }}</td>{% endfor %}{% if kind != 'synonyms' %}<td>{{ row.assigned }}</td>{% endif %}<td>{% if writes_enabled %}<a href="/tags/{{ kind }}/{{ row.id }}/edit">Edit</a> · <a href="/tags/{{ kind }}/{{ row.id }}/delete">Delete</a>{% else %}Read only{% endif %}</td></tr>{% else %}<tr><td colspan="4">No {{ kind }} found.</td></tr>{% endfor %}
+<div class="tag-table-wrap"><table class="tag-table tag-management-table{% if kind == 'synonyms' %} synonym-table{% endif %}"><colgroup><col class="tag-name-column"><col class="tag-secondary-column"><col class="tag-actions-column"></colgroup><thead><tr>{% include '_table_headers.html' %}</tr></thead><tbody>
+{% for row in rows %}<tr data-tag-id="{{ row.id }}">{% for value in row['values'] %}<td>{{ value }}</td>{% endfor %}{% if kind != 'synonyms' %}<td>{{ row.assigned }}</td>{% endif %}<td>{% if writes_enabled %}<a href="/tags/{{ kind }}/{{ row.id }}/edit">Edit</a> · <a href="/tags/{{ kind }}/{{ row.id }}/delete">Delete</a>{% else %}Read only{% endif %}</td></tr>{% else %}<tr><td colspan="3">No {{ kind }} found.</td></tr>{% endfor %}
 </tbody></table></div>
 <nav class="pagination" aria-label="Tag pages">{% if page > 1 %}<a href="/tags/{{ kind }}?page={{ page - 1 }}&amp;{{ query_string }}">Previous</a>{% endif %}<span>Page {{ page }} of {{ pages }}</span>{% if page < pages %}<a href="/tags/{{ kind }}?page={{ page + 1 }}&amp;{{ query_string }}">Next</a>{% endif %}</nav>
 {% endblock %}
