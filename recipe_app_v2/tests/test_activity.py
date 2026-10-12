@@ -106,23 +106,32 @@ class ActivityTests(unittest.TestCase):
         self.assertEqual(self.client.get('/?collection_id=999').status_code, 404)
 
     def test_collection_thumbnail_uses_cooking_count_not_recency_and_keeps_empty_collections(self):
-        from recipe_app_v2.collections import collection_cards
+        from recipe_app_v2.collections import collection_cards, all_recipes_thumbnail
         with Session(self.engine) as session:
+            session.get(Collection, 1).collection_name = 'Kitchen'
             bread = session.get(Recipe, 2)
             bread.collections.append(session.get(Collection, 1))
             session.get(Recipe, 1).image_file = 'soup.jpg'
             session.get(Recipe, 2).image_file = 'bread.jpg'
             session.add(Collection(collection_id=2, collection_name='Empty'))
+            session.add(Collection(collection_id=3, collection_name='Favorites'))
+            session.add(Recipe(recipe_id=3, name='Global favorite', image_file='global.jpg'))
             session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2024, 1, 1)),
                 recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2024, 1, 2)),
                 recipe_cooked_date(recipe_id=2, recipe_cooked_dt=datetime(2026, 1, 1))])
+            session.add_all([recipe_cooked_date(recipe_id=3) for _ in range(3)])
             session.commit()
+            self.assertEqual(collection_cards(session)[0].collection_id, 3)
+            self.assertEqual(all_recipes_thumbnail(session).thumbnail_recipe_id, 3)
             cards = {row.collection_id: row for row in collection_cards(session)}
             self.assertEqual(cards[1].thumbnail_recipe_id, 1)
             self.assertEqual(cards[1].image_file, 'soup.jpg')
             self.assertIsNone(cards[2].thumbnail_recipe_id)
         body = self.client.get('/?collection_id=1&q=chicken').text
         self.assertIn('data-thumbnail-recipe-id="1"', body)
+        self.assertIn('data-thumbnail-recipe-id="3"', body)
+        self.assertLess(body.index('data-collection-id="0"'), body.index('data-collection-id="3"'))
+        self.assertLess(body.index('data-collection-id="3"'), body.index('data-collection-id="2"'))
         self.assertIn('data-collection-id="2"', body)
         self.assertIn('name="collection_id" value="1"', body)
         self.assertNotIn('<select id="collection-filter"', body)
@@ -130,6 +139,27 @@ class ActivityTests(unittest.TestCase):
             session.query(recipe_cooked_date).delete()
             session.commit()
             self.assertEqual(next(row for row in collection_cards(session) if row.collection_id == 1).thumbnail_recipe_id, 2)
+
+    def test_reverse_sort_modes_and_navigation_context(self):
+        with Session(self.engine) as session:
+            session.get(Recipe, 2).name = 'Chicken bread'
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2026, 1, 1)),
+                recipe_view_date(recipe_id=1, recipe_view_dt=datetime(2026, 2, 1))])
+            session.commit()
+        for normal, reverse in [('recent', 'recent_asc'), ('name', 'name_desc'),
+                                ('cooked', 'cooked_asc'), ('visited', 'visited_asc')]:
+            ids = lambda body: re.findall(r'data-recipe-id="(\d+)"', body)
+            forward = ids(self.client.get('/?sort=' + normal).text)
+            body = self.client.get('/?sort=' + reverse).text
+            self.assertEqual(ids(body), forward[::-1])
+            self.assertIn('sort=' + reverse, body)
+            response = self.client.post('/search', data=dict(self.form(), q='chicken', sort=reverse,
+                collection_id='1', intent='sort'), headers={'HX-Request': 'true'})
+            self.assertIn('sort=' + reverse, response.headers['HX-Push-Url'])
+            detail = self.client.get(f'/recipes/1?sort={reverse}&collection_id=1&log_visit=false')
+            self.assertEqual(detail.status_code, 200)
+            self.assertIn('sort=' + reverse, detail.text)
+            self.assertEqual(self.client.get(f'/recipes/1/delete?sort={reverse}').status_code, 200)
 
     def test_delete_removes_related_rows_but_preserves_other_recipes_and_tags(self):
         with Session(self.engine) as session:

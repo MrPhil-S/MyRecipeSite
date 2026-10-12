@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Literal
 from urllib.parse import urlencode
 
 from fastapi import Depends, FastAPI, HTTPException, Path as PathParameter, Query, Request
@@ -22,7 +21,8 @@ from .editor_routes import router as editor_router, COOKIE, check_token, new_tok
 from .search_history import recent_searches, remember_search
 from .tags import router as tag_router
 from .activity import router as activity_router, record_visit
-from .collections import collection_cards
+from .collections import collection_cards, all_recipes_thumbnail
+from .sorting import SortOrder, SORT_CHOICES
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -94,7 +94,7 @@ def health(session: Session = Depends(get_session)):
 def recipe_list(
     request: Request,
     page: int = Query(1, ge=1),
-    sort: Literal["recent", "name", "cooked", "visited"] = "recent",
+    sort: SortOrder = "recent",
     q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
     collection_id: int = Query(0, ge=0, le=2147483647),
@@ -125,6 +125,10 @@ def recipe_list(
         'recent': (Recipe.create_dt.desc(), Recipe.recipe_id.desc()),
         'cooked': (func.date(func.coalesce(cooked.c.last_cooked, Recipe.create_dt)).desc(), Recipe.recipe_id.desc()),
         'visited': (func.coalesce(visited.c.last_visited, Recipe.create_dt).desc(), Recipe.recipe_id.desc()),
+        'name_desc': (Recipe.name.desc(), Recipe.recipe_id.desc()),
+        'recent_asc': (Recipe.create_dt.asc(), Recipe.recipe_id.asc()),
+        'cooked_asc': (func.date(func.coalesce(cooked.c.last_cooked, Recipe.create_dt)).asc(), Recipe.recipe_id.asc()),
+        'visited_asc': (func.coalesce(visited.c.last_visited, Recipe.create_dt).asc(), Recipe.recipe_id.asc()),
     }[sort]
     query = (
         select(Recipe, func.coalesce(ingredients.c.ingredient_count, 0).label("ingredient_count"),
@@ -147,7 +151,8 @@ def recipe_list(
     template = "_recipes.html" if partial else "index.html"
     if not partial:
         context.update(search_history=recent_searches(session, q), history_query=q,
-                       collection_cards=collection_cards(session))
+                       collection_cards=collection_cards(session), all_recipes_thumbnail=all_recipes_thumbnail(session),
+                       sort_choices=SORT_CHOICES)
     response = templates.TemplateResponse(request=request, name=template, context=context)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200, secure=request.url.scheme == 'https')
     response.headers['Cache-Control'] = 'no-store'
@@ -182,7 +187,7 @@ async def explicit_search(request: Request, session: Session = Depends(get_sessi
             collection_id = int(str(form.get('collection_id', '0')))
         except ValueError:
             raise HTTPException(422, 'Invalid collection.')
-        if len(q) > 200 or sort not in ('recent', 'name', 'cooked', 'visited') or intent not in ('search', 'sort') or not 0 <= collection_id <= 2147483647:
+        if len(q) > 200 or sort not in dict(SORT_CHOICES) or intent not in ('search', 'sort') or not 0 <= collection_id <= 2147483647:
             raise HTTPException(422, 'Invalid search form.')
         notice = None
         if intent == 'search':
@@ -204,7 +209,7 @@ def recipe_detail(
     request: Request,
     recipe_id: int = PathParameter(ge=1),
     page: int = Query(1, ge=1),
-    sort: Literal["recent", "name", "cooked", "visited"] = "recent",
+    sort: SortOrder = "recent",
     q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
     collection_id: int = Query(0, ge=0),

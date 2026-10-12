@@ -33,10 +33,7 @@
       <div class="sort-controls">
         <label for="sort">Sort by</label>
         <select id="sort" name="sort">
-          <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recently added</option>
-          <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
-          <option value="cooked" {% if sort == 'cooked' %}selected{% endif %}>Recently cooked</option>
-          <option value="visited" {% if sort == 'visited' %}selected{% endif %}>Recently visited</option>
+          {% for value, label in sort_choices %}<option value="{{ value }}"{% if sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
         <button type="submit" name="intent" value="sort">Apply</button>
       </div>

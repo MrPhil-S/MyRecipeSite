@@ -41,9 +41,9 @@ def browser_check(recipe_id, collection_id):
                 if javascript:
                     browser.execute_script('window.activityMarker = 42')
                 card = f'[data-recipe-id="{recipe_id}"]'
-                wait.until(lambda b: b.find_element(By.CSS_SELECTOR, card + ' button').text == 'Add to plan')
+                wait.until(lambda b: b.find_element(By.CSS_SELECTOR, card + ' button').text == '+ Plan')
                 browser.find_element(By.CSS_SELECTOR, card + ' button').click()
-                wait.until(lambda b: b.find_element(By.CSS_SELECTOR, card + ' button').text == 'Remove from plan')
+                wait.until(lambda b: b.find_element(By.CSS_SELECTOR, card + ' button').text == '✓ Planned')
                 assert f'collection_id={collection_id}' in browser.current_url
                 if javascript:
                     assert browser.execute_script('return window.activityMarker') == 42

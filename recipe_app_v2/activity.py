@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 from .database import get_session, get_write_engine, writes_enabled
 from .editor import recipe_rows, version_for
 from .editor_routes import COOKIE, check_token, new_token, token_valid
+from .sorting import SortOrder
 from .models import (Recipe, Recipe_Ingredient, Recipe_Instruction, Recipe_Plan_Date,
                      recipe_collection, recipe_cooked_date, recipe_view_date)
 
@@ -152,7 +153,7 @@ def meal_plan(request: Request, session: Session = Depends(get_session)):
 
 @router.get('/recipes/{recipe_id}/delete')
 def delete_confirmation(request: Request, recipe_id: int, page: int = Query(1, ge=1),
-                        sort: Literal['recent', 'name', 'cooked', 'visited'] = 'recent',
+                        sort: SortOrder = 'recent',
                         q: str = Query('', max_length=200), collection_id: int = Query(0, ge=0),
                         session: Session = Depends(get_session)):
     from .main import templates, list_url

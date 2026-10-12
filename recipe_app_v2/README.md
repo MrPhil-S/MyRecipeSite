@@ -73,6 +73,9 @@ cooked/view counts. The home page adds a collection carousel and Recently cooked
 Recently visited sorts, preserving search and collection context through actions.
 Collection thumbnails use the most frequently cooked recipe; ties and collections
 with no cooked history use the newest recipe. Empty collections show a placeholder.
+Favorites stays immediately after All recipes, whose thumbnail uses the most
+frequently cooked recipe across the library. Each sort offers both directions.
+Recipe cards use a compact + Plan / Planned button over the thumbnail.
 Deleting a recipe requires confirmation, rejects changed recipes/history and
 removes all child records in one transaction; image/PDF files remain for recovery.
 
@@ -109,7 +112,7 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 39 tests passed. Collection carousel browser checks
+Validated October 11, 2026: 40 tests passed. Collection carousel browser checks
 passed with HTMX, browser Back, JavaScript disabled and mobile scrolling; thumbnail
 choices matched the dev data and all 12 tables stayed unchanged.
 Activity/plan/deletion checks used

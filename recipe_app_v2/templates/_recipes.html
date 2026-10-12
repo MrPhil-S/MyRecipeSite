@@ -20,7 +20,7 @@
         {% if recipe.source_url_short %}<p class="source">{{ recipe.source_url_short }}</p>{% endif %}
       </div>
       </a>
-      {% if writes_enabled %}<div class="card-actions"><form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ list_url(page, sort, q, collection_id) }}"><button type="submit">{{ 'Remove from plan' if row.planned else 'Add to plan' }}</button></form></div>{% endif %}
+      {% if writes_enabled %}<form class="plan-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ list_url(page, sort, q, collection_id) }}"><button type="submit"{% if row.planned %} class="is-planned"{% endif %} title="{{ 'Remove from plan' if row.planned else 'Add to plan' }}" aria-label="{{ 'Remove from plan' if row.planned else 'Add to plan' }}: {{ recipe.name }}">{{ '✓ Planned' if row.planned else '+ Plan' }}</button></form>{% endif %}
     </article>
     {% else %}<p>No recipes found.</p>{% endfor %}
   </div>
