@@ -92,6 +92,20 @@ Create/Save validates entries and commits the recipe and its children
 in one transaction, preserve hidden metadata/history, and reject stale edits.
 Forms require a signed CSRF token and work with or without JavaScript.
 
+**Image aliases** in the header manages a separate ingredient-image catalogue;
+search synonyms are unchanged. Test ingredient wording there before adding/editing
+aliases. Matching normalizes case, accents, punctuation and controlled plurals,
+uses whole phrases, prioritizes the primary ingredient over alternatives and
+leaves tied matches unresolved. It preserves fresh/dried and other conflicting
+variants. New or renamed ingredient rows use the catalogue; unchanged rows retain
+their existing mappings. No bulk remapping has been applied.
+Missing ingredient images always use `default_ingredient.jpg`.
+
+The packaged `image_alias_seed.json` seeds image names and reviewed initial aliases.
+Edits persist separately in `uploads/ingredient-image-aliases.json`, using a lock,
+stale-version checks and atomic file replacement. Include it in uploads backups.
+No MariaDB schema changes or production writes are required.
+
 Images accept JPEG/PNG up to 8 MB and 20 million pixels, re-encoded to a maximum
 1000×1000 JPEG. PDFs accept up to 8 MB with header/end-marker checks. Uploads use
 the separate dev folder; leaving them blank preserves existing files. Normal
@@ -112,7 +126,12 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 40 tests passed. Collection carousel browser checks
+Validated October 12, 2026: 45 tests passed. Separate image-alias CRUD, stale saves,
+recipe matching and fallback checks passed using owned dev fixtures; all 12 tables
+matched their original data after cleanup. Against the saved production audit,
+269 of 429 default rows receive proposed matches and 160 remain unresolved; these
+proposals have not been applied to either database.
+Earlier collection carousel browser checks
 passed with HTMX, browser Back, JavaScript disabled and mobile scrolling; thumbnail
 choices matched the dev data and all 12 tables stayed unchanged.
 Activity/plan/deletion checks used

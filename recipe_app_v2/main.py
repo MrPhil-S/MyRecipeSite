@@ -23,6 +23,7 @@ from .tags import router as tag_router
 from .activity import router as activity_router, record_visit
 from .collections import collection_cards, all_recipes_thumbnail
 from .sorting import SortOrder, SORT_CHOICES
+from .image_alias_routes import router as image_alias_router
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -72,6 +73,7 @@ templates.env.globals["list_url"] = list_url
 app.include_router(editor_router)
 app.include_router(tag_router)
 app.include_router(activity_router)
+app.include_router(image_alias_router)
 
 
 @app.exception_handler(SQLAlchemyError)

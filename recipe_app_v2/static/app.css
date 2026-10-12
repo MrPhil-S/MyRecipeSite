@@ -13,3 +13,4 @@ header{flex-wrap:wrap;gap:.5rem}header nav{flex-wrap:wrap}.card{display:flex;fle
 #recipes .card{position:relative}.plan-overlay{position:absolute;top:.5rem;right:.5rem;z-index:1}.plan-overlay button{font-size:.8rem;line-height:1.2;min-height:32px;padding:.3rem .5rem;border:1px solid #ffffffb3;border-radius:1rem;background:#fffffff0;box-shadow:0 1px 5px #0002}.plan-overlay button:hover{background:#fff}.plan-overlay button.is-planned{background:#234938ed;color:white}.plan-overlay button:disabled{opacity:.65}
 .detail-image-wrap{position:relative}.detail-image-wrap .detail-image{display:block}
 #meal-plan .card{position:relative}
+.alias-preview{width:64px;height:64px;object-fit:contain;mix-blend-mode:multiply}

@@ -1,10 +1,11 @@
 """Read-only recipe detail queries and display values."""
-from urllib.parse import quote, urlsplit
+from urllib.parse import urlsplit
 
 from sqlalchemy import func, select
 
 from .config import ROOT
 from .uploads import upload_root
+from .image_aliases import image_url
 from .models import (Collection, Cuisine, Recipe, Recipe_Ingredient,
                      Recipe_Instruction, Recipe_Plan_Date, recipe_collection,
                      recipe_cooked_date, recipe_view_date)
@@ -50,14 +51,9 @@ def detail_context(session, recipe_id):
                       "is_group_header": bool(step.is_group_header)})
     items = []
     for ingredient in ingredients:
-        official = ingredient.name_official or ""
-        image = ROOT / "myrecipes/static/ingredient_images" / (official + ".jpg")
-        image_url = None
-        if official and not any(c in official for c in ("/", "\\")) and image.is_file():
-            image_url = "/ingredient-images/" + quote(official + ".jpg", safe="")
         items.append({"id": ingredient.recipe_ingredient_id, "name": ingredient.name_written,
                       "note": ingredient.note, "is_group_header": bool(ingredient.is_group_header),
-                      "image_url": image_url})
+                      "image_url": image_url(ingredient.name_official)})
     history = session.execute(select(
         select(func.count()).select_from(recipe_view_date).where(
             recipe_view_date.recipe_id == recipe_id).scalar_subquery(),

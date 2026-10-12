@@ -80,6 +80,19 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303, response.text)
         return int(response.headers['location'].rsplit('/', 1)[1])
 
+    def test_new_ingredients_use_separate_image_catalogue(self):
+        data = self.values()
+        data.update(name='Alias test', ingredient_mode='bulk',
+                    ingredient_bulk='2 scallions\n1 tsp cayenne pepper\n1 butternut squash', instructions='Mix')
+        response = self.client.post('/recipes/new', data=data, follow_redirects=False)
+        self.assertEqual(response.status_code, 303, response.text)
+        recipe_id = int(response.headers['location'].rsplit('/', 1)[1])
+        with Session(self.engine) as session:
+            rows = session.scalars(select(Recipe_Ingredient).where(
+                Recipe_Ingredient.recipe_id == recipe_id).order_by(Recipe_Ingredient.sequence)).all()
+            self.assertEqual([r.name_official for r in rows],
+                             ['spring_onion', 'ground_cayenne_pepper', 'butternut_squash'])
+
     def test_create_edit_and_preserve_hidden_metadata_history(self):
         recipe_id = self.create()
         with Session(self.engine) as session:

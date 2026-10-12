@@ -9,6 +9,7 @@ from .database import get_write_engine, writes_enabled
 from .editor import choices, recipe_rows, total_time, validate, version_for
 from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Instruction
 from .uploads import StagedUploads
+from .image_aliases import Matcher
 
 
 class SaveError(Exception):
@@ -75,9 +76,7 @@ def save_recipe(recipe_id, values, image=None, pdf=None):
                 Collection.collection_id.in_([int(c) for c in clean['collection_ids']]))).all()
             # Obtain an ID for new children/uploads; this is still uncommitted.
             session.flush()
-            official_names = set(session.scalars(select(Recipe_Ingredient.name_official).where(
-                Recipe_Ingredient.name_official.is_not(None))).all()) | {'soy_sauce'}
-            official_names = sorted((n for n in official_names if n), key=lambda n: (-len(n), n))
+            matcher = Matcher()
             used = set()
             for sequence, row in enumerate(clean['ingredients'], 1):
                 ingredient = existing.get(row['id'])
@@ -94,8 +93,7 @@ def save_recipe(recipe_id, values, image=None, pdf=None):
                 if row['group'] == '1':
                     ingredient.name_official = None
                 elif ingredient.name_written != row['name'] or not ingredient.name_official:
-                    ingredient.name_official = next((n for n in official_names
-                        if n.replace('_', ' ').casefold() in row['name'].casefold()), 'default_ingredient')
+                    ingredient.name_official = matcher.match(row['name'])
                 ingredient.name_written = row['name']
                 ingredient.note = row['note'] or None
                 ingredient.sequence = sequence
