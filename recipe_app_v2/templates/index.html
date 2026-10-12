@@ -7,10 +7,12 @@
       <noscript><p>Browse recipes and use the create/edit forms. This preview uses the development database.</p></noscript>
     </div>
     <p><a href="/recipes/new">Create recipe</a></p>
+    {% include '_collection_carousel.html' %}
     <form id="recipe-search" class="search-form" action="/search" method="post" hx-post="/search"
           hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="this:replace"
           x-data="{ historyOpen: false }" @submit="historyOpen = false" @keydown.escape="historyOpen = false">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" id="collection-filter" name="collection_id" value="{{ collection_id }}">
       <label for="search-query">Search recipes</label>
       <div class="search-controls">
         <div class="search-input-wrap" @click.outside="historyOpen = false">
@@ -38,7 +40,6 @@
         </select>
         <button type="submit" name="intent" value="sort">Apply</button>
       </div>
-      <div class="sort-controls"><label for="collection-filter">Collection</label><select id="collection-filter" name="collection_id"><option value="0">All collections</option>{% for collection in collection_choices %}<option value="{{ collection.collection_id }}"{% if collection.collection_id == collection_id %} selected{% endif %}>{{ collection.collection_name }}</option>{% endfor %}</select><button type="submit" name="intent" value="sort">Apply</button></div>
     </form>
     {% include '_recipes.html' %}
 {% endblock %}

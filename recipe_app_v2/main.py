@@ -22,6 +22,7 @@ from .editor_routes import router as editor_router, COOKIE, check_token, new_tok
 from .search_history import recent_searches, remember_search
 from .tags import router as tag_router
 from .activity import router as activity_router, record_visit
+from .collections import collection_cards
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -140,13 +141,13 @@ def recipe_list(
     token = cookie if token_valid(cookie) else new_token()
     context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort, "q": q,
                "history_notice": getattr(request.state, 'history_notice', None), 'collection_id': collection_id,
-               'collection_choices': session.scalars(select(Collection).order_by(Collection.collection_name, Collection.collection_id)).all(),
                'csrf_token': token, 'writes_enabled': writes_enabled()}
     partial = (request.headers.get("HX-Request") == "true"
                and request.headers.get("HX-History-Restore-Request") != "true")
     template = "_recipes.html" if partial else "index.html"
     if not partial:
-        context.update(search_history=recent_searches(session, q), history_query=q)
+        context.update(search_history=recent_searches(session, q), history_query=q,
+                       collection_cards=collection_cards(session))
     response = templates.TemplateResponse(request=request, name=template, context=context)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200, secure=request.url.scheme == 'https')
     response.headers['Cache-Control'] = 'no-store'

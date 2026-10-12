@@ -69,8 +69,10 @@ Each recipe detail page links to its edit form.
 Use **Meal plan** in the header, or Add/Remove from plan on recipe cards and
 details. Plan changes update with HTMX and also work without JavaScript.
 **Mark cooked** is on recipe details and plan cards. Details show the recorded
-cooked/view counts. The home page adds collection filtering and Recently cooked /
+cooked/view counts. The home page adds a collection carousel and Recently cooked /
 Recently visited sorts, preserving search and collection context through actions.
+Collection thumbnails use the most frequently cooked recipe; ties and collections
+with no cooked history use the newest recipe. Empty collections show a placeholder.
 Deleting a recipe requires confirmation, rejects changed recipes/history and
 removes all child records in one transaction; image/PDF files remain for recovery.
 
@@ -107,7 +109,10 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 11, 2026: 38 tests passed. Activity/plan/deletion checks used
+Validated October 11, 2026: 39 tests passed. Collection carousel browser checks
+passed with HTMX, browser Back, JavaScript disabled and mobile scrolling; thumbnail
+choices matched the dev data and all 12 tables stayed unchanged.
+Activity/plan/deletion checks used
 owned dev fixtures, including HTMX and JavaScript-disabled browser checks;
 all 12 tables matched their original data after cleanup. Current list/detail
 parity passed for 454 recipes and 1,182 assets; 17 search queries matched the

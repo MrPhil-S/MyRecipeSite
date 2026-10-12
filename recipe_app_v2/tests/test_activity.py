@@ -105,6 +105,32 @@ class ActivityTests(unittest.TestCase):
         self.assertEqual(response.headers['HX-Push-Url'], '/?page=1&sort=cooked&q=chicken&collection_id=1')
         self.assertEqual(self.client.get('/?collection_id=999').status_code, 404)
 
+    def test_collection_thumbnail_uses_cooking_count_not_recency_and_keeps_empty_collections(self):
+        from recipe_app_v2.collections import collection_cards
+        with Session(self.engine) as session:
+            bread = session.get(Recipe, 2)
+            bread.collections.append(session.get(Collection, 1))
+            session.get(Recipe, 1).image_file = 'soup.jpg'
+            session.get(Recipe, 2).image_file = 'bread.jpg'
+            session.add(Collection(collection_id=2, collection_name='Empty'))
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2024, 1, 1)),
+                recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2024, 1, 2)),
+                recipe_cooked_date(recipe_id=2, recipe_cooked_dt=datetime(2026, 1, 1))])
+            session.commit()
+            cards = {row.collection_id: row for row in collection_cards(session)}
+            self.assertEqual(cards[1].thumbnail_recipe_id, 1)
+            self.assertEqual(cards[1].image_file, 'soup.jpg')
+            self.assertIsNone(cards[2].thumbnail_recipe_id)
+        body = self.client.get('/?collection_id=1&q=chicken').text
+        self.assertIn('data-thumbnail-recipe-id="1"', body)
+        self.assertIn('data-collection-id="2"', body)
+        self.assertIn('name="collection_id" value="1"', body)
+        self.assertNotIn('<select id="collection-filter"', body)
+        with Session(self.engine) as session:
+            session.query(recipe_cooked_date).delete()
+            session.commit()
+            self.assertEqual(next(row for row in collection_cards(session) if row.collection_id == 1).thumbnail_recipe_id, 2)
+
     def test_delete_removes_related_rows_but_preserves_other_recipes_and_tags(self):
         with Session(self.engine) as session:
             session.add_all([Recipe_Plan_Date(recipe_id=1), recipe_view_date(recipe_id=1), recipe_cooked_date(recipe_id=1)])
