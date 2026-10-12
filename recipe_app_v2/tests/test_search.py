@@ -11,7 +11,7 @@ from recipe_app_v2.database import ReadOnlySession, get_session
 from recipe_app_v2.main import app
 from recipe_app_v2.models import (Base, Ingredient_Synonym, Query_History, Recipe,
                                  Recipe_Ingredient, Recipe_Instruction, recipe_view_date)
-from recipe_app_v2.search import search_terms
+from recipe_app_v2.search import search_terms, synonym_groups
 
 
 class SearchTests(unittest.TestCase):
@@ -85,6 +85,45 @@ class SearchTests(unittest.TestCase):
         with Session(self.engine) as session:
             self.assertEqual(session.scalars(select(Query_History)).all(), [])
             self.assertEqual(session.scalars(select(recipe_view_date)).all(), [])
+
+    def test_connected_multiword_groups_cycles_and_exclusions(self):
+        with Session(self.engine) as session:
+            for recipe_id, name in ((5, 'spring onion'), (6, 'scallion'), (7, 'green onion')):
+                session.add(Recipe(recipe_id=recipe_id, name=f'Ingredient test {recipe_id}'))
+                session.add(Recipe_Ingredient(recipe_id=recipe_id, name_written=name))
+            session.add_all([
+                Ingredient_Synonym(primary_term=' Green Onion ', secondary_term='spring onion'),
+                Ingredient_Synonym(primary_term='GREEN ONION', secondary_term='scallion'),
+                Ingredient_Synonym(primary_term='Spring Onion', secondary_term='SCALLION'),
+                Ingredient_Synonym(primary_term='red onion', secondary_term='purple onion'),
+            ])
+            session.commit()
+        for q in ('green onion', 'spring onion', 'scallion', '"green onion"', '"spring onion"', 'SCALL'):
+            self.assertEqual(set(self.ids(q)), {5, 6, 7}, q)
+        self.assertEqual(set(self.ids('NOT "spring onion"')), {1, 2, 3, 4})
+        self.assertEqual(self.ids('"red onion"'), [])
+        with ReadOnlySession(self.engine) as session:
+            groups = synonym_groups(session)
+            self.assertIn(['green onion', 'scallion', 'spring onion'], groups)
+            self.assertIn(['purple onion', 'red onion'], groups)
+
+    def test_removed_link_splits_group_without_cached_matches(self):
+        with Session(self.engine) as session:
+            for recipe_id, name in ((5, 'spring onion'), (6, 'scallion'), (7, 'green onion')):
+                session.add(Recipe(recipe_id=recipe_id, name=f'Ingredient test {recipe_id}'))
+                session.add(Recipe_Ingredient(recipe_id=recipe_id, name_written=name))
+            session.add_all([
+                Ingredient_Synonym(primary_term='green onion', secondary_term='spring onion'),
+                Ingredient_Synonym(primary_term='spring onion', secondary_term='scallion'),
+            ])
+            session.commit()
+        self.assertEqual(set(self.ids('scallion')), {5, 6, 7})
+        with Session(self.engine) as session:
+            edge = session.scalar(select(Ingredient_Synonym).where(Ingredient_Synonym.secondary_term == 'scallion'))
+            session.delete(edge)
+            session.commit()
+        self.assertEqual(self.ids('scallion'), [6])
+        self.assertEqual(set(self.ids('"spring onion"')), {5, 7})
 
 
 if __name__ == '__main__':

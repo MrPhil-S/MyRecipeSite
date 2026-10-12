@@ -3,6 +3,7 @@ import json
 import re
 import subprocess
 from collections import defaultdict
+from functools import lru_cache
 from urllib.parse import parse_qs, urlsplit
 from html import unescape
 
@@ -26,12 +27,26 @@ def verify():
     for row in data['instructions']:
         instructions[row['id']].append(row['text'].lower())
 
+    @lru_cache(maxsize=None)
+    def expanded_terms(term):
+        terms = {term}
+        pairs = [(primary.strip().lower(), secondary.strip().lower())
+                 for primary, secondary in data['synonyms'] if primary.strip() and secondary.strip()]
+        for primary, secondary in pairs:
+            if term in primary or term in secondary:
+                terms.update((primary, secondary))
+        # Independent fixed-point expansion over the immutable legacy snapshot.
+        while True:
+            before = len(terms)
+            for primary, secondary in pairs:
+                if primary in terms or secondary in terms:
+                    terms.update((primary, secondary))
+            if len(terms) == before:
+                return terms
+
     def matches(recipe, term):
         term = term.lower()
-        terms = {term}
-        for primary, secondary in data['synonyms']:
-            if term in primary.lower() or term in secondary.lower():
-                terms.update((primary.lower(), secondary.lower()))
+        terms = expanded_terms(term)
         return (term in recipe['name'].lower() or term in recipe['notes'].lower()
                 or any(term in text for text in instructions[recipe['id']])
                 or any(t in text for t in terms for text in ingredients[recipe['id']]))

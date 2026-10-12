@@ -15,6 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from .database import get_session, get_write_engine, writes_enabled
 from .editor_routes import COOKIE, check_token, new_token, token_valid
 from .models import Collection, Cuisine, Ingredient_Synonym, Recipe, recipe_collection
+from .search import synonym_groups
 
 Kind = Literal['collections', 'cuisines', 'synonyms']
 Action = Literal['edit', 'delete']
@@ -69,20 +70,39 @@ def save_tag(kind, tag_id, action, values, version):
                 session.execute(update(Recipe).where(Recipe.cuisine_id == tag_id).values(cuisine_id=None))
             session.delete(tag)
         else:
+            aliases = []
+            if kind == 'synonyms':
+                aliases = [name.strip() for name in values['secondary_term'].splitlines() if name.strip()]
+                if not aliases or len(aliases) > 50 or any(len(name) > 100 for name in aliases):
+                    raise TagError('Enter 1–50 other names, one per line, with up to 100 characters each.')
+                if len({name.lower() for name in aliases}) != len(aliases):
+                    raise TagError('Each other name must be different.')
             for name, label, limit in fields:
+                if kind == 'synonyms' and name == 'secondary_term':
+                    continue
                 if not values[name] or len(values[name]) > limit:
                     raise TagError(f'{label} must contain 1–{limit} characters.')
+            if kind == 'synonyms':
+                for alias in aliases:
+                    if values['primary_term'].lower() == alias.lower():
+                        raise TagError('Ingredient and other names must be different.')
+                    forward = (func.lower(func.trim(model.primary_term)) == values['primary_term'].lower()) & (
+                        func.lower(func.trim(model.secondary_term)) == alias.lower())
+                    reverse = (func.lower(func.trim(model.primary_term)) == alias.lower()) & (
+                        func.lower(func.trim(model.secondary_term)) == values['primary_term'].lower())
+                    if session.scalar(select(getattr(model, id_field)).where(
+                            or_(forward, reverse), getattr(model, id_field) != (tag_id or 0)).limit(1)) is not None:
+                        raise TagError(f'The link to {alias} already exists.')
+                if tag is None:
+                    tag = model()
+                    session.add(tag)
+                tag.primary_term, tag.secondary_term = values['primary_term'], aliases[0]
+                session.add_all(model(primary_term=values['primary_term'], secondary_term=alias) for alias in aliases[1:])
+                session.commit()
+                return
             conditions = [func.lower(func.trim(getattr(model, name))) == values[name].lower()
                           for name, _, _ in fields]
-            if kind == 'synonyms':
-                if values['primary_term'].casefold() == values['secondary_term'].casefold():
-                    raise TagError('Ingredient and synonym must be different.')
-                forward = conditions[0] & conditions[1]
-                reverse = (func.lower(func.trim(model.primary_term)) == values['secondary_term'].lower()) & (
-                    func.lower(func.trim(model.secondary_term)) == values['primary_term'].lower())
-                duplicate = or_(forward, reverse)
-            else:
-                duplicate = conditions[0]
+            duplicate = conditions[0]
             existing = session.scalar(select(getattr(model, id_field)).where(
                 duplicate, getattr(model, id_field) != (tag_id or 0)).limit(1))
             if existing is not None:
@@ -148,7 +168,9 @@ def tag_list(request: Request, kind: Kind, q: str = Query('', max_length=200),
     response = templates.TemplateResponse(request=request, name='tags.html', context={
         'kind': kind, 'singular': singular, 'fields': fields, 'rows': rows, 'q': q,
         'page': page, 'pages': pages, 'total': total, 'query_string': urlencode({'q': q}),
-        'writes_enabled': writes_enabled()})
+        'writes_enabled': writes_enabled(),
+        'synonym_groups': [group for group in synonym_groups(session)
+                           if not q.strip() or any(q.strip().lower() in name for name in group)] if kind == 'synonyms' else []})
     response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -171,7 +193,7 @@ async def submit_tag(request, session, kind, tag_id=None, action='edit'):
     size, chunks = 0, []
     async for chunk in request.stream():
         size += len(chunk)
-        if size > 8192:
+        if size > 65536:
             raise HTTPException(413, 'Tag form is too large.')
         chunks.append(chunk)
     request._body = b''.join(chunks)

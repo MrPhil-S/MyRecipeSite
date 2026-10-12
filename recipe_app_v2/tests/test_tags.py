@@ -148,3 +148,17 @@ class TagTests(unittest.TestCase):
         self.assertEqual(self.client.get('/tags/collections?page=2').text.count('data-tag-id='), 5)
         self.assertEqual(self.client.get('/tags/collections/999/delete').status_code, 404)
         self.assertEqual(self.client.get('/tags/invalid').status_code, 422)
+
+    def test_multiple_aliases_create_group_and_invalid_batch_rolls_back(self):
+        path = '/tags/synonyms/new'
+        response = self.client.post(path, data=dict(self.form(path), primary_term='green onion',
+            secondary_term='spring onion\nscallion'), follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        with Session(self.engine) as session:
+            self.assertEqual(session.scalar(select(func.count()).select_from(Ingredient_Synonym)), 2)
+        self.assertIn('green onion ↔ scallion ↔ spring onion', self.client.get('/tags/synonyms').text)
+        for aliases in ('fresh onion\nscallion', 'green onion\nother', 'other\nOTHER', 'valid\n' + 'x' * 101):
+            response = self.client.post(path, data=dict(self.form(path), primary_term='green onion', secondary_term=aliases))
+            self.assertEqual(response.status_code, 422)
+        with Session(self.engine) as session:
+            self.assertEqual(session.scalar(select(func.count()).select_from(Ingredient_Synonym)), 2)
