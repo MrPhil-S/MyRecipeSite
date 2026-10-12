@@ -8,10 +8,14 @@
   <script defer src="{{ url_for('static', path='vendor/htmx.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='image-upload.js') }}"></script>
   <script defer src="{{ url_for('static', path='search-controls.js') }}"></script>
+  <script defer src="{{ url_for('static', path='recipe-controls.js') }}"></script>
+  <script defer src="{{ url_for('static', path='recipe-controls.js') }}"></script>
   <script defer src="{{ url_for('static', path='vendor/alpine.min.js') }}"></script>
 </head>
-<body>
-  <header><a href="/">My Recipes</a><nav aria-label="Main navigation"><a href="/plan">Meal plan</a><a href="/tags/collections">Manage tags</a><a href="/image-aliases">Image aliases</a><span>Preview</span></nav></header>
+<body id="page-top">
+  <header><a href="/">My Recipes</a><nav aria-label="Main navigation"><a href="/plan">Meal plan</a><a href="/tags/collections">Manage tags</a><a href="/image-aliases">Image aliases</a><form class="navbar-search" action="/search" method="post" role="search"><input type="hidden" name="csrf_token" value="{{ csrf_token | default(request.cookies.get('recipe_editor_csrf', '')) }}"><label class="visually-hidden" for="navbar-query">Search recipes</label><input id="navbar-query" type="search" name="q" maxlength="200" placeholder="Search recipes" value="{{ q | default('') }}"><button type="submit" aria-label="Search recipes">Search</button></form><form class="navbar-search" action="/search" method="post" role="search"><input type="hidden" name="csrf_token" value="{{ csrf_token | default(request.cookies.get('recipe_editor_csrf', '')) }}"><label class="visually-hidden" for="navbar-query">Search recipes</label><input id="navbar-query" type="search" name="q" maxlength="200" placeholder="Search recipes" value="{{ q | default('') }}"><button type="submit" aria-label="Search recipes">Search</button></form><span>Preview</span></nav></header>
   <main>{% block content %}{% endblock %}</main>
+<div class="floating-actions"><a class="floating-create" href="/recipes/new" aria-label="Create recipe">+</a><a href="#page-top" aria-label="Back to top">?</a></div>
+<div class="floating-actions"><a class="floating-create" href="/recipes/new" aria-label="Create recipe">+</a><a href="#page-top" aria-label="Back to top">&#8593;</a></div>
 </body>
 </html>

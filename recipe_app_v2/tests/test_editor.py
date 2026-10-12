@@ -80,6 +80,22 @@ class EditorTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303, response.text)
         return int(response.headers['location'].rsplit('/', 1)[1])
 
+    def test_reordered_rows_save_sequence_without_changing_identity(self):
+        recipe_id = self.create()
+        data = self.values(recipe_id)
+        with Session(self.engine) as session:
+            before = session.scalars(select(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == recipe_id).order_by(Recipe_Ingredient.sequence)).all()
+            expected = [(r.recipe_ingredient_id, r.name_written, r.name_official) for r in before[:3]][::-1]
+        # Move all populated rows as a group; preserve blank add rows afterward.
+        for field in ('id', 'name', 'note', 'group', 'keep'):
+            key = 'ingredient_' + field
+            data[key] = data[key][:3][::-1] + data[key][3:]
+        response = self.client.post(f'/recipes/{recipe_id}/edit', data=data, follow_redirects=False)
+        self.assertEqual(response.status_code, 303, response.text)
+        with Session(self.engine) as session:
+            after = session.scalars(select(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == recipe_id).order_by(Recipe_Ingredient.sequence)).all()
+            self.assertEqual([(r.recipe_ingredient_id, r.name_written, r.name_official) for r in after], expected)
+
     def test_new_ingredients_use_separate_image_catalogue(self):
         data = self.values()
         data.update(name='Alias test', ingredient_mode='bulk',

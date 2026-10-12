@@ -12,11 +12,11 @@
         {% if recipe.image_file %}
         <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
         {% endif %}
+        <span class="cooked-badge" aria-label="Cooked {{ row.cook_count }} times">Cooked {{ row.cook_count }}</span>
       </div>
       <div class="card-content">
         <h2>{{ recipe.name }}</h2>
         <p class="meta">{{ row.ingredient_count }} ingredients{% if recipe.total_time %} · {{ recipe.total_time }}{% endif %}</p>
-        {% if row.cook_count %}<p class="meta">Cooked {{ row.cook_count }} times</p>{% endif %}
         {% if recipe.source_url_short %}<p class="source">{{ recipe.source_url_short }}</p>{% endif %}
       </div>
       </a>

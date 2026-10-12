@@ -161,6 +161,17 @@ class ActivityTests(unittest.TestCase):
             self.assertIn('sort=' + reverse, detail.text)
             self.assertEqual(self.client.get(f'/recipes/1/delete?sort={reverse}').status_code, 200)
 
+    def test_detail_modal_deletes_using_current_version(self):
+        body = self.client.get('/recipes/1?sort=name&q=chicken&collection_id=1&log_visit=false').text
+        self.assertIn('<dialog id="delete-recipe-modal"', body)
+        data = {key: re.search(f'name="{key}" value="([^\"]*)"', body)[1] for key in ('csrf_token', 'version')}
+        target = '/?page=1&sort=name&q=chicken&collection_id=1'
+        response = self.client.post('/recipes/1/delete', data=dict(data, return_to=target), follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers['location'], target)
+        self.assertEqual(self.count(Recipe_Ingredient), 0)
+        self.assertEqual(self.count(Recipe_Instruction), 0)
+
     def test_delete_removes_related_rows_but_preserves_other_recipes_and_tags(self):
         with Session(self.engine) as session:
             session.add_all([Recipe_Plan_Date(recipe_id=1), recipe_view_date(recipe_id=1), recipe_cooked_date(recipe_id=1)])

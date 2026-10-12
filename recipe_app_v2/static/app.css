@@ -17,3 +17,21 @@ header{flex-wrap:wrap;gap:.5rem}header nav{flex-wrap:wrap}.card{display:flex;fle
 .tag-management-table,.image-alias-table{table-layout:fixed}.tag-management-table{min-width:480px}.tag-name-column{width:60%}.tag-secondary-column{width:20%}.tag-actions-column{width:20%}.synonym-table .tag-name-column,.synonym-table .tag-secondary-column{width:40%}.image-alias-table{min-width:640px}.alias-image-column{width:96px}.alias-name-column{width:32%}.alias-actions-column{width:100px}.tag-table th,.tag-table td{overflow-wrap:anywhere}
 html{scrollbar-gutter:stable}
 .rematch-table{table-layout:fixed;min-width:760px}.rematch-select-column{width:64px}.rematch-recipe-column{width:23%}.rematch-ingredient-column{width:31%}.rematch-image-column{width:20%}
+
+/* Backlog controls */
+.navbar-search { display:flex; gap:.35rem; align-items:center; margin:0; }
+.navbar-search input { width: min(15rem, 35vw); margin:0; }
+.navbar-search button { margin:0; }
+.visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.floating-actions { position:fixed; right:1rem; bottom:calc(1rem + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:.5rem; z-index:20; }
+.floating-actions a { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:50%; background:#355b43; color:white; text-decoration:none; font-size:1.5rem; box-shadow:0 2px 8px #0003; }
+.floating-actions .floating-create { display:none; }
+.picture { position:relative; }
+.cooked-badge { position:absolute; bottom:.5rem; left:.5rem; background:#182b20e6; color:white; border-radius:.35rem; padding:.2rem .45rem; font-size:.75rem; }
+dialog { border:1px solid #bcc7bc; border-radius:.75rem; max-width:min(32rem, calc(100vw - 2rem)); padding:1.5rem; color:inherit; background:#f7f7f1; }
+dialog::backdrop { background:#0008; }
+dialog form { display:flex; gap:.75rem; }
+.ingredient-order-buttons { display:flex; gap:.25rem; align-self:end; }
+.ingredient-order-buttons button { padding:.3rem .65rem; }
+.ingredient-sort-control { max-width:16rem; }
+@media (max-width:700px) { .floating-actions .floating-create { display:flex; } header { flex-wrap:wrap; } header nav { flex-wrap:wrap; } .navbar-search input { width:10rem; } }

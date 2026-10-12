@@ -19,7 +19,7 @@ class HistoryTests(unittest.TestCase):
         self.engine = create_engine('sqlite://', connect_args={'check_same_thread': False}, poolclass=StaticPool)
         Base.metadata.create_all(self.engine)
         with Session(self.engine) as session:
-            session.add(Recipe(name='Chicken soup'))
+            session.add_all([Recipe(name='Chicken soup'), Recipe(name='Chicken soup with noodles')])
             session.commit()
 
         def sessions():
@@ -71,6 +71,15 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(self.histories(), ['chicken soup', 'chicken soup'])
         body = self.client.get('/search/history').text
         self.assertEqual(body.count('data-history-query="chicken soup"'), 1)
+
+    def test_only_searches_with_more_than_one_result_are_saved(self):
+        token = self.token()
+        for query in ('missing recipe', 'chicken soup with noodles'):
+            response = self.client.post('/search', data={'q': query, 'csrf_token': token}, headers={'HX-Request': 'true'})
+            self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.histories(), [])
+        self.client.post('/search', data={'q': 'chicken', 'csrf_token': token})
+        self.assertEqual(self.histories(), ['chicken'])
 
     def test_recent_deduplication_filtering_literal_wildcards_and_escaping(self):
         now = datetime.now()

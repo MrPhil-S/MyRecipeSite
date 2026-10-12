@@ -20,7 +20,7 @@ from .search import search_filters
 from .editor_routes import router as editor_router, COOKIE, check_token, new_token, token_valid
 from .search_history import recent_searches, remember_search
 from .tags import router as tag_router
-from .activity import router as activity_router, record_visit
+from .activity import router as activity_router, record_visit, deletion_version
 from .collections import collection_cards, all_recipes_thumbnail
 from .sorting import SortOrder, SORT_CHOICES
 from .image_alias_routes import router as image_alias_router
@@ -194,7 +194,13 @@ async def explicit_search(request: Request, session: Session = Depends(get_sessi
         notice = None
         if intent == 'search':
             try:
-                notice = await run_in_threadpool(remember_search, q)
+                filters = search_filters(session, q)
+                if collection_id:
+                    filters.append(select(recipe_collection.c.recipe_id).where(
+                        recipe_collection.c.recipe_id == Recipe.recipe_id,
+                        recipe_collection.c.collection_id == collection_id).exists())
+                result_count = session.scalar(select(func.count()).select_from(Recipe).where(*filters))
+                notice = await run_in_threadpool(remember_search, q, result_count)
             except SQLAlchemyError as exc:
                 logging.getLogger(__name__).error('Search history save failed (%s)', type(exc).__name__)
                 notice = 'Search history could not be saved.'
@@ -228,6 +234,8 @@ def recipe_detail(
     cookie = request.cookies.get(COOKIE, '')
     token = cookie if token_valid(cookie) else new_token()
     context.update(page=page, sort=sort, q=q, collection_id=collection_id, from_plan=from_plan,
+                   deletion_version=deletion_version(session, context['recipe']) if writes_enabled() else '',
+                   delete_return_to='/plan' if from_plan else list_url(page, sort, q, collection_id),
                    csrf_token=token, writes_enabled=writes_enabled(), return_to=request.url.path + ('?' + request.url.query if request.url.query else ''))
     response = templates.TemplateResponse(request=request, name="detail.html", context=context)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200, secure=request.url.scheme == 'https')

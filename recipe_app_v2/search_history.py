@@ -21,13 +21,15 @@ def recent_searches(session, query=''):
         rows.c.searched_at.desc(), rows.c.id.desc()).limit(10)).all()
 
 
-def remember_search(query):
+def remember_search(query, result_count):
     query = query.strip()
     if not query:
         return None
     # Never truncate a query into a partial search to fit the legacy column.
     if len(query) > 100:
         return 'This search is too long to save in history.'
+    if result_count <= 1:
+        return None
     if not writes_enabled():
         return 'Search history saving is disabled.'
     with Session(get_write_engine(), autoflush=False) as session:
