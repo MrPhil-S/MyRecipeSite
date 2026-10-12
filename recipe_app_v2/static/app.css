@@ -16,4 +16,4 @@ header{flex-wrap:wrap;gap:.5rem}header nav{flex-wrap:wrap}.card{display:flex;fle
 .alias-preview{width:64px;height:64px;object-fit:contain;mix-blend-mode:multiply}
 .tag-management-table,.image-alias-table{table-layout:fixed}.tag-management-table{min-width:480px}.tag-name-column{width:60%}.tag-secondary-column{width:20%}.tag-actions-column{width:20%}.synonym-table .tag-name-column,.synonym-table .tag-secondary-column{width:40%}.image-alias-table{min-width:640px}.alias-image-column{width:96px}.alias-name-column{width:32%}.alias-actions-column{width:100px}.tag-table th,.tag-table td{overflow-wrap:anywhere}
 html{scrollbar-gutter:stable}
-.ingredient-image-control{grid-column:1/-1;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}.ingredient-image-control p{margin:.3rem 0}.ingredient-image-proposal{flex-basis:100%;padding:.6rem;background:#e2e7d8;border-radius:.4rem}
+.rematch-table{table-layout:fixed;min-width:760px}.rematch-select-column{width:64px}.rematch-recipe-column{width:23%}.rematch-ingredient-column{width:31%}.rematch-image-column{width:20%}

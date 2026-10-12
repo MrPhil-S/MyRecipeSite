@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Review ingredient images · My Recipes{% endblock %}
+{% block content %}
+<h1>Review affected ingredient images{% if name %}: {{ name }}{% endif %}</h1>
+<p><a href="/image-aliases">Back to image aliases</a>{% if name %} · <a href="/image-aliases/rematch">Review all image changes</a>{% endif %}</p>
+<p>The catalogue is checked against every recipe. Only different, confident matches appear here. Select the changes you want to apply; recipe text, notes and other fields stay unchanged.</p>
+{% if applied %}<p class="success" role="status">Updated {{ applied }} selected ingredient image mapping{{ 's' if applied != 1 else '' }}.</p>{% endif %}
+{% if error %}<p class="form-errors" role="alert">{{ error }}</p>{% endif %}
+<p>{{ total }} proposed change{{ 's' if total != 1 else '' }}. No changes are selected automatically.</p>
+<form action="/image-aliases/rematch" method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="name" value="{{ name }}"><input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="direction" value="{{ direction }}">
+<div class="tag-table-wrap"><table class="tag-table rematch-table"><colgroup><col class="rematch-select-column"><col class="rematch-recipe-column"><col class="rematch-ingredient-column"><col class="rematch-image-column"><col class="rematch-image-column"></colgroup><thead><tr><th scope="col">Select</th>{% for header in headers %}<th scope="col" aria-sort="{{ header.aria_sort }}"><a href="{{ header.url }}">{{ header.label }}{% if header.aria_sort != 'none' %}<span aria-hidden="true"> {{ '↑' if header.aria_sort == 'ascending' else '↓' }}</span>{% endif %}</a></th>{% endfor %}</tr></thead><tbody>
+{% for row in rows %}<tr data-rematch-id="{{ row.row_id }}"><td>{% if writes_enabled %}<input type="checkbox" name="selected" value="{{ row.token }}" aria-label="Update image for {{ row.ingredient }} in {{ row.recipe_name }}">{% endif %}</td><td><a href="/recipes/{{ row.recipe_id }}">{{ row.recipe_name }}</a></td><td>{{ row.ingredient }}</td><td><img class="alias-preview" src="{{ row.current_image }}" alt="" loading="lazy"><div>{{ row.current }}</div></td><td><img class="alias-preview" src="{{ row.proposed_image }}" alt="" loading="lazy"><div>{{ row.proposed }}</div></td></tr>
+{% else %}<tr><td colspan="5">No confident image changes are needed for this selection.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if writes_enabled and rows %}<p><button type="submit">Apply selected image mappings</button></p>{% endif %}
+</form>
+<nav class="pagination" aria-label="Image review pages">{% if page > 1 %}<a href="/image-aliases/rematch?page={{ page - 1 }}&amp;{{ query_string }}">Previous</a>{% endif %}<span>Page {{ page }} of {{ pages }}</span>{% if page < pages %}<a href="/image-aliases/rematch?page={{ page + 1 }}&amp;{{ query_string }}">Next</a>{% endif %}</nav>
+{% endblock %}

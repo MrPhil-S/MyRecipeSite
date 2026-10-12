@@ -3,6 +3,7 @@
 {% block content %}
 <h1>{{ 'Edit' if original else 'Add' }} ingredient image name</h1>
 <p><a href="/image-aliases">Back to ingredient image aliases</a></p>
+{% if original %}<p><a href="/image-aliases/rematch?name={{ original | urlencode }}">Review affected recipes for this image</a></p>{% endif %}
 {% if error %}<p class="form-errors" role="alert">{{ error }} <a href="/image-aliases/edit?name={{ original | urlencode }}">Reload entry</a></p>{% endif %}
 <form class="recipe-editor" action="/image-aliases/edit" method="post">
 <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="version" value="{{ version }}"><input type="hidden" name="original" value="{{ original }}">

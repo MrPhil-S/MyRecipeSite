@@ -1,5 +1,4 @@
 import io
-import json
 import os
 import re
 import tempfile
@@ -16,7 +15,6 @@ from sqlalchemy.pool import StaticPool
 from recipe_app_v2.database import ReadOnlySession, get_session
 from recipe_app_v2.editor import form_values
 from recipe_app_v2.main import app
-from recipe_app_v2.image_aliases import catalogue_path
 from recipe_app_v2.models import (Base, Collection, Cuisine, Recipe, Recipe_Ingredient,
                                  Recipe_Instruction, recipe_cooked_date)
 
@@ -94,67 +92,6 @@ class EditorTests(unittest.TestCase):
                 Recipe_Ingredient.recipe_id == recipe_id).order_by(Recipe_Ingredient.sequence)).all()
             self.assertEqual([r.name_official for r in rows],
                              ['spring_onion', 'ground_cayenne_pepper', 'butternut_squash'])
-
-    def rematch_fixture(self):
-        data = self.values()
-        data.update(name='Rematch fixture', ingredient_mode='bulk',
-                    ingredient_bulk='2 ounces gin, keep note\nOnion', instructions='Mix')
-        response = self.client.post('/recipes/new', data=data, follow_redirects=False)
-        recipe_id = int(response.headers['location'].rsplit('/', 1)[1])
-        with Session(self.engine) as session:
-            ingredient = session.scalar(select(Recipe_Ingredient).where(
-                Recipe_Ingredient.recipe_id == recipe_id, Recipe_Ingredient.name_written == '2 ounces gin'))
-            ingredient.ingredient_id = 777
-            row_id = ingredient.recipe_ingredient_id
-            session.commit()
-        catalogue_path().write_text(json.dumps({'alcohol': ['gin'], 'onion': []}), encoding='utf-8')
-        data = self.values(recipe_id)
-        payload = dict(recipe_id=recipe_id, row_id=row_id, name='2 ounces gin',
-                       version=data['version'], csrf_token=data['csrf_token'])
-        return recipe_id, row_id, data, payload
-
-    def test_selected_row_rematch_preserves_text_other_rows_and_hidden_metadata(self):
-        recipe_id, row_id, data, payload = self.rematch_fixture()
-        response = self.client.post('/editor/ingredient-image-preview', json=payload)
-        self.assertEqual(response.status_code, 200, response.text)
-        preview = response.json()
-        self.assertEqual(preview['name'], 'alcohol')
-        with Session(self.engine) as session:
-            self.assertEqual(session.get(Recipe_Ingredient, row_id).name_official, 'gin')
-        # A preview alone is ignored by Save; consent is the per-row token.
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=data, follow_redirects=False).status_code, 303)
-        with Session(self.engine) as session:
-            self.assertEqual(session.get(Recipe_Ingredient, row_id).name_official, 'gin')
-        data = self.values(recipe_id)
-        payload.update(version=data['version'], csrf_token=data['csrf_token'])
-        token = self.client.post('/editor/ingredient-image-preview', json=payload).json()['token']
-        data['ingredient_image_token'] = [token if identity == str(row_id) else '' for identity in data['ingredient_id']]
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=data, follow_redirects=False).status_code, 303)
-        with Session(self.engine) as session:
-            row = session.get(Recipe_Ingredient, row_id)
-            self.assertEqual((row.name_written, row.note, row.ingredient_id, row.name_official),
-                             ('2 ounces gin', 'keep note', 777, 'alcohol'))
-            other = session.scalar(select(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == recipe_id,
-                                   Recipe_Ingredient.recipe_ingredient_id != row_id))
-            self.assertEqual((other.name_written, other.name_official), ('Onion', 'onion'))
-
-    def test_rematch_rejects_forgery_changed_catalogue_text_and_bulk_without_writes(self):
-        recipe_id, row_id, data, payload = self.rematch_fixture()
-        self.assertEqual(self.client.post('/editor/ingredient-image-preview', json=dict(payload, csrf_token='bad')).status_code, 403)
-        token = self.client.post('/editor/ingredient-image-preview', json=payload).json()['token']
-        data['ingredient_image_token'] = [token if identity == str(row_id) else '' for identity in data['ingredient_id']]
-        forged = dict(data, ingredient_image_token=[value + 'x' if value else '' for value in data['ingredient_image_token']])
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=forged).status_code, 422)
-        changed = dict(data, ingredient_name=['new name' if identity == str(row_id) else name
-                       for identity, name in zip(data['ingredient_id'], data['ingredient_name'])])
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=changed).status_code, 422)
-        bulk = dict(data, ingredient_mode='bulk')
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=bulk).status_code, 422)
-        catalogue_path().write_text(json.dumps({'alcohol': ['gin', 'new alias'], 'onion': []}), encoding='utf-8')
-        self.assertEqual(self.client.post(f'/recipes/{recipe_id}/edit', data=data).status_code, 422)
-        with Session(self.engine) as session:
-            row = session.get(Recipe_Ingredient, row_id)
-            self.assertEqual((row.name_written, row.note, row.name_official), ('2 ounces gin', 'keep note', 'gin'))
 
     def test_create_edit_and_preserve_hidden_metadata_history(self):
         recipe_id = self.create()

@@ -2,15 +2,17 @@
 from urllib.parse import quote, urlencode
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from .activity import csrf_context, set_cookie
-from .database import writes_enabled
+from .database import get_session, writes_enabled
 from .editor_routes import check_token
 from .image_aliases import Matcher, image_url, load_catalogue, normalize, revision, save_entry
 from .sorting import table_headers
+from .ingredient_rematch import RematchError, affected_ingredients, apply_selected
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -38,7 +40,8 @@ def alias_list(request: Request, q: str = Query('', max_length=200),
     token = csrf_context(request)
     response = templates.TemplateResponse(request=request, name='image_aliases.html', context={
         'rows': [{'name': name, 'aliases': values[name], 'image': image_url(name),
-                  'edit_url': '/image-aliases/edit?name=' + quote(name, safe='')}
+                  'edit_url': '/image-aliases/edit?name=' + quote(name, safe=''),
+                  'review_url': '/image-aliases/rematch?name=' + quote(name, safe='')}
                  for name in names[(page - 1) * 50:page * 50]],
         'q': q, 'page': page, 'pages': pages, 'total': len(names),
         'query_string': urlencode({'q': q, 'sample': sample, 'sort': sort, 'direction': direction}),
@@ -99,4 +102,56 @@ async def alias_save(request: Request):
             return render_form(request, original, name, aliases, version, str(exc), 409)
         except ValueError as exc:
             return render_form(request, original, name, aliases, version, str(exc), 422)
-    return RedirectResponse('/image-aliases', status_code=303)
+    target = '/image-aliases/rematch?name=' + quote(name, safe='') if action == 'save' else '/image-aliases'
+    return RedirectResponse(target, status_code=303)
+
+
+def render_rematches(request, session, name='', page=1, sort='recipe', direction='asc', error=None, status=200, applied=0):
+    from .main import templates
+    changes = affected_ingredients(session, name)
+    field = {'recipe': 'recipe_name', 'ingredient': 'ingredient', 'current': 'current', 'proposed': 'proposed'}[sort]
+    changes.sort(key=lambda row: (row[field].casefold(), row['recipe_id'], row['row_id']), reverse=direction == 'desc')
+    pages = max(1, (len(changes) + 49) // 50)
+    page = min(page, pages)
+    parameters = {'name': name, 'sort': sort, 'direction': direction}
+    token = csrf_context(request)
+    response = templates.TemplateResponse(request=request, name='image_rematches.html', status_code=status, context={
+        'rows': changes[(page - 1) * 50:page * 50], 'total': len(changes), 'page': page, 'pages': pages,
+        'name': name, 'sort': sort, 'direction': direction, 'query_string': urlencode(parameters),
+        'headers': table_headers('/image-aliases/rematch', [('recipe', 'Recipe'), ('ingredient', 'Ingredient'),
+            ('current', 'Current image'), ('proposed', 'Proposed image')], sort, direction, {'name': name}),
+        'error': error, 'applied': applied, 'csrf_token': token, 'writes_enabled': writes_enabled()})
+    return set_cookie(request, response, token)
+
+
+@router.get('/image-aliases/rematch')
+def rematch_list(request: Request, name: str = Query('', max_length=100), page: int = Query(1, ge=1),
+                 sort: Literal['recipe', 'ingredient', 'current', 'proposed'] = 'recipe',
+                 direction: Literal['asc', 'desc'] = 'asc', applied: int = Query(0, ge=0, le=50),
+                 session: Session = Depends(get_session)):
+    return render_rematches(request, session, name, page, sort, direction, applied=applied)
+
+
+@router.post('/image-aliases/rematch')
+async def rematch_apply(request: Request, session: Session = Depends(get_session)):
+    size, chunks = 0, []
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > 131072:
+            raise HTTPException(413, 'Image selection is too large.')
+        chunks.append(chunk)
+    request._body = b''.join(chunks)
+    if request._body.count(b'&') > 55:
+        raise HTTPException(413, 'Too many image selections.')
+    async with request.form(max_files=0, max_fields=55) as form:
+        check_token(request, str(form.get('csrf_token', '')))
+        name = str(form.get('name', ''))
+        sort, direction = str(form.get('sort', 'recipe')), str(form.get('direction', 'asc'))
+        if len(name) > 100 or sort not in ('recipe', 'ingredient', 'current', 'proposed') or direction not in ('asc', 'desc'):
+            raise HTTPException(422, 'Invalid image review parameters.')
+        try:
+            count = await run_in_threadpool(apply_selected, [str(v) for v in form.getlist('selected')])
+        except RematchError as exc:
+            return await run_in_threadpool(render_rematches, request, session, name, 1, sort, direction, str(exc), exc.status)
+    return RedirectResponse('/image-aliases/rematch?' + urlencode(
+        {'name': name, 'sort': sort, 'direction': direction, 'applied': count}), status_code=303)

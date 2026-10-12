@@ -1,24 +1,7 @@
-<div class="ingredient-row" x-data="ingredientImage({{ row.id | tojson | forceescape }}, {{ row.selected_name | default('') | tojson | forceescape }}, {{ row.selected_url | default('') | tojson | forceescape }})">
+<div class="ingredient-row">
   <input type="hidden" name="ingredient_id" value="{{ row.id }}">
-  <input type="hidden" name="ingredient_image_token" value="{{ row.image_token | default('') }}" x-ref="imageToken">
-  <label>Name<input name="ingredient_name" maxlength="100" value="{{ row.name }}" @input="clear()"></label>
+  <label>Name<input name="ingredient_name" maxlength="100" value="{{ row.name }}"></label>
   <label>Note<input name="ingredient_note" maxlength="100" value="{{ row.note }}"></label>
-  <label>Type<select name="ingredient_group" @change="clear()"><option value="0"{% if row.group == '0' %} selected{% endif %}>Ingredient</option><option value="1"{% if row.group == '1' %} selected{% endif %}>Group heading</option></select></label>
-  <label>Action<select name="ingredient_keep" @change="clear()"><option value="1"{% if row.keep == '1' %} selected{% endif %}>Keep</option><option value="0"{% if row.keep == '0' %} selected{% endif %}>Remove</option></select></label>
-  {% if row.id and row.group == '0' and writes_enabled %}
-  <div class="ingredient-image-control" x-cloak>
-    <span class="meta">Current image: {{ row.image_name }}</span><img class="alias-preview" src="{{ row.image_url }}" alt="Current ingredient image">
-    <button type="button" @click="preview()" :disabled="busy || $el.closest('.ingredient-row').querySelector('[name=ingredient_group]').value !== '0' || $el.closest('.ingredient-row').querySelector('[name=ingredient_keep]').value !== '1'">Re-match image</button>
-    <p class="upload-error" role="alert" x-show="error" x-text="error"></p>
-    <div x-show="proposal" class="ingredient-image-proposal">
-      <template x-if="proposal"><div>
-        <p x-text="!proposal.token ? 'No confident match. Your current image will stay unchanged.' : !proposal.changed ? 'Already mapped to ' + proposal.name + '.' : 'Proposed image: ' + proposal.name"></p>
-        <img class="alias-preview" :src="proposal.image" alt="Proposed ingredient image">
-        <button type="button" x-show="proposal.token && proposal.changed" @click="accept()">Use this image</button>
-        <button type="button" @click="clear()">Dismiss</button>
-      </div></template>
-    </div>
-    <div x-show="selectedName"><p class="meta">Selected: <span x-text="selectedName"></span> — applies when you save the recipe.</p><img class="alias-preview" :src="selectedUrl || undefined" alt="Selected ingredient image"><button type="button" @click="clear()">Undo image change</button></div>
-  </div>
-  {% endif %}
+  <label>Type<select name="ingredient_group"><option value="0"{% if row.group == '0' %} selected{% endif %}>Ingredient</option><option value="1"{% if row.group == '1' %} selected{% endif %}>Group heading</option></select></label>
+  <label>Action<select name="ingredient_keep"><option value="1"{% if row.keep == '1' %} selected{% endif %}>Keep</option><option value="0"{% if row.keep == '0' %} selected{% endif %}>Remove</option></select></label>
 </div>
