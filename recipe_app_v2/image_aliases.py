@@ -68,7 +68,9 @@ def image_url(name):
 class Matcher:
     def __init__(self, values=None):
         self.entries = []
-        for name, aliases in (load_catalogue() if values is None else values).items():
+        self.catalogue = load_catalogue() if values is None else values
+        self.version = revision(self.catalogue)
+        for name, aliases in self.catalogue.items():
             for term, explicit in [(name, False)] + [(alias, True) for alias in aliases]:
                 phrase = normalize(term)
                 if phrase:

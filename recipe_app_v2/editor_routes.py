@@ -13,8 +13,10 @@ from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
 from .database import get_session, writes_enabled
-from .editor import choices, empty_row, form_values, submitted_values, validate
-from .models import Recipe
+from .editor import choices, empty_row, form_values, submitted_values, validate, recipe_rows, version_for
+from .models import Recipe, Recipe_Ingredient
+from .image_aliases import Matcher, image_url
+from .ingredient_rematch import sign_preview, read_preview
 from .recipe_saves import SaveError, save_recipe
 from .uploads import MAX_UPLOAD, image_bytes, pdf_bytes
 
@@ -55,6 +57,18 @@ def render(request, session, recipe, values=None, errors=None, token=None, statu
     context.update(recipe=recipe, values=values if values is not None else form_values(session, recipe),
                    errors=errors or [], csrf_token=token,
                    row=empty_row(), writes_enabled=writes_enabled())
+    existing = {str(row.recipe_ingredient_id): row for row in recipe_rows(session, recipe.recipe_id)[0]} if recipe else {}
+    for row in context['values']['rows']:
+        old = existing.get(row['id'])
+        row['image_name'] = (old.name_official or 'default_ingredient') if old else ''
+        row['image_url'] = image_url(row['image_name'])
+        row['selected_name'] = ''
+        if row.get('image_token'):
+            try:
+                row['selected_name'] = read_preview(row['image_token'])['target']
+            except ValueError:
+                pass
+        row['selected_url'] = image_url(row['selected_name'])
     partial = request.headers.get('HX-Request') == 'true'
     response = templates.TemplateResponse(request=request,
         name='_editor.html' if partial else 'editor.html', context=context, status_code=status)
@@ -73,6 +87,46 @@ def new_recipe(request: Request, session: Session = Depends(get_session)):
 def ingredient_row(request: Request):
     from .main import templates
     return templates.TemplateResponse(request=request, name='_ingredient_row.html', context={'row': empty_row()})
+
+
+@router.post('/editor/ingredient-image-preview')
+async def ingredient_image_preview(request: Request, session: Session = Depends(get_session)):
+    size, chunks = 0, []
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > 4096:
+            raise HTTPException(413, 'Image preview request is too large.')
+        chunks.append(chunk)
+    import json
+    try:
+        values = json.loads(b''.join(chunks))
+        if not isinstance(values, dict):
+            raise ValueError()
+        check_token(request, str(values.get('csrf_token', '')))
+        recipe_id, row_id = int(values['recipe_id']), int(values['row_id'])
+        name, version = str(values['name']).strip(), str(values['version'])
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(422, 'Invalid ingredient preview.')
+    if not writes_enabled():
+        raise HTTPException(403, 'Dev saves are disabled.')
+    if not name or len(name) > 100:
+        raise HTTPException(422, 'Enter an ingredient name of up to 100 characters.')
+    def preview():
+        recipe = session.get(Recipe, recipe_id)
+        ingredient = session.get(Recipe_Ingredient, row_id)
+        if recipe is None or ingredient is None or ingredient.recipe_id != recipe_id:
+            raise HTTPException(404, 'Ingredient not found in this recipe.')
+        ingredients, instructions = recipe_rows(session, recipe_id)
+        if version_for(recipe, ingredients, instructions) != version:
+            raise HTTPException(409, 'The recipe changed. Reload the edit page before re-matching.')
+        if ingredient.is_group_header:
+            raise HTTPException(422, 'Group headings do not have ingredient images.')
+        matcher = Matcher()
+        target = matcher.match(name)
+        token = sign_preview(recipe_id, row_id, name, version, matcher.version, target) if target != 'default_ingredient' else ''
+        return {'name': target, 'image': image_url(target), 'token': token,
+                'changed': target != (ingredient.name_official or 'default_ingredient')}
+    return await run_in_threadpool(preview)
 
 
 @router.get('/recipes/{recipe_id}/edit')

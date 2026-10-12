@@ -10,6 +10,7 @@ from .editor import choices, recipe_rows, total_time, validate, version_for
 from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Instruction
 from .uploads import StagedUploads
 from .image_aliases import Matcher
+from .ingredient_rematch import verify_preview
 
 
 class SaveError(Exception):
@@ -90,9 +91,21 @@ def save_recipe(recipe_id, values, image=None, pdf=None):
                     session.add(ingredient)
                 else:
                     used.add(ingredient.recipe_ingredient_id)
+                image_token = row.get('image_token', '')
+                if image_token:
+                    if not row['id'] or row['group'] != '0':
+                        raise SaveError(['Re-match images only on existing ingredient rows.'])
+                    try:
+                        target = verify_preview(image_token, recipe.recipe_id, int(row['id']),
+                            row['name'], values['version'], matcher.version)
+                    except ValueError as exc:
+                        raise SaveError([str(exc)]) from None
+                    if target == 'default_ingredient' or target not in matcher.catalogue or matcher.match(row['name']) != target:
+                        raise SaveError(['No confident image match. Keep the existing mapping or re-match again.'])
+                    ingredient.name_official = target
                 if row['group'] == '1':
                     ingredient.name_official = None
-                elif ingredient.name_written != row['name'] or not ingredient.name_official:
+                elif not image_token and (ingredient.name_written != row['name'] or not ingredient.name_official):
                     ingredient.name_official = matcher.match(row['name'])
                 ingredient.name_written = row['name']
                 ingredient.note = row['note'] or None

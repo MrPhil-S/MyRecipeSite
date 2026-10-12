@@ -98,7 +98,11 @@ aliases. Matching normalizes case, accents, punctuation and controlled plurals,
 uses whole phrases, prioritizes the primary ingredient over alternatives and
 leaves tied matches unresolved. It preserves fresh/dried and other conflicting
 variants. New or renamed ingredient rows use the catalogue; unchanged rows retain
-their existing mappings. No bulk remapping has been applied.
+their existing mappings. On the edit page, individual ingredient rows also offer
+**Re-match image**: preview, choose **Use this image**, then Save changes. Undo
+clears the pending selection. Only selected image mappings are refreshed; ingredient
+wording stays unchanged. Changed recipe data, text or catalogue invalidates the
+preview. No bulk remapping has been applied.
 Missing ingredient images always use `default_ingredient.jpg`.
 Image-alias and tag table headers sort both ways across all pages; filters retain
 the chosen order. The Image column sorts by image availability.
@@ -128,7 +132,9 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 `RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
 table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
 
-Validated October 12, 2026: 47 tests passed. Separate image-alias CRUD, stale saves,
+Validated October 12, 2026: 49 tests passed. Per-row rematch preview, undo and save
+passed in Chrome using an owned dev fixture; text, notes, hidden metadata and other
+ingredient mappings were preserved. All 12 tables matched after cleanup. Separate image-alias CRUD, stale saves,
 recipe matching and fallback checks passed using owned dev fixtures; all 12 tables
 matched their original data after cleanup. Against the saved production audit,
 269 of 429 default rows receive proposed matches and 160 remain unresolved; these

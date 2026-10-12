@@ -18,7 +18,7 @@ FIELDS = {
 
 
 def empty_row():
-    return {'id': '', 'name': '', 'note': '', 'group': '0', 'keep': '1'}
+    return {'id': '', 'name': '', 'note': '', 'group': '0', 'keep': '1', 'image_token': ''}
 
 
 def recipe_rows(session, recipe_id):
@@ -73,6 +73,11 @@ def submitted_values(form):
         raise ValueError('Ingredient rows are incomplete or exceed the 300-row limit.')
     values['rows'] = [dict(zip(('id', 'name', 'note', 'group', 'keep'), map(str, row)))
                       for row in zip(*arrays)]
+    tokens = form.getlist('ingredient_image_token') or [''] * len(values['rows'])
+    if len(tokens) != len(values['rows']) or any(len(str(token)) > 2048 for token in tokens):
+        raise ValueError('Ingredient image selections are incomplete. Re-match before saving.')
+    for row, token in zip(values['rows'], tokens):
+        row['image_token'] = str(token)
     return values
 
 
@@ -155,6 +160,8 @@ def validate(values, options):
     clean['collection_ids'] = sorted(set(values['collection_ids']))
     clean['ingredients'] = []
     if clean['ingredient_mode'] == 'bulk':
+        if any(row.get('image_token') for row in values['rows']):
+            errors.append('Use individual rows to save selected image rematches, or undo them before bulk paste.')
         rows = []
         for line in clean['ingredient_bulk'].splitlines():
             if line.strip():

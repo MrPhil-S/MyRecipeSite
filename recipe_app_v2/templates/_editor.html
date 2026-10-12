@@ -9,6 +9,7 @@
         hx-target="#editor" hx-swap="outerHTML">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="version" value="{{ values.version }}">
+    <input type="hidden" name="recipe_id" value="{{ recipe.recipe_id if recipe else '' }}">
     <label>Recipe name<input name="name" maxlength="200" required value="{{ values.name }}"></label>
     {% if writes_enabled %}
     <div class="recipe-image-section" x-data="imageUpload">
