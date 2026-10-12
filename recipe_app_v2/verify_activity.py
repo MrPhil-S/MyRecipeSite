@@ -49,6 +49,15 @@ def browser_check(recipe_id, collection_id):
                     assert browser.execute_script('return window.activityMarker') == 42
                 browser.get('http://127.0.0.1:8001/plan')
                 plan_card = f'[data-plan-recipe-id="{recipe_id}"]'
+                for width in (1200, 390):
+                    browser.set_window_size(width, 900)
+                    assert browser.execute_script('''const card=arguments[0],
+                        image=card.querySelector('.picture').getBoundingClientRect(),
+                        overlay=card.querySelector('.plan-overlay').getBoundingClientRect();
+                        return overlay.top>=image.top && overlay.bottom<=image.bottom &&
+                            Math.abs(image.right-overlay.right-8)<1;''',
+                        browser.find_element(By.CSS_SELECTOR, plan_card))
+                browser.set_window_size(1200, 900)
                 if javascript:
                     browser.execute_script('window.activityMarker = 42')
                 old = browser.find_element(By.CSS_SELECTOR, plan_card)

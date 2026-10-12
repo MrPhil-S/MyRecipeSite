@@ -7,7 +7,10 @@
 <section class="plan-group"><h2>Added {{ day }} · {{ group.age }} day{{ 's' if group.age != 1 else '' }} ago</h2>
 <div class="grid">{% for recipe in group.recipes %}<article class="card" data-plan-recipe-id="{{ recipe.recipe_id }}">
 <a class="recipe-link" href="/recipes/{{ recipe.recipe_id }}?from_plan=true"><div class="picture">{% if recipe.image_file %}<img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="{{ recipe.name }}" loading="lazy">{% endif %}</div><div class="card-content"><h2>{{ recipe.name }}</h2>{% if recipe.total_time %}<p class="meta">{{ recipe.total_time }}</p>{% endif %}</div></a>
-{% if writes_enabled %}<div class="card-actions">{% for action, label in [('cooked', 'Mark cooked'), ('plan-remove', 'Remove from plan')] %}<form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ action }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ action }}" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="/plan"><button type="submit">{{ label }}</button></form>{% endfor %}</div>{% endif %}
+{% if writes_enabled %}
+<form class="plan-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/plan-remove" hx-post="/recipes/{{ recipe.recipe_id }}/actions/plan-remove" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="/plan"><button type="submit" class="is-planned" title="Remove from plan" aria-label="Remove from plan: {{ recipe.name }}">✓ Planned</button></form>
+<div class="card-actions"><form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/cooked" hx-post="/recipes/{{ recipe.recipe_id }}/actions/cooked" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="/plan"><button type="submit">Mark cooked</button></form></div>
+{% endif %}
 </article>{% endfor %}</div></section>
 {% else %}<p>Your plan is empty. Add recipes from the recipe list or a recipe’s detail page.</p>{% endfor %}
 </div>
