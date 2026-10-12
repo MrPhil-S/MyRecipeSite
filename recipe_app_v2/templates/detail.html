@@ -21,13 +21,14 @@
       </dl>
       <p class="meta">Cooked {{ cook_count }} times · {{ view_count }} recorded views{% if planned %} · In meal plan{% endif %}</p>
       {% if writes_enabled %}<div class="recipe-actions">
-      {% for action, label in [('cooked', 'Mark cooked'), ('plan-remove' if planned else 'plan-add', 'Remove from plan' if planned else 'Add to plan')] %}
-      <form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ action }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit">{{ label }}</button></form>
-      {% endfor %}
+      <form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/cooked"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit">Mark cooked</button></form>
       <a href="/recipes/{{ recipe.recipe_id }}/delete{{ '?from_plan=true' if from_plan else list_url(page, sort, q, collection_id)[1:] }}">Delete recipe</a>
       </div>{% endif %}
     </div>
-    {% if recipe.image_file %}<img class="detail-image" src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="{{ recipe.name }}">{% endif %}
+    <div class="detail-image-wrap">
+      <img class="detail-image" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
+      {% if writes_enabled %}<form class="plan-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if planned else 'plan-add' }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit"{% if planned %} class="is-planned"{% endif %} title="{{ 'Remove from plan' if planned else 'Add to plan' }}" aria-label="{{ 'Remove from plan' if planned else 'Add to plan' }}: {{ recipe.name }}">{{ '✓ Planned' if planned else '+ Plan' }}</button></form>{% endif %}
+    </div>
   </div>
   {% if recipe.note_from_user %}<section class="user-notes"><h2>Your notes</h2><p class="preserve-lines">{{ recipe.note_from_user }}</p></section>{% endif %}
   <div class="detail-columns">
