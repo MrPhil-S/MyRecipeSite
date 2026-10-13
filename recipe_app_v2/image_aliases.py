@@ -27,7 +27,23 @@ PLURALS = {
     'walnuts': 'walnut', 'pecans': 'pecan', 'cherries': 'cherry', 'bananas': 'banana',
     'florets': 'floret', 'flakes': 'flake', 'jalapenos': 'jalapeno', 'zucchinis': 'zucchini',
     'tenderloins': 'tenderloin', 'ribs': 'rib', 'chickpeas': 'chickpea',
+    'eggs': 'egg', 'shallots': 'shallot', 'carrots': 'carrot', 'chives': 'chive',
+    'capers': 'caper', 'chops': 'chop', 'thighs': 'thigh', 'breasts': 'breast',
+    'wings': 'wing', 'drumsticks': 'drumstick', 'livers': 'liver',
+    'wedges': 'wedge', 'tortillas': 'tortilla', 'lemons': 'lemon', 'limes': 'lime',
+    'cucumbers': 'cucumber', 'avocados': 'avocado', 'almonds': 'almond',
+    'cashews': 'cashew', 'peanuts': 'peanut', 'skewers': 'skewer', 'steaks': 'steak',
+    'olives': 'olive', 'lentils': 'lentil', 'oats': 'oat', 'peppercorns': 'peppercorn',
+    'artichokes': 'artichoke', 'apples': 'apple', 'chestnuts': 'chestnut',
+    'chips': 'chip', 'shells': 'shell', 'juiced': 'juice',
 }
+
+# These words identify a different food, cut or product; matching just a
+# component (flour in a tortilla, water in water chestnuts) is not sufficient.
+IMAGE_HEADS = frozenset(('sauce', 'paste', 'jelly', 'tortilla', 'chestnut',
+    'juice', 'zest', 'noodle', 'starch', 'syrup', 'vinegar', 'broth', 'stock',
+    'sausage', 'meatball', 'breast', 'thigh', 'wing', 'drumstick', 'liver',
+    'tenderloin', 'chop', 'shell', 'chip', 'rind', 'dressing', 'soup', 'powder'))
 
 
 def normalize(value):
@@ -39,7 +55,12 @@ def normalize(value):
     value = unicodedata.normalize('NFKD', unquote(value)).casefold()
     value = ''.join(char for char in value if not unicodedata.combining(char))
     tokens = re.findall(r'[a-z0-9]+', value)
-    return ' '.join(PLURALS.get(token, token) for token in tokens)
+    normalized = ' '.join(PLURALS.get(token, token) for token in tokens)
+    # Known compound spellings; no unrestricted substring or fuzzy matching.
+    normalized = re.sub(r'\blemon grass\b', 'lemongrass', normalized)
+    normalized = re.sub(r'\bcornstarch\b', 'corn starch', normalized)
+    normalized = re.sub(r'\bclove garlic\b', 'garlic clove', normalized)
+    return normalized
 
 
 def catalogue_path():
@@ -79,7 +100,12 @@ class Matcher:
 
     def match(self, text):
         # Alternatives/examples never outrank the primary ingredient.
-        primary = re.split(r'\bor\b|\bsuch as\b', text, maxsplit=1, flags=re.I)[0]
+        # Quantity alternatives retain the common ingredient: 2 or 3 cloves.
+        text = re.sub(r'(\d)\s+or\s+(\d)', r'\1 to \2', text, flags=re.I)
+        # Remove complete parenthetical substitutions while keeping a shared
+        # noun after them ("red kuri (or butternut) squash").
+        text = re.sub(r'\((?:or|such as|can substitute)\b[^)]*\)', '', text, flags=re.I)
+        primary = re.split(r'\bor\b|\bsuch as\b|\bcan substitute\b|//', text, maxsplit=1, flags=re.I)[0]
         normalized = normalize(primary)
         words = set(normalized.split())
         candidates = []
@@ -89,6 +115,11 @@ class Matcher:
             if not pattern.search(normalized):
                 continue
             target = set(normalize(name).split())
+            # An explicit full alias can describe a form not present in its
+            # image filename (red pepper flakes -> crushed red chili peppers).
+            semantic_target = target | (set(phrase.split()) if explicit else set())
+            if (words & IMAGE_HEADS) - semantic_target:
+                continue
             # A sauce or paste must not become its pepper/vegetable component.
             if not explicit and any(head in words and head not in target for head in ('sauce', 'paste', 'jelly')):
                 continue
@@ -96,8 +127,10 @@ class Matcher:
                 continue
             if 'bone in' in normalized and 'boneless' in target:
                 continue
-            # Do not turn coriander roots/seeds into the leafy herb through a shorter alias.
-            if ('root' in words or 'seed' in words) and not ({'root', 'seed'} & target):
+            # This distinction applies to coriander's leafy image, not every
+            # ingredient: fresh ginger root legitimately uses the ginger image.
+            if (('root' in words or 'seed' in words)
+                    and name in ('cilantro_(coriander_herb)', 'coriander_leaves')):
                 continue
             candidates.append(((len(phrase.split()), int(explicit)), name))
         if not candidates:

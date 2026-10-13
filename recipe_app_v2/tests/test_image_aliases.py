@@ -50,6 +50,40 @@ class ImageAliasTests(unittest.TestCase):
         self.assertEqual(Matcher({'dried_basil': ['basil']}).match('fresh basil'), 'default_ingredient')
         self.assertEqual(Matcher({'chili_pepper': []}).match('asian chile pepper sauce'), 'default_ingredient')
 
+    def test_reviewed_compounds_cuts_and_plural_forms_do_not_match_components(self):
+        matcher = Matcher()
+        cases = {
+            'lemon wedges': 'lemon_wedge',
+            'fresh lime wedges': 'lime_wedge',
+            '1 tablespoon lemon grass': 'lemongrass',
+            '4 chicken breasts': 'chicken_breast',
+            '6 chicken thighs': 'chicken_thigh',
+            '3 pounds chicken wings': 'chicken_wing',
+            '3 cloves garlic': 'garlic_clove',
+            '2 or 3 large garlic cloves': 'garlic_clove',
+            '4 pork chops': 'pork_chop',
+            '2 eggs': 'egg',
+            '2 tablespoons cornstarch': 'corn_starch',
+            '1 piece fresh ginger root': 'ginger',
+        }
+        for text, expected in cases.items():
+            self.assertEqual(matcher.match(text), expected, text)
+        blocked = {
+            '6 flour tortillas': {'flour': []},
+            '12 corn tortillas': {'corn': []},
+            '1 can water chestnuts': {'water': []},
+            '1 tablespoon lemon grass': {'lemon': []},
+            '1 pound chicken breasts': {'chicken': []},
+            '1 pound ground turkey breast': {'turkey': []},
+            '1 cup jumbo pasta shells': {'pasta': []},
+            '227g semi sweet chocolate chips': {'semi_sweet_chocolate': []},
+            '1 tsp kombu dashi powder (can substitute for mushroom stock powder)': {'mushroom_stock': []},
+            '1 tsp kombu dashi powder': {'kombu': []},
+            '1 medium red kuri (or butternut) squash': {'butternut_squash': [], 'butter': []},
+        }
+        for text, entries in blocked.items():
+            self.assertEqual(Matcher(entries).match(text), 'default_ingredient', text)
+
     def test_fallback_is_safe_and_keeps_existing_images(self):
         folder = Path(self.folder.name) / 'myrecipes/static/ingredient_images'
         folder.mkdir(parents=True)
