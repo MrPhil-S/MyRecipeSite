@@ -49,11 +49,9 @@
   <div class="detail-columns">
     <section aria-labelledby="ingredients-heading">
       <h2 id="ingredients-heading">Ingredients ({{ ingredient_count }})</h2>
-      <p class="meta">Drag the handles to rearrange ingredients for this visit. Use Edit recipe to save a new order.</p>
-      <ul class="ingredients" data-sortable-ingredients>
+      <ul class="ingredients">
         {% for item in ingredients %}
         <li data-ingredient-name="{{ item.name }}" data-ingredient-id="{{ item.id }}"{% if item.is_group_header %} class="group-heading"{% endif %}>
-          {% if not item.is_group_header %}<button type="button" class="drag-handle" aria-label="Reorder {{ item.name }}" title="Drag to reorder; use arrow keys when focused">&#8942;&#8942;</button>{% endif %}
           {% if item.image_url and not item.is_group_header %}<img loading="lazy" src="{{ item.image_url }}" alt="">{% endif %}
           <div>{% if item.is_group_header %}<h3>{{ item.name }}</h3>{% else %}<span>{{ item.name }}</span>{% endif %}
           {% if item.note %}<p class="meta preserve-lines">{{ item.note }}</p>{% endif %}</div>
