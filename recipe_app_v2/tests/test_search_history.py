@@ -57,6 +57,16 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(self.histories(), [])
 
+    def test_navbar_search_works_when_first_page_is_tags_or_aliases(self):
+        for path in ('/tags/collections', '/image-aliases'):
+            self.client.cookies.clear()
+            body = self.client.get(path).text
+            self.assertEqual(body.count('id="navbar-query"'), 1)
+            token = re.search(r'name="csrf_token" value="([^"]+)"', body)[1]
+            response = self.client.post('/search', data={'q': 'chicken', 'csrf_token': token}, follow_redirects=False)
+            self.assertEqual(response.status_code, 303)
+        self.assertEqual(self.histories(), ['chicken', 'chicken'])
+
     def test_explicit_search_saves_complete_query_and_canonical_url(self):
         token = self.token()
         data = {'q': '  chicken soup  ', 'sort': 'name', 'intent': 'search', 'csrf_token': token}

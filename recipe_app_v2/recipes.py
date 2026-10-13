@@ -65,6 +65,7 @@ def detail_context(session, recipe_id):
     pdf = ROOT / "myrecipes/static/custom_prints" / f"{recipe_id}.pdf"
     return {"recipe": recipe, "ingredients": items, "steps": steps,
             "source_notes": source_notes, "collections": collections, "cuisine": cuisine,
+            "favorite": any(c.collection_name.strip().lower() in ('favorites', 'favorite') for c in collections),
             "ingredient_count": sum(not item["is_group_header"] for item in items),
             "view_count": history[0], "cook_count": history[1], "planned": history[2],
             "source_link": web_link(recipe.source_url), "whisk_link": web_link(recipe.whisk_url),

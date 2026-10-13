@@ -14,7 +14,8 @@ from .database import get_session, get_write_engine, writes_enabled
 from .editor import recipe_rows, version_for
 from .editor_routes import COOKIE, check_token, new_token, token_valid
 from .sorting import SortOrder
-from .models import (Recipe, Recipe_Ingredient, Recipe_Instruction, Recipe_Plan_Date,
+from .collections import favorite_membership
+from .models import (Collection, Recipe, Recipe_Ingredient, Recipe_Instruction, Recipe_Plan_Date,
                      recipe_collection, recipe_cooked_date, recipe_view_date)
 
 router = APIRouter()
@@ -61,6 +62,18 @@ def mutate(recipe_id, action):
             session.execute(update(Recipe_Plan_Date).where(
                 Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None)
             ).values(removed_dt=func.current_timestamp()))
+        elif action in ('favorite-add', 'favorite-remove'):
+            favorites = session.scalars(select(Collection).where(
+                func.lower(func.trim(Collection.collection_name)).in_(('favorites', 'favorite')))
+                .order_by(Collection.collection_id).with_for_update()).all()
+            if action == 'favorite-add':
+                if not favorites:
+                    favorites = [Collection(collection_name='Favorites')]
+                    session.add(favorites[0])
+                if not any(c in recipe.collections for c in favorites):
+                    recipe.collections.append(favorites[0])
+            else:
+                recipe.collections[:] = [c for c in recipe.collections if c not in favorites]
         session.commit()
 
 
@@ -122,7 +135,7 @@ async def read_form(request):
 
 @router.post('/recipes/{recipe_id}/actions/{action}')
 async def recipe_action(request: Request, recipe_id: int,
-                        action: Literal['cooked', 'plan-add', 'plan-remove']):
+                        action: Literal['cooked', 'plan-add', 'plan-remove', 'favorite-add', 'favorite-remove']):
     form = await read_form(request)
     target = safe_return(str(form.get('return_to', f'/recipes/{recipe_id}')))
     await run_in_threadpool(mutate, recipe_id, action)
@@ -147,14 +160,15 @@ def meal_plan(request: Request, session: Session = Depends(get_session)):
         group['recipes'].append(recipe)
     token = csrf_context(request)
     response = templates.TemplateResponse(request=request, name='plan.html', context={
-        'groups': grouped, 'csrf_token': token, 'writes_enabled': writes_enabled(), 'total': len(rows)})
+        'groups': grouped, 'csrf_token': token, 'writes_enabled': writes_enabled(), 'total': len(rows),
+        'favorite_ids': set(session.scalars(select(Recipe.recipe_id).where(favorite_membership())))})
     return set_cookie(request, response, token)
 
 
 @router.get('/recipes/{recipe_id}/delete')
 def delete_confirmation(request: Request, recipe_id: int, page: int = Query(1, ge=1),
                         sort: SortOrder = 'recent',
-                        q: str = Query('', max_length=200), collection_id: int = Query(0, ge=0),
+                        q: str = Query('', max_length=200), collection_id: int = Query(0, ge=-1), per_page: int = 24,
                         session: Session = Depends(get_session)):
     from .main import templates, list_url
     recipe = session.get(Recipe, recipe_id)
@@ -163,7 +177,7 @@ def delete_confirmation(request: Request, recipe_id: int, page: int = Query(1, g
     token = csrf_context(request)
     response = templates.TemplateResponse(request=request, name='delete_recipe.html', context={
         'recipe': recipe, 'version': deletion_version(session, recipe), 'csrf_token': token,
-        'return_to': '/plan' if request.query_params.get('from_plan') == 'true' else list_url(page, sort, q, collection_id),
+        'return_to': '/plan' if request.query_params.get('from_plan') == 'true' else list_url(page, sort, q, collection_id, per_page),
         'cancel_to': f'/recipes/{recipe_id}' + ('?' + request.url.query if request.url.query else ''),
         'writes_enabled': writes_enabled(), 'error': None})
     return set_cookie(request, response, token)

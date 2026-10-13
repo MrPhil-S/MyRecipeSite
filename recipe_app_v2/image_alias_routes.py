@@ -39,6 +39,7 @@ def alias_list(request: Request, q: str = Query('', max_length=200),
     matched = Matcher(values).match(sample) if sample.strip() else None
     token = csrf_context(request)
     response = templates.TemplateResponse(request=request, name='image_aliases.html', context={
+        'csrf_token': token,
         'rows': [{'name': name, 'aliases': values[name], 'image': image_url(name),
                   'edit_url': '/image-aliases/edit?name=' + quote(name, safe=''),
                   'review_url': '/image-aliases/rematch?name=' + quote(name, safe='')}

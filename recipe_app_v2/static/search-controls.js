@@ -6,7 +6,7 @@ function syncCollections(collectionId) {
   document.querySelectorAll('[data-collection-id].collection-tile').forEach((tile) => {
     if (tile.dataset.collectionId === String(collectionId)) tile.setAttribute('aria-current', 'true');
     else tile.removeAttribute('aria-current');
-    const params = new URLSearchParams({page: '1', sort: document.getElementById('sort').value});
+    const params = new URLSearchParams({page: '1', sort: document.getElementById('sort').value, per_page: document.getElementById('per-page').value});
     const query = document.getElementById('search-query').value;
     if (query) params.set('q', query);
     if (tile.dataset.collectionId !== '0') params.set('collection_id', tile.dataset.collectionId);
@@ -38,8 +38,8 @@ document.addEventListener('htmx:historyRestore', () => {
 document.addEventListener('click', (event) => {
   const suggestion = event.target.closest('[data-history-query]');
   if (!suggestion) return;
-  const input = document.getElementById('search-query');
-  const form = document.getElementById('recipe-search');
+  const form = suggestion.closest('form');
+  const input = form.querySelector('input[name=q]');
   input.value = suggestion.dataset.historyQuery;
-  form.requestSubmit(document.getElementById('submit-search'));
+  form.requestSubmit(form.querySelector('button[type=submit]'));
 });

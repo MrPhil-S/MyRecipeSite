@@ -16,12 +16,12 @@
         {% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %}
         <div x-show="!previewUrl">
           <p>Current image</p>
-          <img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}">
+          <div class="editor-image-wrap"><span class="favorite-badge" data-editor-favorite hidden role="img" aria-label="Favorite">&#9733;</span><img src="/recipe-images/{{ recipe.image_file | urlencode }}" alt="Current image for {{ recipe.name }}"></div>
         </div>
         {% endif %}
         <div x-show="previewUrl" x-cloak>
           <p>Selected image</p>
-          <img :src="previewUrl || undefined" alt="Selected recipe image">
+          <div class="editor-image-wrap"><span class="favorite-badge" data-editor-favorite hidden role="img" aria-label="Favorite">&#9733;</span><img :src="previewUrl || undefined" alt="Selected recipe image"></div>
         </div>
       </div>
       <div class="image-upload-control">
@@ -58,7 +58,7 @@
         <div class="collection-options">
           {% for collection in collection_choices %}
           <label x-show="{{ collection.collection_name | lower | tojson | forceescape }}.includes(search.trim().toLowerCase())">
-            <input type="checkbox" name="collection_ids" value="{{ collection.collection_id }}" x-model="selected"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}
+            <input type="checkbox" {% if collection.collection_name | trim | lower in ('favorite', 'favorites') %}data-favorite-collection{% endif %} name="collection_ids" value="{{ collection.collection_id }}" x-model="selected"{% if collection.collection_id|string in values.collection_ids %} checked{% endif %}>{{ collection.collection_name }}
           </label>
           {% else %}<p>No collections available.</p>{% endfor %}
         </div>
@@ -66,9 +66,13 @@
       <noscript><style>.collection-select .collection-trigger{display:none}.collection-select [x-cloak]{display:block!important}.collection-select .collection-dropdown{position:static;box-shadow:none}</style></noscript>
     </fieldset>
     <fieldset id="ingredient-inputs" x-data="{ mode: {{ ('bulk' if values.ingredient_mode == 'bulk' else 'rows') | tojson | forceescape }} }"><legend>Ingredients</legend>
-      <label>Input method<select name="ingredient_mode" x-model="mode"><option value="rows"{% if values.ingredient_mode == 'rows' %} selected{% endif %}>Individual rows</option><option value="bulk"{% if values.ingredient_mode == 'bulk' %} selected{% endif %}>Bulk paste</option></select></label>
+      <div class="input-method" role="group" aria-label="Ingredient input method">
+        <label><input type="radio" name="ingredient_mode" value="rows" x-model="mode"{% if values.ingredient_mode == 'rows' %} checked{% endif %}>Individual rows</label>
+        <label><input type="radio" name="ingredient_mode" value="bulk" x-model="mode"{% if values.ingredient_mode == 'bulk' %} checked{% endif %}>Bulk paste</label>
+      </div>
       <div x-show="mode === 'rows'" x-cloak>
-        <div id="ingredient-rows">{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
+        <p class="meta">Drag a handle to reorder; save the recipe to keep the new order.</p>
+        <div id="ingredient-rows" data-sortable-ingredients>{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
         <button type="button" hx-get="/editor/ingredient-row" hx-target="#ingredient-rows" hx-swap="beforeend">Add ingredient row</button>
       </div>
       <div x-show="mode === 'bulk'" x-cloak>

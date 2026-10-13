@@ -19,7 +19,7 @@
           <input id="search-query" type="search" name="q" value="{{ q }}" maxlength="200" placeholder="Search titles, ingredients, instructions, or notes" aria-describedby="search-help"
                  autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true"
                  :aria-expanded="historyOpen" aria-controls="search-history"
-                 hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort,#collection-filter" hx-params="q,sort,collection_id" hx-sync="#recipe-search:replace">
+                 hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort,#collection-filter,#per-page" hx-params="q,sort,collection_id,per_page" hx-sync="#recipe-search:replace">
           <div class="search-history" x-show="historyOpen" x-cloak>
             <div id="search-history" hx-get="/search/history" hx-trigger="focus from:#search-query, input changed delay:150ms from:#search-query"
                  hx-include="#search-query" hx-params="q" hx-target="this" hx-swap="innerHTML" hx-push-url="false" hx-sync="this:replace">

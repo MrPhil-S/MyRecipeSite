@@ -181,7 +181,10 @@ def tag_list(request: Request, kind: Kind, q: str = Query('', max_length=200),
             Recipe.cuisine_id.in_(ids)).group_by(Recipe.cuisine_id)).all())
     rows = [{'id': getattr(tag, id_field), 'values': [getattr(tag, field) for field, _, _ in fields],
              'assigned': counts.get(getattr(tag, id_field), 0)} for tag in tags]
+    cookie = request.cookies.get(COOKIE, '')
+    token = cookie if token_valid(cookie) else new_token()
     response = templates.TemplateResponse(request=request, name='tags.html', context={
+        'csrf_token': token,
         'kind': kind, 'singular': singular, 'fields': fields, 'rows': rows, 'q': q,
         'page': page, 'pages': pages, 'total': total,
         'query_string': urlencode({'q': q, 'sort': sort, 'direction': direction}),
@@ -190,6 +193,8 @@ def tag_list(request: Request, kind: Kind, q: str = Query('', max_length=200),
         'writes_enabled': writes_enabled(),
         'synonym_groups': [group for group in synonym_groups(session)
                            if not q.strip() or any(q.strip().lower() in name for name in group)] if kind == 'synonyms' else []})
+    response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200,
+                        secure=request.url.scheme == 'https')
     response.headers['Cache-Control'] = 'no-store'
     return response
 

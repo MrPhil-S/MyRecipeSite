@@ -68,6 +68,56 @@ class ActivityTests(unittest.TestCase):
             self.assertEqual(self.count(recipe_view_date), 1)
             self.assertEqual(self.client.post('/recipes/1/actions/cooked', data=data).status_code, 403)
 
+    def test_favorites_are_idempotent_existing_collection_links_and_shared_badges(self):
+        data = self.form()
+        with Session(self.engine) as session:
+            session.add(Collection(collection_id=2, collection_name='Dinner'))
+            recipe = session.get(Recipe, 2)
+            recipe.collections.append(session.get(Collection, 2))
+            session.commit()
+        for _ in range(2):
+            response = self.client.post('/recipes/2/actions/favorite-add', data=data, follow_redirects=False)
+            self.assertEqual(response.status_code, 303)
+        with Session(self.engine) as session:
+            self.assertEqual(sorted(c.collection_id for c in session.get(Recipe, 2).collections), [1, 2])
+            self.assertEqual(session.scalar(select(func.count()).select_from(recipe_collection).where(
+                recipe_collection.c.recipe_id == 2)), 2)
+        self.assertIn('aria-pressed="true"', self.client.get('/recipes/2?log_visit=false').text)
+        self.assertEqual(self.client.get('/').text.count('class="favorite-badge"'), 2)
+        self.client.post('/recipes/2/actions/plan-add', data=data, follow_redirects=False)
+        self.assertIn('class="favorite-badge"', self.client.get('/plan').text)
+        self.assertIn('data-favorite-collection', self.client.get('/recipes/2/edit').text)
+        for _ in range(2):
+            self.client.post('/recipes/2/actions/favorite-remove', data=data, follow_redirects=False)
+        with Session(self.engine) as session:
+            self.assertEqual([c.collection_id for c in session.get(Recipe, 2).collections], [2])
+        self.assertIn('aria-pressed="false"', self.client.get('/recipes/2?log_visit=false').text)
+        self.assertEqual(self.client.post('/recipes/2/actions/favorite-add', data={'csrf_token': 'bad'}).status_code, 403)
+        with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '0'}):
+            self.assertEqual(self.client.post('/recipes/2/actions/favorite-add', data=data).status_code, 403)
+
+    def test_never_cooked_uses_history_and_pagination_preserves_filters(self):
+        with Session(self.engine) as session:
+            session.get(Recipe, 1).cooked_count = 99  # Stale legacy counters must not decide membership.
+            session.add(recipe_cooked_date(recipe_id=2))
+            session.add_all([Recipe(name=f'Uncooked {n}') for n in range(30)])
+            session.commit()
+        body = self.client.get('/?collection_id=-1&per_page=12&sort=name').text
+        self.assertIn('data-recipe-id="1"', body)
+        self.assertNotIn('data-recipe-id="2"', body)
+        self.assertEqual(len(re.findall(r'data-recipe-id="\d+"', body)), 12)
+        self.assertIn('collection_id=-1&amp;per_page=12', body)
+        detail = self.client.get('/recipes/1?collection_id=-1&per_page=12&page=2&log_visit=false').text
+        self.assertIn('page=2&amp;sort=recent&amp;collection_id=-1&amp;per_page=12', detail)
+        response = self.client.post('/search', data=dict(self.form(), q='Uncooked', intent='sort',
+            collection_id=-1, per_page=12), headers={'HX-Request': 'true'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('collection_id=-1&per_page=12', response.headers['HX-Push-Url'])
+        self.client.post('/recipes/1/actions/cooked', data=self.form(), follow_redirects=False)
+        self.assertNotIn('data-recipe-id="1"', self.client.get('/?collection_id=-1').text)
+        for size in (-1, 0, 500, 13):
+            self.assertEqual(self.client.get(f'/?per_page={size}').status_code, 422)
+
     def test_plan_idempotence_grouping_soft_removal_and_back_navigation(self):
         data = self.form()
         for _ in range(2):

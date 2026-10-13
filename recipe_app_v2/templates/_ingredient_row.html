@@ -1,8 +1,8 @@
 <div class="ingredient-row">
+  <button type="button" class="drag-handle" aria-label="Reorder ingredient" title="Drag to reorder; use arrow keys when focused">&#8942;&#8942;</button>
   <input type="hidden" name="ingredient_id" value="{{ row.id }}">
   <label>Name<input name="ingredient_name" maxlength="100" value="{{ row.name }}"></label>
   <label>Note<input name="ingredient_note" maxlength="100" value="{{ row.note }}"></label>
   <label>Type<select name="ingredient_group"><option value="0"{% if row.group == '0' %} selected{% endif %}>Ingredient</option><option value="1"{% if row.group == '1' %} selected{% endif %}>Group heading</option></select></label>
   <label>Action<select name="ingredient_keep"><option value="1"{% if row.keep == '1' %} selected{% endif %}>Keep</option><option value="0"{% if row.keep == '0' %} selected{% endif %}>Remove</option></select></label>
-  <div class="ingredient-order-buttons"><button type="button" data-move-ingredient="up" aria-label="Move ingredient up">&#8593;</button><button type="button" data-move-ingredient="down" aria-label="Move ingredient down">&#8595;</button></div>
 </div>
