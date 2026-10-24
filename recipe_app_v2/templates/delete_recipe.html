@@ -4,4 +4,4 @@
 <p>This deletes the recipe, ingredients, instructions, cooking/view history and plan entries. Image and PDF files are retained for recovery.</p>
 {% if error %}<p class="form-errors" role="alert">{{ error }} <a href="{{ reload_to }}">Reload confirmation</a></p>{% endif %}
 <form method="post" action="/recipes/{{ recipe.recipe_id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="version" value="{{ version }}"><input type="hidden" name="return_to" value="{{ return_to }}">
-<div class="form-actions"><button type="submit"{% if not writes_enabled or error %} disabled{% endif %}>Delete recipe</button><a href="{{ cancel_to }}">Cancel</a></div></form></section>{% endblock %}
+<div class="form-actions"><button class="danger" type="submit"{% if not writes_enabled or error %} disabled{% endif %}>Delete recipe</button><a href="{{ cancel_to }}">Cancel</a></div></form></section>{% endblock %}

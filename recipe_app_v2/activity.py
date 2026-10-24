@@ -15,6 +15,7 @@ from .editor import recipe_rows, version_for
 from .editor_routes import COOKIE, check_token, new_token, token_valid
 from .sorting import SortOrder
 from .collections import favorite_membership
+from .cooked_history import can_undo_cooked
 from .models import (Collection, Recipe, Recipe_Ingredient, Recipe_Instruction, Recipe_Plan_Date,
                      recipe_collection, recipe_cooked_date, recipe_view_date)
 
@@ -55,6 +56,15 @@ def mutate(recipe_id, action):
             Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None))
         if action == 'cooked':
             session.add(recipe_cooked_date(recipe_id=recipe_id))
+        elif action == 'undo-cooked':
+            latest = session.scalar(select(recipe_cooked_date).where(
+                recipe_cooked_date.recipe_id == recipe_id).order_by(
+                recipe_cooked_date.recipe_cooked_dt.desc(),
+                recipe_cooked_date.recipe_cooked_date_id.desc()).limit(1).with_for_update())
+            if not can_undo_cooked(latest.recipe_cooked_dt if latest else None,
+                                   session.scalar(select(func.current_timestamp()))):
+                raise HTTPException(409, 'Only cooking records from the last 24 hours can be undone.')
+            session.delete(latest)
         elif action == 'plan-add':
             if session.scalar(active.limit(1)) is None:
                 session.add(Recipe_Plan_Date(recipe_id=recipe_id))
@@ -135,14 +145,15 @@ async def read_form(request):
 
 @router.post('/recipes/{recipe_id}/actions/{action}')
 async def recipe_action(request: Request, recipe_id: int,
-                        action: Literal['cooked', 'plan-add', 'plan-remove', 'favorite-add', 'favorite-remove']):
+                        action: Literal['cooked', 'undo-cooked', 'plan-add', 'plan-remove', 'favorite-add', 'favorite-remove']):
     form = await read_form(request)
     target = safe_return(str(form.get('return_to', f'/recipes/{recipe_id}')))
     await run_in_threadpool(mutate, recipe_id, action)
-    if request.headers.get('HX-Request') == 'true' and urlsplit(target).path in ('/', '/plan'):
-        selector = '#recipes' if urlsplit(target).path == '/' else '#meal-plan'
-        return Response(status_code=204, headers={'HX-Location': json.dumps({
-            'path': target, 'target': selector, 'select': selector, 'swap': 'outerHTML'})})
+    if request.headers.get('HX-Request') == 'true':
+        path = urlsplit(target).path
+        selector = '#recipes' if path == '/' else '#meal-plan' if path == '/plan' else '#recipe-detail-page'
+        location = {'path': target, 'target': selector, 'swap': 'outerHTML'}
+        return Response(status_code=204, headers={'HX-Location': json.dumps(location)})
     return RedirectResponse(target, status_code=303)
 
 
@@ -151,24 +162,42 @@ def meal_plan(request: Request, session: Session = Depends(get_session)):
     from .main import templates
     active = select(Recipe_Plan_Date.recipe_id, func.max(Recipe_Plan_Date.added_dt).label('added')).where(
         Recipe_Plan_Date.removed_dt.is_(None)).group_by(Recipe_Plan_Date.recipe_id).subquery()
-    rows = session.execute(select(Recipe, active.c.added).join(active, Recipe.recipe_id == active.c.recipe_id)
+    cooked = select(recipe_cooked_date.recipe_id, func.count().label('cook_count'),
+        func.max(recipe_cooked_date.recipe_cooked_dt).label('last_cooked')).group_by(
+        recipe_cooked_date.recipe_id).subquery()
+    last_marked_cook = select(recipe_cooked_date.recipe_cooked_dt).where(
+        recipe_cooked_date.recipe_id == Recipe.recipe_id).order_by(
+        recipe_cooked_date.recipe_cooked_dt.desc(), recipe_cooked_date.recipe_cooked_date_id.desc()
+    ).limit(1).scalar_subquery()
+    rows = session.execute(select(Recipe, active.c.added,
+        func.coalesce(cooked.c.cook_count, 0).label('cook_count'), cooked.c.last_cooked,
+        last_marked_cook.label('last_marked_cook_dt'),
+        favorite_membership().label('favorite'), (active.c.recipe_id.is_not(None)).label('planned'))
+        .join(active, Recipe.recipe_id == active.c.recipe_id)
+        .outerjoin(cooked, cooked.c.recipe_id == Recipe.recipe_id)
                            .order_by(active.c.added.desc(), Recipe.recipe_id.desc())).all()
     grouped = {}
     server_now = session.scalar(select(func.current_timestamp()))
-    for recipe, added in rows:
+    undo_cooked_ids = {row.Recipe.recipe_id for row in rows
+                       if can_undo_cooked(row.last_marked_cook_dt, server_now)}
+    for row in rows:
+        added = row.added
         group = grouped.setdefault(added.date(), {'age': max(0, (server_now - added).days), 'recipes': []})
-        group['recipes'].append(recipe)
+        group['recipes'].append(row)
     token = csrf_context(request)
-    response = templates.TemplateResponse(request=request, name='plan.html', context={
+    partial = request.headers.get('HX-Request') == 'true' and request.headers.get('HX-History-Restore-Request') != 'true'
+    response = templates.TemplateResponse(request=request, name='_plan_fragment.html' if partial else 'plan.html', context={
         'groups': grouped, 'csrf_token': token, 'writes_enabled': writes_enabled(), 'total': len(rows),
-        'favorite_ids': set(session.scalars(select(Recipe.recipe_id).where(favorite_membership())))})
+        'undo_cooked_ids': undo_cooked_ids,
+        'planned_count': len(rows)})
     return set_cookie(request, response, token)
 
 
 @router.get('/recipes/{recipe_id}/delete')
 def delete_confirmation(request: Request, recipe_id: int, page: int = Query(1, ge=1),
                         sort: SortOrder = 'recent',
-                        q: str = Query('', max_length=200), collection_id: int = Query(0, ge=-1), per_page: int = 24,
+                        q: str = Query('', max_length=200), collection_id: int = Query(0, ge=-3), per_page: int = 24,
+                        cuisine_id: int = Query(0, ge=0),
                         session: Session = Depends(get_session)):
     from .main import templates, list_url
     recipe = session.get(Recipe, recipe_id)
@@ -177,7 +206,7 @@ def delete_confirmation(request: Request, recipe_id: int, page: int = Query(1, g
     token = csrf_context(request)
     response = templates.TemplateResponse(request=request, name='delete_recipe.html', context={
         'recipe': recipe, 'version': deletion_version(session, recipe), 'csrf_token': token,
-        'return_to': '/plan' if request.query_params.get('from_plan') == 'true' else list_url(page, sort, q, collection_id, per_page),
+        'return_to': '/plan' if request.query_params.get('from_plan') == 'true' else list_url(page, sort, q, collection_id, per_page, cuisine_id),
         'cancel_to': f'/recipes/{recipe_id}' + ('?' + request.url.query if request.url.query else ''),
         'writes_enabled': writes_enabled(), 'error': None})
     return set_cookie(request, response, token)

@@ -1,0 +1,79 @@
+{% from 'design_home_macros.html' import icon %}
+{% macro action(value, label, class='', symbol='') -%}
+<form class="inline-action" method="post" action="{{ action_url }}" hx-post="{{ action_url }}" hx-push-url="false">
+  <button name="action" value="{{ value }}" class="button {{ class }}" {% if value == 'favorite' %}aria-pressed="{{ 'true' if favorite else 'false' }}"{% endif %}>{% if symbol %}{{ icon(symbol, 17) }}{% endif %}{{ label }}</button>
+</form>
+{%- endmacro %}
+
+{% macro photo() -%}
+<figure class="hero-photo">
+  <img src="/recipe-images/{{ recipe_image }}" alt="{{ state.title }}" width="800" height="600">
+  <form method="post" action="{{ action_url }}" hx-post="{{ action_url }}" hx-push-url="false" class="photo-favorite">
+    <button name="action" value="favorite" class="favorite{% if favorite %} is-favorite{% endif %}" aria-label="{{ 'Remove from' if favorite else 'Add to' }} favorites" aria-pressed="{{ 'true' if favorite else 'false' }}">{{ icon('star', 19) }}</button>
+  </form>
+  <figcaption><span class="photo-badge">Cooked {{ cook_count }} times</span>{% if planned %}<span class="photo-badge photo-badge--planned">Planned {{ plan_label }}</span>{% endif %}</figcaption>
+</figure>
+{%- endmacro %}
+
+{% macro facts() -%}
+<dl class="recipe-time"><div><dt>Total</dt><dd>{{ recipe_minutes }} <span>min</span></dd></div>{% if not sample %}<div><dt>Prep</dt><dd>15 <span>min</span></dd></div><div><dt>Cook</dt><dd>20 <span>min</span></dd></div><div><dt>Marinate / rest</dt><dd>25 <span>min</span></dd></div>{% endif %}<div><dt>Serves</dt><dd>{{ servings }}</dd></div></dl>
+{%- endmacro %}
+
+{% macro controls() -%}
+<div class="recipe-controls">
+  <button class="button primary" @click="$refs.planDialog.showModal()">{{ icon('calendar',17) }}{{ 'Planned · ' ~ plan_label if planned else 'Add to meal plan' }}</button>
+  {{ action('favorite', 'Favorited' if favorite else 'Favorite', 'saved' if favorite else '', 'star') }}
+  {{ action('undo-cooked' if state.cooked_on else 'cooked', 'Undo cooked' if state.cooked_on else 'Mark cooked') }}
+</div>
+<div class="recipe-utilities"><button @click="$refs.editDialog.showModal()">Edit recipe</button><button @click="window.print()">Print</button><button @click="$refs.deleteDialog.showModal()">Delete recipe</button></div>
+{%- endmacro %}
+
+{% macro summary() -%}
+<section class="recipe-summary">
+  <a class="recipe-cuisine" href="/design?layout=library&amp;palette=oxblood&amp;cuisine={{ state.cuisine|urlencode }}" hx-boost="false">{{ state.cuisine }}</a>
+  <h1 id="recipe-title">{{ state.title }}</h1>
+  <div class="recipe-tags" aria-label="Collections">{% for name in state.collections %}<a href="/design?layout=library&amp;palette=oxblood&amp;collection={{ name|urlencode }}" hx-boost="false">{{ name }}</a>{% endfor %}{% if favorite %}<a href="/design?layout=library&amp;palette=oxblood&amp;collection=Favorites" hx-boost="false">Favorites</a>{% endif %}</div>
+  {% if state.note %}<p class="recipe-deck">{{ state.note }}</p>{% endif %}<button class="text-button" @click="$refs.noteDialog.showModal()">{{ 'Edit personal note' if state.note else 'Add personal note' }}</button>
+  {{ facts() }}{{ controls() }}
+  <a class="jump-link" href="#ingredients-heading" hx-boost="false">Jump to ingredients ↓</a>
+</section>
+{%- endmacro %}
+
+{% macro ingredient_section() -%}
+<section class="ingredient-section" aria-labelledby="ingredients-heading">
+  <header class="section-top"><h2 id="ingredients-heading">{{ 'Ingredient highlights' if sample and sample.id != 1 else 'Ingredients' }} <span>{{ ingredient_count }}</span></h2>
+    <form method="get" action="/design/recipe" hx-get="/design/recipe" hx-trigger="change" hx-swap="outerHTML show:none" class="serving-form">
+      <input type="hidden" name="version" value="{{ version }}"><label for="servings">Servings</label><select id="servings" name="servings">{% for n in [2,4,6,8] %}<option {% if n == servings %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+      {% if sample %}<input type="hidden" name="sample_id" value="{{ sample.id }}">{% endif %}
+    </form>
+  </header>
+  <p class="section-help">Check off ingredients as you go.</p>
+  <ul class="recipe-ingredients">
+    {% for item in ingredients %}
+    {% if loop.first or ingredients[loop.index0-1].group != item.group %}<li class="ingredient-group">{{ item.group }}</li>{% endif %}
+    <li class="ingredient-row" :class="{ 'is-checked': checked.includes('{{ item.file }}') }"><label>
+      <img src="/ingredient-images/{{ item.file }}" alt="" width="64" height="64" loading="lazy">
+      <span class="ingredient-copy"><small class="tile-group">{{ item.group }}</small><span>{% if item.amount %}<b>{{ item.amount }} {{ item.unit }}</b> {% endif %}{{ item.name }}</span>{% if item.note %}<small>{{ item.note }}</small>{% endif %}</span>
+      <input type="checkbox" x-model="checked" value="{{ item.file }}" aria-label="Check {{ item.name }}">
+    </label></li>
+    {% endfor %}
+  </ul>
+</section>
+{%- endmacro %}
+
+{% macro method_section() -%}
+<section class="method-section" aria-labelledby="method-heading"><header class="section-top"><h2 id="method-heading">Method <span>{{ steps|length }} steps</span></h2><span class="method-progress" x-text="completed.length ? completed.length + ' of {{ steps|length }} done' : ''" aria-live="polite"></span></header>
+<ol class="method-list">{% for heading, text in steps %}<li :class="{ 'step-complete': completed.includes('{{ loop.index }}') }"><label class="step-marker"><input type="checkbox" x-model="completed" value="{{ loop.index }}" aria-label="Mark step {{ loop.index }} complete"><span>{{ loop.index }}</span></label><div><h3>{{ heading }}</h3><p>{{ text }}</p></div></li>{% endfor %}</ol>
+</section>
+{%- endmacro %}
+
+{% macro notes_section() -%}
+<section class="recipe-notes" aria-labelledby="notes-heading"><header class="section-top"><h2 id="notes-heading">Recipe notes</h2></header>
+<div class="source-notes"><p>{% if sample and sample.id != 1 %}Sample recipe notes can be added here.{% else %}For a head start, mix the marinade ahead of time and keep it refrigerated. The ingredient amounts above are for {{ servings }} servings.{% endif %}</p></div>
+</section>
+{%- endmacro %}
+
+{% macro history_section() -%}
+<section class="recipe-record" aria-labelledby="history-heading"><h2 id="history-heading">In your kitchen</h2><dl class="history-facts"><div><dt>Times cooked</dt><dd>{{ cook_count }}</dd></div><div><dt>Recorded views</dt><dd>{{ recipe_views }}</dd></div><div><dt>Meal plan</dt><dd>{{ plan_label or 'Not planned' }}</dd></div></dl>{% if state.cooked_on %}<p class="cooked-notice">Cooking recorded {{ state.cooked_on }}.</p>{% endif %}
+<div class="recipe-sources"><h3>Source references</h3>{% if not sample or sample.id == 1 %}<a href="https://www.bonappetit.com/recipe/gochujang-yogurt-chicken" target="_blank" rel="noopener noreferrer" hx-boost="false">Bon Appétit recipe reference ↗</a><a href="/static/design-reference.pdf" target="_blank" rel="noopener" hx-boost="false">Open reference PDF ↗</a>{% endif %}<p>No Whisk link saved.</p></div></section>
+{%- endmacro %}

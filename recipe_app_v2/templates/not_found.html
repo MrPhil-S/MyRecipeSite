@@ -3,5 +3,5 @@
 {% block content %}
 <h1>Recipe not found</h1>
 <p>This recipe is not available.</p>
-<a href="{{ list_url(page, sort, q) }}">Back to recipes</a>
+<a href="{{ list_url(page, sort, q, collection_id | default(0), per_page | default(24), cuisine_id | default(0)) }}">Back to recipes</a>
 {% endblock %}

@@ -10,7 +10,7 @@ from sqlalchemy.orm import aliased
 from myrecipes import (  # <<<disable get_recipies if not using; get_recipies
     app, db, scrapers)
 from myrecipes.forms import (add_collection_form, add_recipe_form,
-                             edit_recipe_form)
+                             add_synonym_form, edit_recipe_form)
 from myrecipes.models import (Collection, Cuisine, Ingredient_Synonym,
                               Query_History, Recipe, Recipe_Ingredient,
                               Recipe_Instruction, Recipe_Plan_Date,
@@ -251,23 +251,55 @@ def collections():
 
 @app.route('/synonyms', methods=['GET', 'POST'])
 def synonyms():
-    form = add_collection_form()
-    collections = Collection.query.order_by(Collection.collection_name.asc()).all()
+    form = add_synonym_form()
+    synonym_list = Ingredient_Synonym.query.order_by(
+        Ingredient_Synonym.primary_term.asc(),
+        Ingredient_Synonym.secondary_term.asc(),
+    ).all()
 
     if form.validate_on_submit():
-        # Get populted form data
-        collection_name = request.form['collection_name']
-        
-        # Add new collection to DB
-        collection = Collection(collection_name=collection_name)
-        db.session.add(collection)
-        db.session.flush()
-        db.session.refresh(collection)
+        primary_term = form.primary_term.data.strip()
+        secondary_term = form.secondary_term.data.strip()
+        synonym = Ingredient_Synonym(
+            primary_term=primary_term,
+            secondary_term=secondary_term,
+        )
+        db.session.add(synonym)
         db.session.commit()
-        flash(f'{collection_name} added', 'success')
+        flash(f'Synonym added: {primary_term} ↔ {secondary_term}', 'success')
+        return redirect(url_for('synonyms'))
 
-        return redirect(url_for('synonyms', collections=collections))  
-    return render_template('synonyms.html', collections=collections, title='Collections', form=form)
+    return render_template(
+        'synonyms.html',
+        synonyms=synonym_list,
+        title='Synonyms',
+        form=form,
+    )
+
+
+@app.route('/synonyms/<int:synonym_id>/delete', methods=['POST'])
+def delete_synonym(synonym_id):
+    synonym = Ingredient_Synonym.query.get_or_404(synonym_id)
+    label = f'{synonym.primary_term} ↔ {synonym.secondary_term}'
+    db.session.delete(synonym)
+    db.session.commit()
+    flash(f'Synonym deleted: {label}', 'success')
+    return redirect(url_for('synonyms'))
+
+
+@app.route('/synonyms/<int:synonym_id>/edit', methods=['POST'])
+def edit_synonym(synonym_id):
+    synonym = Ingredient_Synonym.query.get_or_404(synonym_id)
+    form = add_synonym_form()
+    if form.validate_on_submit():
+        synonym.primary_term = form.primary_term.data.strip()
+        synonym.secondary_term = form.secondary_term.data.strip()
+        db.session.commit()
+        flash(
+            f'Synonym updated: {synonym.primary_term} ↔ {synonym.secondary_term}',
+            'success',
+        )
+    return redirect(url_for('synonyms'))
 
 
 

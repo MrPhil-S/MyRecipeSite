@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import json
 import time
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from .database import get_write_engine, writes_enabled
@@ -49,25 +49,36 @@ class RematchError(ValueError):
         super().__init__(message)
 
 
-def affected_ingredients(session, name=''):
+def affected_ingredients(session, name='', recipe_query='', current='', scope='changes'):
     matcher = Matcher()
-    rows = session.execute(select(Recipe_Ingredient, Recipe.name).join(
-        Recipe, Recipe.recipe_id == Recipe_Ingredient.recipe_id).order_by(
-        Recipe.recipe_id, Recipe_Ingredient.recipe_ingredient_id)).all()
+    query = select(Recipe_Ingredient, Recipe.name).join(
+        Recipe, Recipe.recipe_id == Recipe_Ingredient.recipe_id)
+    if recipe_query.strip():
+        needle = recipe_query.strip()
+        condition = func.lower(Recipe.name).contains(needle.lower(), autoescape=True)
+        if needle.isdecimal() and len(needle) <= 10:
+            condition = or_(condition, Recipe.recipe_id == int(needle))
+        query = query.where(condition)
+    if current:
+        query = query.where(func.coalesce(func.nullif(Recipe_Ingredient.name_official, ''),
+                                         'default_ingredient') == current)
+    rows = session.execute(query.order_by(Recipe.recipe_id, Recipe_Ingredient.recipe_ingredient_id)).all()
     changes = []
     for row, recipe_name in rows:
         if row.is_group_header:
             continue
-        target = matcher.match(row.name_written)
-        if target == 'default_ingredient' or target == row.name_official:
+        target = matcher.match(row.name_written, row.note)
+        actionable = target != 'default_ingredient' and target != row.name_official
+        if scope == 'changes' and not actionable:
             continue
         if name and target != name and row.name_official != name:
             continue
         changes.append({'recipe_id': row.recipe_id, 'row_id': row.recipe_ingredient_id,
-            'recipe_name': recipe_name, 'ingredient': row.name_written,
+            'recipe_name': recipe_name, 'ingredient': row.name_written, 'note': row.note or '',
             'current': row.name_official or 'default_ingredient', 'proposed': target,
             'current_image': image_url(row.name_official), 'proposed_image': image_url(target),
-            'token': sign_preview(row, matcher.version, target)})
+            'actionable': actionable,
+            'token': sign_preview(row, matcher.version, target) if actionable else None})
     return changes
 
 
@@ -100,7 +111,7 @@ def apply_selected(tokens):
                     or row_version(row) != preview.get('row_version')
                     or matcher.version != preview.get('catalogue')):
                 raise RematchError('An ingredient or the alias catalogue changed. Nothing was applied; review again.', 409)
-            target = matcher.match(row.name_written)
+            target = matcher.match(row.name_written, row.note)
             if target == 'default_ingredient' or target != preview.get('target'):
                 raise RematchError('The proposed match changed. Nothing was applied; review again.', 409)
             row.name_official = target

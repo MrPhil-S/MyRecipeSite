@@ -68,7 +68,12 @@ def search_filters(session, query):
             or_(*(contains(ingredient_text, value) for value in sorted(ingredient_terms)))).exists()
         instructions = select(Recipe_Instruction.recipe_instruction_id).where(
             Recipe_Instruction.recipe_id == Recipe.recipe_id,
-            contains(Recipe_Instruction.text_contents, term)).exists()
-        match = or_(contains(Recipe.name, term), contains(func.coalesce(Recipe.note_from_user, ""), term), ingredients, instructions)
+            or_(*(contains(Recipe_Instruction.text_contents, value)
+                  for value in sorted(ingredient_terms)))).exists()
+        # Ingredient aliases should also match equivalent recipe titles and notes.
+        text_match = or_(
+            *(contains(Recipe.name, value) for value in sorted(ingredient_terms)),
+            *(contains(func.coalesce(Recipe.note_from_user, ""), value) for value in sorted(ingredient_terms)))
+        match = or_(text_match, ingredients, instructions)
         filters.append(~match if negative else match)
     return filters

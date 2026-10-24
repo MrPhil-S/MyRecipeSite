@@ -6,39 +6,11 @@ services:
     ports:
       - "127.0.0.1:8001:8001"
     environment:
-      RECIPE_CONFIG: /app/config.ini
+      RECIPE_DEV_DB_URI: ${RECIPE_DEV_DB_URI:-}
       RECIPE_DEV_WRITES: "1"
       RECIPE_UPLOADS: /app/recipe_uploads
     volumes:
-      - type: bind
-        source: ./recipe_app_v2/uploads
-        target: /app/recipe_uploads
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./config.ini
-        target: /app/config.ini
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./myrecipes/static/recipe_images
-        target: /app/myrecipes/static/recipe_images
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./myrecipes/static/ingredient_images
-        target: /app/myrecipes/static/ingredient_images
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
-        source: ./myrecipes/static/custom_prints
-        target: /app/myrecipes/static/custom_prints
-        read_only: true
-        bind:
-          create_host_path: false
+      - recipe_uploads:/app/recipe_uploads
     read_only: true
     tmpfs:
       - /tmp
@@ -52,3 +24,8 @@ services:
       timeout: 25s
       start_period: 15s
       retries: 3
+
+volumes:
+  recipe_uploads:
+    name: myrecipesite_recipe_uploads
+    external: true

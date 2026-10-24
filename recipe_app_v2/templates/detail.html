@@ -1,71 +1,17 @@
 {% extends 'base.html' %}
+{% from 'design_home_macros.html' import icon %}
 {% block title %}{{ recipe.name }} · My Recipes{% endblock %}
+{% block core_styles %}{% endblock %}
+{% block page_styles %}<link rel="stylesheet" href="{{ url_for('static', path='design-home.css') }}?v=clear-search-recipe-groups-2"><link rel="stylesheet" href="{{ url_for('static', path='design-recipe.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='live-app.css') }}">{% endblock %}
+{% block body_class %}recipe-studies recipe-page-body{% endblock %}
+{% block shell_header %}{% endblock %}
+{% block main_class %}recipe-shell{% endblock %}
+{% block floating_actions %}{% endblock %}
 {% block content %}
-<a class="back-link" href="{{ '/plan' if from_plan else list_url(page, sort, q, collection_id, per_page) }}">← Back to {% if from_plan %}meal plan{% elif q %}search results{% else %}recipes{% endif %}</a>
-<article class="recipe-detail" data-recipe-id="{{ recipe.recipe_id }}">
-  <div class="detail-intro">
-    <div>
-      <h1>{{ recipe.name }}</h1>
-      <p><a href="/recipes/{{ recipe.recipe_id }}/edit">Edit recipe</a></p>
-      {% if cuisine %}<p class="cuisine">{{ cuisine.cuisine_name }}</p>{% endif %}
-      {% if collections %}<ul class="tags" aria-label="Collections">{% for collection in collections %}<li>{{ collection.collection_name }}</li>{% endfor %}</ul>{% endif %}
-      <div class="source-links">
-        {% if source_link %}<a href="{{ source_link }}" target="_blank" rel="noopener noreferrer">{{ recipe.source_url_short or 'Original recipe' }}</a>{% endif %}
-        {% if whisk_link %}<a href="{{ whisk_link }}" target="_blank" rel="noopener noreferrer">View recipe on Whisk</a>{% endif %}
-        {% if pdf_url %}<a href="{{ pdf_url }}" target="_blank" rel="noopener">Source recipe PDF</a>{% endif %}
-      </div>
-      <dl class="recipe-facts">
-        {% for label, value in [('Total', recipe.total_time), ('Prep', recipe.prep_time), ('Cook', recipe.cook_time), ('Additional', recipe.additional_time), ('Servings', recipe.servings)] %}
-        {% if value is not none and value != '' %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endif %}
-        {% endfor %}
-      </dl>
-      <p class="meta">Cooked {{ cook_count }} times · {{ view_count }} recorded views{% if planned %} · In meal plan{% endif %}</p>
-      {% if writes_enabled %}<div class="recipe-actions">
-      <form method="post" action="/recipes/{{ recipe.recipe_id }}/actions/cooked"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit">Mark cooked</button></form>
-      <button type="button" data-open-delete>Delete recipe</button>
-      <dialog id="delete-recipe-modal" aria-labelledby="delete-recipe-title">
-        <h2 id="delete-recipe-title">Delete {{ recipe.name }}?</h2>
-        <p>This deletes the recipe, ingredients, instructions, collection links, cooking and visit history, and meal plan entries.</p>
-        <form method="post" action="/recipes/{{ recipe.recipe_id }}/delete">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input type="hidden" name="version" value="{{ deletion_version }}">
-          <input type="hidden" name="return_to" value="{{ delete_return_to }}">
-          <button type="submit">Delete recipe</button><button type="button" data-close-delete>Cancel</button>
-        </form>
-      </dialog>
-      <noscript><a href="/recipes/{{ recipe.recipe_id }}/delete{{ '?from_plan=true' if from_plan else list_url(page, sort, q, collection_id, per_page)[1:] }}">Confirm deletion</a></noscript>
-      </div>{% endif %}
-    </div>
-    <div class="detail-image-wrap">
-      <img class="detail-image" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
-      {% if writes_enabled %}<form class="favorite-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'favorite-remove' if favorite else 'favorite-add' }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}">
-        <button type="submit" aria-pressed="{{ 'true' if favorite else 'false' }}" title="{{ 'Remove from Favorites' if favorite else 'Add to Favorites' }}">{{ '★' if favorite else '☆' }} Favorite</button>
-      </form>{% elif favorite %}<span class="favorite-badge" role="img" aria-label="Favorite">&#9733;</span>{% endif %}
-      {% if writes_enabled %}<form class="plan-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if planned else 'plan-add' }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ return_to }}"><button type="submit"{% if planned %} class="is-planned"{% endif %} title="{{ 'Remove from plan' if planned else 'Add to plan' }}" aria-label="{{ 'Remove from plan' if planned else 'Add to plan' }}: {{ recipe.name }}">{{ '✓ Planned' if planned else '+ Plan' }}</button></form>{% endif %}
-    </div>
-  </div>
-  {% if recipe.note_from_user %}<section class="user-notes"><h2>Your notes</h2><p class="preserve-lines">{{ recipe.note_from_user }}</p></section>{% endif %}
-  <div class="detail-columns">
-    <section aria-labelledby="ingredients-heading">
-      <h2 id="ingredients-heading">Ingredients ({{ ingredient_count }})</h2>
-      <ul class="ingredients">
-        {% for item in ingredients %}
-        <li data-ingredient-name="{{ item.name }}" data-ingredient-id="{{ item.id }}"{% if item.is_group_header %} class="group-heading"{% endif %}>
-          {% if item.image_url and not item.is_group_header %}<img loading="lazy" src="{{ item.image_url }}" alt="">{% endif %}
-          <div>{% if item.is_group_header %}<h3>{{ item.name }}</h3>{% else %}<span>{{ item.name }}</span>{% endif %}
-          {% if item.note %}<p class="meta preserve-lines">{{ item.note }}</p>{% endif %}</div>
-        </li>
-        {% else %}<li>No ingredients recorded.</li>{% endfor %}
-      </ul>
-    </section>
-    <section aria-labelledby="instructions-heading">
-      <h2 id="instructions-heading">Instructions</h2>
-      {% for step in steps %}
-      <div data-instruction-id="{{ step.id }}">{% if step.is_group_header %}<h3>{{ step.text }}</h3>{% else %}<p class="preserve-lines">{{ step.text }}</p>{% endif %}</div>
-      {% else %}<p>No instructions recorded.</p>{% endfor %}
-    </section>
-  </div>
-  {% if source_notes %}<section class="source-notes"><h2>Source notes</h2><ul>{% for note in source_notes %}<li data-source-note-id="{{ note.recipe_instruction_id }}" class="preserve-lines">{{ note.text_contents }}</li>{% endfor %}</ul></section>{% endif %}
-</article>
+<div class="recipe-page">
+  {% set nav_page = 'recipes' %}{% set show_header_search = true %}{% include 'app_header.html' %}
+  <nav class="recipe-breadcrumb" aria-label="Breadcrumb"><a href="{{ '/plan' if from_plan else list_url(page, sort, q, collection_id, per_page, cuisine_id) }}">← Back to {% if from_plan %}meal plan{% elif q %}search results{% else %}recipes{% endif %}</a><span>/</span><span>{{ recipe.name }}</span></nav>
+  {% include '_recipe_detail.html' %}
+  {% include '_library_floating_actions.html' %}
+</div>
 {% endblock %}

@@ -1,3 +1,4 @@
+{% macro inline_errors(key) %}{% for error in field_errors.get(key, []) %}<span class="field-error">{{ error }}</span>{% endfor %}{% endmacro %}
 <section id="editor" class="recipe-editor"
          hx-on::before-swap="if([422,409,503].includes(event.detail.xhr.status)){event.detail.shouldSwap = true; event.detail.isError = false;}">
   <a class="back-link" href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">← Cancel</a>
@@ -9,7 +10,7 @@
         hx-target="#editor" hx-swap="outerHTML">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="version" value="{{ values.version }}">
-    <label>Recipe name<input name="name" maxlength="200" required value="{{ values.name }}"></label>
+    <label>Recipe name<input name="name" maxlength="200" required value="{{ values.name }}"{% if field_errors.get('name') %} aria-invalid="true" aria-describedby="error-name"{% endif %}>{% for error in field_errors.get('name', []) %}<span class="field-error" id="error-name">{{ error }}</span>{% endfor %}</label>
     {% if writes_enabled %}
     <div class="recipe-image-section" x-data="imageUpload">
       <div class="image-preview" x-show="previewUrl || {{ 'true' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'false' }}">
@@ -20,7 +21,6 @@
         </div>
         {% endif %}
         <div x-show="previewUrl" x-cloak>
-          <p>Selected image</p>
           <div class="editor-image-wrap"><span class="favorite-badge" data-editor-favorite hidden role="img" aria-label="Favorite">&#9733;</span><img :src="previewUrl || undefined" alt="Selected recipe image"></div>
         </div>
       </div>
@@ -31,27 +31,28 @@
                @drop.prevent.stop="drop($event)">
           <span>{{ 'Replace image' if recipe and recipe.image_file and recipe.image_file != 'default.jpg' else 'Recipe image' }}</span>
           <span class="meta">Drop an image here or click to choose.</span>
-          <input type="file" name="image" accept="image/jpeg,image/png" x-ref="image" @change="choose($event.target.files)">
+          <input type="file" name="image" accept="image/jpeg,image/png" x-ref="image" @change="choose($event.target.files)"{% if field_errors.get('image') %} aria-invalid="true"{% endif %}>
           <span class="meta">JPEG or PNG, up to 8 MB.{% if recipe and recipe.image_file and recipe.image_file != 'default.jpg' %} Leave empty to keep the current image.{% endif %}</span>
         </label>
+        {% for error in field_errors.get('image', []) %}<span class="field-error">{{ error }}</span>{% endfor %}
         <p class="upload-error" role="alert" x-show="error" x-text="error" x-cloak></p>
       </div>
     </div>
     {% endif %}
     <div class="form-grid">
-      <label>Source URL<input type="url" name="source_url" maxlength="255" value="{{ values.source_url }}"></label>
-      <label>Whisk URL<input type="url" name="whisk_url" maxlength="255" value="{{ values.whisk_url }}"></label>
+      <label>Source URL<input type="url" name="source_url" maxlength="255" value="{{ values.source_url }}"{% if field_errors.get('source_url') %} aria-invalid="true"{% endif %}>{{ inline_errors('source_url') }}</label>
+      <label>Whisk URL<input type="url" name="whisk_url" maxlength="255" value="{{ values.whisk_url }}"{% if field_errors.get('whisk_url') %} aria-invalid="true"{% endif %}>{{ inline_errors('whisk_url') }}</label>
       {% for key, title in [('prep_time', 'Prep time'), ('cook_time', 'Cook time'), ('additional_time', 'Additional time')] %}
-      <label>{{ title }}<input name="{{ key }}" maxlength="20" placeholder="1 hr 30 mins" value="{{ values[key] }}"></label>
+      <label>{{ title }}<input name="{{ key }}" maxlength="20" placeholder="1 hr 30 mins" value="{{ values[key] }}"{% if field_errors.get(key) %} aria-invalid="true"{% endif %}>{{ inline_errors(key) }}</label>
       {% endfor %}
-      <label>Servings<input type="number" name="servings" min="1" max="2147483647" value="{{ values.servings }}"></label>
-      <label>Cuisine<select name="cuisine_id"><option value="">None</option>{% for cuisine in cuisines %}<option value="{{ cuisine.cuisine_id }}"{% if cuisine.cuisine_id|string == values.cuisine_id %} selected{% endif %}>{{ cuisine.cuisine_name }}</option>{% endfor %}</select></label>
+      <label>Servings<input type="number" name="servings" min="1" max="2147483647" value="{{ values.servings }}"{% if field_errors.get('servings') %} aria-invalid="true"{% endif %}>{{ inline_errors('servings') }}</label>
+      <label>Cuisine<select name="cuisine_id"><option value="">None</option>{% for cuisine in cuisines %}<option value="{{ cuisine.cuisine_id }}"{% if cuisine.cuisine_id|string == values.cuisine_id %} selected{% endif %}>{{ cuisine.cuisine_name }}</option>{% endfor %}</select>{{ inline_errors('cuisine_id') }}</label>
     </div>
-    <fieldset class="collection-select" x-data="{ open: false, search: '', selected: {{ values.collection_ids | tojson | forceescape }} }"
+    <fieldset class="collection-select" x-data="{ open: false, search: '', selected: {{ values.collection_ids | tojson | forceescape }}, labels: {{ collection_labels | tojson | forceescape }} }"
               @keydown.escape="open = false; $refs.trigger.focus()"><legend>Collections</legend>
       <button class="collection-trigger" type="button" x-ref="trigger" @click="open = !open; if (open) $nextTick(() => $refs.search.focus())"
-              :aria-expanded="open" aria-controls="collection-options">
-        <span x-text="selected.length ? selected.length + ' collection' + (selected.length === 1 ? '' : 's') + ' selected' : 'Choose collections'">Choose collections</span><span aria-hidden="true">▾</span>
+              :aria-expanded="open" aria-controls="collection-options"{% if field_errors.get('collection_ids') %} aria-invalid="true"{% endif %}>
+        <span class="collection-trigger-value" x-text="selected.length ? selected.map(id => labels[String(id)]).filter(Boolean).join(', ') : 'Choose collections'">Choose collections</span><span aria-hidden="true">▾</span>
       </button>
       <div id="collection-options" class="collection-dropdown" x-show="open" x-cloak @click.outside="open = false">
         <label>Find a collection<input type="search" x-ref="search" x-model="search" placeholder="Search collections"></label>
@@ -73,21 +74,21 @@
       <div x-show="mode === 'rows'" x-cloak>
         <p class="meta">Drag a handle to reorder; save the recipe to keep the new order.</p>
         <div id="ingredient-rows" data-sortable-ingredients>{% for row in values.rows %}{% include '_ingredient_row.html' %}{% endfor %}</div>
+        {% if row_errors and values.ingredient_mode == 'rows' %}<div class="ingredient-form-errors">{% for index, messages in row_errors.items() %}{% for error in messages %}<p class="field-error" data-row-error="{{ index }}">{{ error }}</p>{% endfor %}{% endfor %}</div>{% endif %}
         <button type="button" hx-get="/editor/ingredient-row" hx-target="#ingredient-rows" hx-swap="beforeend">Add ingredient row</button>
       </div>
       <div x-show="mode === 'bulk'" x-cloak>
         <p class="meta">Enter one ingredient per line; separate its note with a comma. Start a group heading with &gt;. Bulk paste replaces the individual rows when you save.</p>
-        <label>Bulk ingredients<textarea name="ingredient_bulk" rows="6" maxlength="60000">{{ values.ingredient_bulk }}</textarea></label>
+        <label>Bulk ingredients<textarea name="ingredient_bulk" rows="6" maxlength="60000"{% if row_errors and values.ingredient_mode == 'bulk' %} aria-invalid="true"{% endif %}>{{ values.ingredient_bulk }}</textarea>{{ inline_errors('ingredient_bulk') }}{% if values.ingredient_mode == 'bulk' %}{% for messages in row_errors.values() %}{% for error in messages %}<span class="field-error">{{ error }}</span>{% endfor %}{% endfor %}{% endif %}</label>
       </div>
       <noscript><style>#ingredient-inputs [x-cloak]{display:block!important}</style><p>Choose which input method to use above. Use bulk paste to add more ingredients.</p></noscript>
     </fieldset>
-    <label>Instructions<textarea name="instructions" rows="10" maxlength="60000">{{ values.instructions }}</textarea></label>
+    <label>Instructions<textarea name="instructions" rows="10" maxlength="60000"{% if field_errors.get('instructions') %} aria-invalid="true" aria-describedby="error-instructions"{% endif %}>{{ values.instructions }}</textarea>{% for error in field_errors.get('instructions', []) %}<span class="field-error" id="error-instructions">{{ error }}</span>{% endfor %}</label>
     <p class="meta">One step per line, up to 1,000 characters per step. Start a group heading with &gt;.</p>
-    <label>Source notes<textarea name="source_notes" rows="5" maxlength="60000">{{ values.source_notes }}</textarea></label>
-    <label>Your notes<textarea name="note_from_user" rows="5" maxlength="1000">{{ values.note_from_user }}</textarea></label>
+    <label>Source notes<textarea name="source_notes" rows="5" maxlength="60000"{% if field_errors.get('source_notes') %} aria-invalid="true" aria-describedby="error-source-notes"{% endif %}>{{ values.source_notes }}</textarea>{% for error in field_errors.get('source_notes', []) %}<span class="field-error" id="error-source-notes">{{ error }}</span>{% endfor %}</label>
+    <label>Your notes<textarea name="note_from_user" rows="5" maxlength="1000"{% if field_errors.get('note_from_user') %} aria-invalid="true" aria-describedby="error-your-notes"{% endif %}>{{ values.note_from_user }}</textarea>{% for error in field_errors.get('note_from_user', []) %}<span class="field-error" id="error-your-notes">{{ error }}</span>{% endfor %}</label>
     {% if writes_enabled %}
-      <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"><span class="meta">PDF, up to 8 MB.</span></label>
-    {% if errors %}<p class="meta">If you selected uploads, select them again before saving.</p>{% endif %}
+      <label>Source recipe PDF<input type="file" name="pdf" accept="application/pdf"{% if field_errors.get('pdf') %} aria-invalid="true"{% endif %}><span class="meta">PDF, up to 8 MB.</span>{% for error in field_errors.get('pdf', []) %}<span class="field-error">{{ error }}</span>{% endfor %}</label>
     {% endif %}
     <div class="form-actions"><button type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Save changes' if recipe else 'Create recipe' }}</button><a href="{{ '/recipes/' ~ recipe.recipe_id if recipe else '/' }}">Cancel</a></div>
   </form>

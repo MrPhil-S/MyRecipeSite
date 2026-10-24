@@ -109,6 +109,26 @@ class EditorTests(unittest.TestCase):
             self.assertEqual([r.name_official for r in rows],
                              ['spring_onion', 'ground_cayenne_pepper', 'butternut_squash'])
 
+    def test_preparation_notes_match_new_rows_and_preserve_existing_choices(self):
+        data = self.values()
+        data.update(name='Prepared ingredient', ingredient_mode='bulk',
+                    ingredient_bulk='3 cloves garlic, minced', instructions='Mix')
+        response = self.client.post('/recipes/new', data=data, follow_redirects=False)
+        self.assertEqual(response.status_code, 303, response.text)
+        recipe_id = int(response.headers['location'].rsplit('/', 1)[1])
+        with Session(self.engine) as session:
+            row = session.scalar(select(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == recipe_id))
+            self.assertEqual(row.name_official, 'minced_garlic')
+            row.name_official = 'garlic'
+            session.commit()
+        data = self.values(recipe_id)
+        data['ingredient_note'][0] = 'crushed'
+        response = self.client.post(f'/recipes/{recipe_id}/edit', data=data, follow_redirects=False)
+        self.assertEqual(response.status_code, 303, response.text)
+        with Session(self.engine) as session:
+            row = session.scalar(select(Recipe_Ingredient).where(Recipe_Ingredient.recipe_id == recipe_id))
+            self.assertEqual((row.name_official, row.note), ('garlic', 'crushed'))
+
     def test_create_edit_and_preserve_hidden_metadata_history(self):
         recipe_id = self.create()
         with Session(self.engine) as session:

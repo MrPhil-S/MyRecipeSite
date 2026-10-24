@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from urllib.parse import urlencode
+from types import SimpleNamespace
 
 from fastapi import Depends, FastAPI, HTTPException, Path as PathParameter, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -14,16 +15,19 @@ from starlette.concurrency import run_in_threadpool
 from .config import ROOT, dev_database_url
 from .database import get_session, writes_enabled
 from .uploads import upload_root
-from .models import Collection, Recipe, Recipe_Ingredient, Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date
+from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date
 from .recipes import detail_context
 from .search import search_filters
 from .editor_routes import router as editor_router, COOKIE, check_token, new_token, token_valid
 from .search_history import recent_searches, remember_search
 from .tags import router as tag_router
 from .activity import router as activity_router, record_visit, deletion_version
-from .collections import collection_cards, all_recipes_thumbnail, collection_filter, favorite_membership
+from .collections import collection_filter, favorite_membership
 from .sorting import SortOrder, SORT_CHOICES
 from .image_alias_routes import router as image_alias_router
+from .design_routes import router as design_router
+from .design_recipe import router as recipe_design_router
+from .recipe_book import router as recipe_book_router
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
@@ -60,7 +64,7 @@ for route, folder in (("ingredient-images", "ingredient_images"),):
 templates = Jinja2Templates(directory=PACKAGE / "templates")
 
 
-def list_url(page, sort, q="", collection_id=0, per_page=24):
+def list_url(page, sort, q="", collection_id=0, per_page=24, cuisine_id=0):
     values = {"page": page, "sort": sort}
     if q:
         values["q"] = q
@@ -68,6 +72,8 @@ def list_url(page, sort, q="", collection_id=0, per_page=24):
         values['collection_id'] = collection_id
     if per_page != 24:
         values['per_page'] = per_page
+    if cuisine_id:
+        values['cuisine_id'] = cuisine_id
     return "/?" + urlencode(values)
 
 
@@ -76,6 +82,30 @@ app.include_router(editor_router)
 app.include_router(tag_router)
 app.include_router(activity_router)
 app.include_router(image_alias_router)
+app.include_router(design_router)
+app.include_router(recipe_design_router)
+app.include_router(recipe_book_router)
+
+
+@app.get("/design/archive/palettes", response_class=HTMLResponse)
+def design_preview(request: Request):
+    """A static visual direction preview; does not read or write recipe data."""
+    ingredients = [
+        {"file": "chicken_thigh.jpg", "amount": "1½ lb.", "name": "boneless chicken thighs"},
+        {"file": "greek_yogurt.jpg", "amount": "½ cup", "name": "plain Greek yogurt"},
+        {"file": "gochujang.jpg", "amount": "3 Tbsp.", "name": "gochujang"},
+        {"file": "garlic.jpg", "amount": "3 cloves", "name": "garlic, grated"},
+        {"file": "maple_syrup.jpg", "amount": "2 Tbsp.", "name": "maple syrup"},
+        {"file": "soy_sauce.jpg", "amount": "2 Tbsp.", "name": "soy sauce"},
+    ]
+    steps = [
+        "Whisk yogurt, gochujang, garlic, maple syrup, and soy sauce until smooth. Reserve a spoonful for serving.",
+        "Turn chicken in the marinade until coated. Rest 20 minutes, or cover and chill for up to 8 hours.",
+        "Broil on an oiled rack, turning once, until cooked through and burnished at the edges, 15–18 minutes. Rest briefly and serve.",
+    ]
+    return templates.TemplateResponse(request=request, name="design_grid_palettes.html", context={
+        "ingredients": ingredients, "steps": steps,
+    })
 
 
 @app.exception_handler(SQLAlchemyError)
@@ -101,17 +131,22 @@ def recipe_list(
     sort: SortOrder = "recent",
     q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
-    collection_id: int = Query(0, ge=-1, le=2147483647),
+    collection_id: int = Query(0, ge=-3, le=2147483647),
     per_page: int = 24,
+    cuisine_id: int = Query(0, ge=0, le=2147483647),
 ):
     if per_page not in (12, 24, 48, 96):
         raise HTTPException(422, 'Choose 12, 24, 48 or 96 recipes per page.')
     page_size = per_page
     filters = search_filters(session, q)
     if collection_id:
-        if collection_id != -1 and session.get(Collection, collection_id) is None:
+        if collection_id not in (-1, -2, -3) and session.get(Collection, collection_id) is None:
             raise HTTPException(404, 'Collection not found.')
         filters.append(collection_filter(collection_id))
+    if cuisine_id:
+        if session.get(Cuisine, cuisine_id) is None:
+            raise HTTPException(404, 'Cuisine not found.')
+        filters.append(Recipe.cuisine_id == cuisine_id)
     total = session.scalar(select(func.count()).select_from(Recipe).where(*filters))
     pages = max(1, (total + page_size - 1) // page_size)
     page = min(page, pages)
@@ -136,10 +171,11 @@ def recipe_list(
         'visited_asc': (func.coalesce(visited.c.last_visited, Recipe.create_dt).asc(), Recipe.recipe_id.asc()),
     }[sort]
     query = (
-        select(Recipe, func.coalesce(ingredients.c.ingredient_count, 0).label("ingredient_count"),
+        select(Recipe, Cuisine.cuisine_name.label('cuisine_name'), func.coalesce(ingredients.c.ingredient_count, 0).label("ingredient_count"),
                func.coalesce(cooked.c.cook_count, 0).label("cook_count"), favorite_membership().label('favorite'),
                select(Recipe_Plan_Date.recipe_plan_date_id).where(Recipe_Plan_Date.recipe_id == Recipe.recipe_id,
                    Recipe_Plan_Date.removed_dt.is_(None)).exists().label('planned'))
+        .outerjoin(Cuisine, Cuisine.cuisine_id == Recipe.cuisine_id)
         .outerjoin(ingredients, Recipe.recipe_id == ingredients.c.recipe_id)
         .outerjoin(cooked, Recipe.recipe_id == cooked.c.recipe_id)
         .outerjoin(visited, Recipe.recipe_id == visited.c.recipe_id)
@@ -150,14 +186,39 @@ def recipe_list(
     token = cookie if token_valid(cookie) else new_token()
     context = {"recipes": rows, "total": total, "page": page, "pages": pages, "sort": sort, "q": q,
                "history_notice": getattr(request.state, 'history_notice', None), 'collection_id': collection_id,
-               'csrf_token': token, 'writes_enabled': writes_enabled(), 'per_page': per_page}
+               'csrf_token': token, 'writes_enabled': writes_enabled(), 'per_page': per_page,
+               'cuisine_id': cuisine_id}
     partial = (request.headers.get("HX-Request") == "true"
                and request.headers.get("HX-History-Restore-Request") != "true")
-    template = "_recipes.html" if partial else "index.html"
-    if not partial:
-        context.update(search_history=recent_searches(session, q), history_query=q,
-                       collection_cards=collection_cards(session), all_recipes_thumbnail=all_recipes_thumbnail(session),
-                       sort_choices=SORT_CHOICES)
+    template = "_library_results.html" if partial else "index.html"
+    context["partial"] = partial
+    collection_names = {0: 'All recipes', -1: 'Never cooked', -2: 'Favorites', -3: 'Meal plan'}
+    collection_label = collection_names.get(collection_id)
+    if collection_id > 0:
+        collection_label = session.get(Collection, collection_id).collection_name
+    collection_counts = {
+        0: session.scalar(select(func.count()).select_from(Recipe)) or 0,
+        -1: session.scalar(select(func.count()).select_from(Recipe).where(collection_filter(-1))) or 0,
+        -2: session.scalar(select(func.count()).select_from(Recipe).where(collection_filter(-2))) or 0,
+        -3: session.scalar(select(func.count()).select_from(Recipe).where(collection_filter(-3))) or 0,
+    }
+    actual_collection_counts = dict(session.execute(select(
+        recipe_collection.c.collection_id, func.count(func.distinct(recipe_collection.c.recipe_id))
+    ).group_by(recipe_collection.c.collection_id)).all())
+    sidebar_collections = [
+        SimpleNamespace(collection_id=key, collection_name=collection_names[key], count=collection_counts[key])
+        for key in (0, -2, -1, -3)
+    ]
+    sidebar_collections.extend(
+        SimpleNamespace(collection_id=row.collection_id, collection_name=row.collection_name,
+                        count=actual_collection_counts.get(row.collection_id, 0))
+        for row in session.scalars(select(Collection).order_by(Collection.collection_name, Collection.collection_id)).all()
+        if row.collection_name.strip().lower() not in ('favorite', 'favorites')
+    )
+    context.update(search_history=recent_searches(session, q), history_query=q,
+                   sort_choices=SORT_CHOICES, cuisines=session.scalars(select(Cuisine).order_by(Cuisine.cuisine_name, Cuisine.cuisine_id)).all(),
+                   sidebar_collections=sidebar_collections, collection_label=collection_label,
+                   planned_count=collection_counts[-3])
     response = templates.TemplateResponse(request=request, name=template, context=context)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200, secure=request.url.scheme == 'https')
     response.headers['Cache-Control'] = 'no-store'
@@ -190,27 +251,34 @@ async def explicit_search(request: Request, session: Session = Depends(get_sessi
         intent = str(form.get('intent', 'search'))
         try:
             collection_id = int(str(form.get('collection_id', '0')))
+            cuisine_id = int(str(form.get('cuisine_id', '0')))
             per_page = int(str(form.get('per_page', '24')))
         except ValueError:
             raise HTTPException(422, 'Invalid collection.')
-        if len(q) > 200 or sort not in dict(SORT_CHOICES) or intent not in ('search', 'sort') or not -1 <= collection_id <= 2147483647 or per_page not in (12, 24, 48, 96):
+        if len(q) > 200 or sort not in dict(SORT_CHOICES) or intent not in ('search', 'sort') or not -3 <= collection_id <= 2147483647 or not 0 <= cuisine_id <= 2147483647 or per_page not in (12, 24, 48, 96):
             raise HTTPException(422, 'Invalid search form.')
+        if collection_id > 0 and session.get(Collection, collection_id) is None:
+            raise HTTPException(404, 'Collection not found.')
+        if cuisine_id and session.get(Cuisine, cuisine_id) is None:
+            raise HTTPException(404, 'Cuisine not found.')
         notice = None
         if intent == 'search':
             try:
                 filters = search_filters(session, q)
                 if collection_id:
                     filters.append(collection_filter(collection_id))
+                if cuisine_id:
+                    filters.append(Recipe.cuisine_id == cuisine_id)
                 result_count = session.scalar(select(func.count()).select_from(Recipe).where(*filters))
                 notice = await run_in_threadpool(remember_search, q, result_count)
             except SQLAlchemyError as exc:
                 logging.getLogger(__name__).error('Search history save failed (%s)', type(exc).__name__)
                 notice = 'Search history could not be saved.'
         if request.headers.get('HX-Request') != 'true':
-            return RedirectResponse(list_url(1, sort, q, collection_id, per_page), status_code=303)
+            return RedirectResponse(list_url(1, sort, q, collection_id, per_page, cuisine_id), status_code=303)
         request.state.history_notice = notice
-        response = await run_in_threadpool(recipe_list, request, 1, sort, q, session, collection_id, per_page)
-        response.headers['HX-Push-Url'] = list_url(1, sort, q, collection_id, per_page)
+        response = await run_in_threadpool(recipe_list, request, 1, sort, q, session, collection_id, per_page, cuisine_id)
+        response.headers['HX-Push-Url'] = list_url(1, sort, q, collection_id, per_page, cuisine_id)
         return response
 
 
@@ -222,25 +290,36 @@ def recipe_detail(
     sort: SortOrder = "recent",
     q: str = Query("", max_length=200),
     session: Session = Depends(get_session),
-    collection_id: int = Query(0, ge=-1),
+    collection_id: int = Query(0, ge=-3),
     per_page: int = 24,
+    cuisine_id: int = Query(0, ge=0),
     from_plan: bool = False,
     log_visit: bool = True,
 ):
-    if session.get(Recipe, recipe_id) is not None and log_visit and writes_enabled():
+    if session.get(Recipe, recipe_id) is not None and log_visit and writes_enabled() and request.headers.get("HX-Request") != "true":
         record_visit(recipe_id)
         session.rollback()  # Start a new read snapshot so the new visit is counted.
     context = detail_context(session, recipe_id)
     if context is None:
-        return templates.TemplateResponse(request=request, name="not_found.html",
-                                          context={"page": page, "sort": sort, "q": q}, status_code=404)
+        cookie = request.cookies.get(COOKIE, '')
+        token = cookie if token_valid(cookie) else new_token()
+        response = templates.TemplateResponse(request=request, name="not_found.html",
+            context={"page": page, "sort": sort, "q": q, "collection_id": collection_id,
+                     "per_page": per_page, "cuisine_id": cuisine_id, "csrf_token": token}, status_code=404)
+        response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200,
+                            secure=request.url.scheme == 'https')
+        response.headers['Cache-Control'] = 'no-store'
+        return response
     cookie = request.cookies.get(COOKIE, '')
     token = cookie if token_valid(cookie) else new_token()
-    context.update(page=page, sort=sort, q=q, collection_id=collection_id, per_page=per_page, from_plan=from_plan,
+    context.update(page=page, sort=sort, q=q, collection_id=collection_id, per_page=per_page, cuisine_id=cuisine_id, from_plan=from_plan,
                    deletion_version=deletion_version(session, context['recipe']) if writes_enabled() else '',
-                   delete_return_to='/plan' if from_plan else list_url(page, sort, q, collection_id, per_page),
+                   delete_return_to='/plan' if from_plan else list_url(page, sort, q, collection_id, per_page, cuisine_id),
+                   search_history=recent_searches(session, q),
+                   planned_count=session.scalar(select(func.count()).select_from(Recipe).where(collection_filter(-3))) or 0,
                    csrf_token=token, writes_enabled=writes_enabled(), return_to=request.url.path + ('?' + request.url.query if request.url.query else ''))
-    response = templates.TemplateResponse(request=request, name="detail.html", context=context)
+    partial = request.headers.get("HX-Request") == "true" and request.headers.get("HX-History-Restore-Request") != "true"
+    response = templates.TemplateResponse(request=request, name="_detail_fragment.html" if partial else "detail.html", context=context)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200, secure=request.url.scheme == 'https')
     response.headers['Cache-Control'] = 'no-store'
     return response

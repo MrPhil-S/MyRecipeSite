@@ -1,42 +1,33 @@
 {% extends 'base.html' %}
+{% from 'design_home_macros.html' import icon %}
+{% block title %}Recipe library · My Recipes{% endblock %}
+{% block core_styles %}{% endblock %}
+{% block page_styles %}<link rel="stylesheet" href="{{ url_for('static', path='design-home.css') }}?v=clear-search-v3"><link rel="stylesheet" href="{{ url_for('static', path='live-app.css') }}">{% endblock %}
+{% block body_class %}library-body{% endblock %}
+{% block shell_header %}{% endblock %}
+{% block main_class %}library-main{% endblock %}
+{% block floating_actions %}{% endblock %}
 {% block content %}
-    <h1>Your recipe collection</h1>
-    <div x-data="{ open: false }" class="notice">
-      <button type="button" @click="open = !open" :aria-expanded="open">About this preview</button>
-      <p x-show="open" x-cloak>Browse recipes and use the create/edit forms. This preview uses the development database.</p>
-      <noscript><p>Browse recipes and use the create/edit forms. This preview uses the development database.</p></noscript>
-    </div>
-    <p><a href="/recipes/new">Create recipe</a></p>
-    {% include '_collection_carousel.html' %}
-    <form id="recipe-search" class="search-form" action="/search" method="post" hx-post="/search"
-          hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="this:replace"
-          x-data="{ historyOpen: false }" @submit="historyOpen = false" @keydown.escape="historyOpen = false">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <input type="hidden" id="collection-filter" name="collection_id" value="{{ collection_id }}">
-      <label for="search-query">Search recipes</label>
-      <div class="search-controls">
-        <div class="search-input-wrap" @click.outside="historyOpen = false">
-          <input id="search-query" type="search" name="q" value="{{ q }}" maxlength="200" placeholder="Search titles, ingredients, instructions, or notes" aria-describedby="search-help"
-                 autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true"
-                 :aria-expanded="historyOpen" aria-controls="search-history"
-                 hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort,#collection-filter,#per-page" hx-params="q,sort,collection_id,per_page" hx-sync="#recipe-search:replace">
-          <div class="search-history" x-show="historyOpen" x-cloak>
-            <div id="search-history" hx-get="/search/history" hx-trigger="focus from:#search-query, input changed delay:150ms from:#search-query"
-                 hx-include="#search-query" hx-params="q" hx-target="this" hx-swap="innerHTML" hx-push-url="false" hx-sync="this:replace">
-              {% include '_search_history.html' %}
-            </div>
-          </div>
+<div class="homepage homepage--library">
+  {% set nav_page = 'recipes' %}{% set show_header_search = false %}{% include 'app_header.html' %}
+  <div class="page-layout">
+    {% include '_library_sidebar.html' %}
+    <section class="main-content">
+      <header class="page-heading"><div><h1>Your recipe library.</h1><p>The recipes you save. The meals you make.</p></div></header>
+      <form class="filter-form" id="recipe-search" method="post" action="/search" role="search" hx-post="/search" hx-target="#recipes" hx-swap="outerHTML" hx-sync="this:replace" x-data="{ historyOpen: false }" @submit="historyOpen = false" @keydown.escape="historyOpen = false">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="intent" value="search">
+        <input type="hidden" id="collection-filter" name="collection_id" value="{{ collection_id }}">
+        <div class="search-field" @click.outside="historyOpen = false">{{ icon('search', 17) }}<label class="sr-only" for="search-query">Search recipes</label>
+          <input type="search" id="search-query" name="q" maxlength="200" value="{{ q }}" placeholder="Search your recipes" autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true" :aria-expanded="historyOpen" aria-controls="library-history"
+            hx-get="/" hx-trigger="input changed delay:350ms" hx-include="#sort,#collection-filter,#cuisine-filter,#per-page" hx-params="q,sort,collection_id,cuisine_id,per_page" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">
+          <button type="submit">Search</button><div class="search-history" x-show="historyOpen" x-cloak><div id="library-history" hx-get="/search/history" hx-trigger="focus from:#search-query, input changed delay:150ms from:#search-query" hx-include="#search-query" hx-params="q" hx-target="this" hx-swap="innerHTML" hx-sync="this:replace">{% include '_search_history.html' %}</div></div>
         </div>
-        <button id="submit-search" type="submit" name="intent" value="search">Search</button>
-      </div>
-      <p class="meta" id="search-help">Use quotes for a phrase and NOT to exclude terms. Example: chicken NOT cream</p>
-      <div class="sort-controls">
-        <label for="sort">Sort by</label>
-        <select id="sort" name="sort">
-          {% for value, label in sort_choices %}<option value="{{ value }}"{% if sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
-        </select>
-        <button type="submit" name="intent" value="sort">Apply</button>
-      </div>
-    </form>
-    {% include '_recipes.html' %}
+        <label class="select-field"><span>Cuisine</span><select id="cuisine-filter" name="cuisine_id" hx-get="/" hx-trigger="change" hx-include="#search-query,#collection-filter,#sort,#per-page" hx-params="q,sort,collection_id,cuisine_id,per_page" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace"><option value="0">All cuisines</option>{% for item in cuisines %}<option value="{{ item.cuisine_id }}"{% if cuisine_id == item.cuisine_id %} selected{% endif %}>{{ item.cuisine_name }}</option>{% endfor %}</select></label>
+        <label class="select-field"><span>Sort by</span><select id="sort" name="sort" hx-get="/" hx-trigger="change" hx-include="#search-query,#collection-filter,#cuisine-filter,#per-page" hx-params="q,sort,collection_id,cuisine_id,per_page" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">{% for value, label in sort_choices %}<option value="{{ value }}"{% if value == sort %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      </form>
+      {% include '_recipes.html' %}
+    </section>
+  </div>
+  {% include '_library_floating_actions.html' %}
+</div>
 {% endblock %}

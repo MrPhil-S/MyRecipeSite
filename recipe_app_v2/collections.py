@@ -1,7 +1,7 @@
 """Collection carousel thumbnails from recorded cooking history."""
 from sqlalchemy import case, func, select
 
-from .models import Collection, Recipe, recipe_collection, recipe_cooked_date
+from .models import Collection, Recipe, Recipe_Plan_Date, recipe_collection, recipe_cooked_date
 
 
 def favorite_membership():
@@ -14,6 +14,12 @@ def collection_filter(collection_id):
     if collection_id == -1:  # A computed collection; never stored as a tag.
         return ~select(recipe_cooked_date.recipe_id).where(
             recipe_cooked_date.recipe_id == Recipe.recipe_id).exists()
+    if collection_id == -2:  # Favorites is a normal collection, with legacy aliases.
+        return favorite_membership()
+    if collection_id == -3:  # A computed collection over active meal-plan rows.
+        return select(Recipe_Plan_Date.recipe_id).where(
+            Recipe_Plan_Date.recipe_id == Recipe.recipe_id,
+            Recipe_Plan_Date.removed_dt.is_(None)).exists()
     return select(recipe_collection.c.recipe_id).where(
         recipe_collection.c.recipe_id == Recipe.recipe_id,
         recipe_collection.c.collection_id == collection_id).exists()

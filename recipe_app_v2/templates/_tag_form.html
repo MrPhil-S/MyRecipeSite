@@ -15,5 +15,5 @@
 <p class="meta">For example, enter spring onion and scallion on separate lines for green onion. Every connected name becomes interchangeable in ingredient searches.</p>
 {% else %}<label>{{ label }}<input name="{{ name }}" required maxlength="{{ limit }}" value="{{ values[name] }}"></label>{% endif %}
 {% endfor %}{% if kind == 'synonyms' and tag %}<p class="meta">Editing changes this link. Extra lines add links to the same ingredient; other existing links are kept.</p>{% endif %}{% endif %}
-<div class="form-actions"><button type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Delete ' ~ singular if action == 'delete' else 'Save changes' if tag else 'Add ' ~ singular }}</button><a href="/tags/{{ kind }}">Cancel</a></div>
+<div class="form-actions"><button{% if action == 'delete' %} class="danger"{% endif %} type="submit"{% if not writes_enabled %} disabled{% endif %}>{{ 'Delete ' ~ singular if action == 'delete' else 'Save changes' if tag else 'Add ' ~ singular }}</button><a href="/tags/{{ kind }}">Cancel</a></div>
 </form></section>

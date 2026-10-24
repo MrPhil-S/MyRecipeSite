@@ -13,6 +13,61 @@ from recipe_app_v2.main import app
 
 
 class ImageAliasTests(unittest.TestCase):
+    def test_preparation_and_reviewed_identities(self):
+        matcher = Matcher()
+        cases = [
+            ('3 cloves garlic', 'minced', 'minced_garlic'),
+            ('1 tablespoon fresh ginger root', 'minced', 'minced_ginger'),
+            ('1 piece fresh ginger root', 'chopped', 'ginger'),
+            ('pepper', 'to taste', 'ground_black_pepper'),
+            ('1 tsp Chinese five-spice powder', '', 'five_spice_mix'),
+            ('2 green bell peppers', 'halved and seeded', 'green_capsicum'),
+            ('Pickled turnip', '', 'turnip'),
+            ('tahini paste', '', 'tahini_sauce'),
+            ('tzatziki sauce', '', 'tzatziki'),
+            ('pancetta bacon', 'thinly sliced, chopped', 'diced_pancetta'),
+            ('12 toasted corn or flour tortillas', '', 'corn_tortilla'),
+            ('plain or Greek yogurt', '', 'plain_yogurt'),
+            ('1 lime', 'zested and juiced', 'lime'),
+            ('Grated zest and juice of 1 lime', '', 'lime'),
+            ('1 lb boneless', 'skinless chicken thighs', 'boneless_chicken_thigh'),
+            ('Toasted', 'chopped cashews', 'cashew'),
+            ('2 tablespoons heavy cream', '', 'heavy_whipping_cream'),
+            ('Thai basil', 'leaves roughly torn', 'thai_basil'),
+            ('romaine lettuce', 'leaves separated', 'romaine_lettuce'),
+            ('1 can pineapple rings', 'juice drained and reserved', 'canned_pineapple_slices'),
+            ('4 oz feta or goat cheese', 'crumbled', 'crumbled_feta_cheese'),
+            ('fresh thyme leaves', '', 'thyme_leaves'),
+            ('12 ounces grated full-fat', 'low moisture mozzarella cheese', 'shredded_mozzarella_cheese'),
+        ]
+        for ingredient, note, expected in cases:
+            with self.subTest(ingredient=ingredient, note=note):
+                self.assertEqual(matcher.match(ingredient, note), expected)
+
+    def test_preparation_does_not_borrow_alternatives_or_components(self):
+        matcher = Matcher()
+        for text, note, expected in [
+            ('ginger', 'or minced garlic', 'ginger'),
+            ('ginger', 'serve with garlic sauce', 'ginger'),
+            ('3 cloves garlic', 'minced, plus chili sauce for serving', 'minced_garlic'),
+            ('fresh basil', 'or dried oregano', 'basil'),
+            ('2 peppers', '', 'default_ingredient'),
+            ('white pepper', '', 'white_pepper'),
+            ('chili pepper sauce', '', 'default_ingredient'),
+        ]:
+            with self.subTest(text=text, note=note):
+                self.assertEqual(matcher.match(text, note), expected)
+        self.assertEqual(Matcher({'water': []}).match('water chestnuts'), 'default_ingredient')
+        self.assertEqual(Matcher({'flour': []}).match('corn or flour tortillas'), 'default_ingredient')
+        self.assertEqual(Matcher({'a': ['red herb'], 'b': ['red herb']}).match('red herb'), 'default_ingredient')
+
+    def test_alias_preview_accepts_and_preserves_preparation_note(self):
+        response = self.client.get('/image-aliases', params={'sample': '2 cloves garlic', 'sample_note': 'minced'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['matched'], 'minced_garlic')
+        self.assertIn('name="sample_note" value="minced"', response.text)
+        self.assertIn('sample_note=minced', response.context['query_string'])
+
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
         self.env = patch.dict(os.environ, {'RECIPE_UPLOADS': self.folder.name, 'RECIPE_DEV_WRITES': '1'})

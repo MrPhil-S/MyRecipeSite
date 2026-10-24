@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Print recipe book - My Recipes{% endblock %}
+{% block main_class %}recipe-book-page{% endblock %}
+{% block content %}
+<a class="back-link" href="/">&larr; Back to recipes</a>
+<header class="utility-page-heading">
+  <div><p class="page-kicker">PRINT</p><h1>Recipe book</h1>
+    <p>Generate a printable PDF of all {{ recipe_count }} recipes in your library.</p></div>
+</header>
+<section class="recipe-book-panel" aria-labelledby="recipe-book-contents">
+  <h2 id="recipe-book-contents">What the book includes</h2>
+  <p>Each recipe includes its photo when available, prep and cook times, servings, ingredients,
+    instructions, source notes, and your notes. Longer recipes may continue across pages.</p>
+  {% if recipe_count %}
+  <a class="button primary" href="/recipe-book.pdf" target="_blank" rel="noopener">
+    Generate recipe book PDF
+  </a>
+  {% else %}<p>Your recipe library is empty.</p>{% endif %}
+</section>
+{% endblock %}
+{% block floating_actions %}{% endblock %}

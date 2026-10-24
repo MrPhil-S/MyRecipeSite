@@ -51,6 +51,50 @@ class CentralRematchTests(unittest.TestCase):
         self.environment.stop()
         self.folder.cleanup()
 
+    def test_filters_include_unresolved_default_images_and_blank_assignments(self):
+        with Session(self.engine) as session:
+            session.add_all([
+                Recipe_Ingredient(recipe_ingredient_id=10, recipe_id=1, name_written='gin', name_official='default_ingredient'),
+                Recipe_Ingredient(recipe_ingredient_id=11, recipe_id=1, name_written='mystery', name_official=None),
+                Recipe_Ingredient(recipe_ingredient_id=12, recipe_id=2, name_written='unknown', name_official=''),
+                Recipe_Ingredient(recipe_ingredient_id=13, recipe_id=1, name_written='Heading', name_official='default_ingredient', is_group_header=True),
+            ])
+            session.commit()
+        response = self.client.get('/image-aliases/rematch', params={'current': 'default_ingredient', 'scope': 'all'})
+        rows = response.context['rows']
+        self.assertEqual({row['row_id'] for row in rows}, {10, 11, 12})
+        self.assertEqual(sum(bool(row['token']) for row in rows), 1)
+        self.assertIn('No confident match', response.text)
+        for query in ('One', 'oNe', '1'):
+            response = self.client.get('/image-aliases/rematch', params={'recipe_query': query, 'current': 'default_ingredient', 'scope': 'all'})
+            self.assertEqual({row['row_id'] for row in response.context['rows']}, {10, 11})
+        response = self.client.get('/image-aliases/rematch', params={'recipe_query': '%', 'scope': 'all'})
+        self.assertEqual(response.context['total'], 0)
+        response = self.client.get('/image-aliases/rematch', params={'current': 'default_ingredient'})
+        self.assertEqual([row['row_id'] for row in response.context['rows']], [10])
+
+    def test_review_filters_survive_sort_pagination_error_and_apply(self):
+        from urllib.parse import parse_qs, urlsplit
+        with Session(self.engine) as session:
+            session.add_all(Recipe_Ingredient(recipe_id=1, name_written='gin', name_official='default_ingredient') for _ in range(51))
+            session.commit()
+        filters = {'recipe_query': 'One', 'current': 'default_ingredient', 'scope': 'all', 'sort': 'ingredient', 'direction': 'desc', 'page': 2}
+        response = self.client.get('/image-aliases/rematch', params=filters)
+        self.assertEqual(len(response.context['rows']), 1)
+        self.assertEqual(response.context['total'], 51)
+        self.assertIn('current=default_ingredient', response.context['headers'][0]['url'])
+        data = dict(filters, csrf_token=response.context['csrf_token'])
+        error = self.client.post('/image-aliases/rematch', data=data)
+        self.assertEqual(error.status_code, 422)
+        self.assertEqual(error.context['page'], 2)
+        self.assertEqual(error.context['current'], 'default_ingredient')
+        data['selected'] = response.context['rows'][0]['token']
+        saved = self.client.post('/image-aliases/rematch', data=data, follow_redirects=False)
+        self.assertEqual(saved.status_code, 303)
+        query = parse_qs(urlsplit(saved.headers['location']).query)
+        for key, value in filters.items():
+            self.assertEqual(query[key], [str(value)])
+
     def proposals(self):
         with Session(self.engine) as s:
             return affected_ingredients(s, 'alcohol')
@@ -70,6 +114,30 @@ class CentralRematchTests(unittest.TestCase):
         before[1]['name_official'] = 'alcohol'
         self.assertEqual(after, before)
         self.assertEqual([r['row_id'] for r in self.proposals()], [2])
+
+    def test_preparation_note_affects_preview_and_apply_and_staleness(self):
+        catalogue_path().write_text(json.dumps({'garlic': [], 'minced_garlic': []}), encoding='utf-8')
+        with Session(self.engine) as s:
+            row = s.get(Recipe_Ingredient, 1)
+            row.name_written, row.note, row.name_official = 'garlic', 'minced', 'garlic'
+            s.commit()
+        with Session(self.engine) as s:
+            changes = affected_ingredients(s, 'minced_garlic')
+        self.assertEqual([(r['row_id'], r['note'], r['proposed']) for r in changes],
+                         [(1, 'minced', 'minced_garlic')])
+        self.assertEqual(apply_selected([changes[0]['token']]), 1)
+        with Session(self.engine) as s:
+            self.assertEqual(s.get(Recipe_Ingredient, 1).name_official, 'minced_garlic')
+            s.get(Recipe_Ingredient, 1).name_official = 'garlic'
+            s.commit()
+        with Session(self.engine) as s:
+            changes = affected_ingredients(s, 'minced_garlic')
+            s.get(Recipe_Ingredient, 1).note = 'whole'
+            s.commit()
+        with self.assertRaises(RematchError):
+            apply_selected([changes[0]['token']])
+        with Session(self.engine) as s:
+            self.assertEqual(s.get(Recipe_Ingredient, 1).name_official, 'garlic')
 
     def test_stale_row_or_catalogue_rolls_back_entire_selection(self):
         changes = self.proposals()

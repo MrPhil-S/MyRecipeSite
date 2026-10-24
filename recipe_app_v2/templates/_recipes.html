@@ -1,38 +1,26 @@
-<section id="recipes" data-collection-id="{{ collection_id }}" aria-label="Recipe list" aria-live="polite">
+{% from 'design_home_macros.html' import icon %}
+<section id="recipes" class="recipe-results" data-collection-id="{{ collection_id }}" data-cuisine-id="{{ cuisine_id }}" aria-label="Recipe list" aria-live="polite">
   {% if history_notice %}<p class="meta" role="status">{{ history_notice }}</p>{% endif %}
-  <div class="toolbar">
-    <p>{{ total }} recipes{% if q %} matching “{{ q }}” · <a href="{{ list_url(1, sort, '', collection_id, per_page) }}">Clear search</a>{% endif %}</p>
-  </div>
-  <div class="grid">
-    {% for row in recipes %}
-    {% set recipe = row.Recipe %}
-    <article class="card" data-recipe-id="{{ recipe.recipe_id }}">
-      <a class="recipe-link" href="/recipes/{{ recipe.recipe_id }}{{ list_url(page, sort, q, collection_id, per_page)[1:] }}">
-      <div class="picture">
-        {% if recipe.image_file %}
-        <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}">
-        {% endif %}
-        {% if row.favorite %}<span class="favorite-badge" role="img" aria-label="Favorite" title="Favorite">&#9733;</span>{% endif %}
-        <span class="cooked-badge" aria-label="Cooked {{ row.cook_count }} times">Cooked {{ row.cook_count }}</span>
+  <div class="results-heading"><h2>{{ collection_label or 'All recipes' }}</h2><p>{{ total }} {{ 'recipe' if total == 1 else 'recipes' }}{% if q %} matching “{{ q }}” · <a class="clear-search-link" href="{{ list_url(1, sort, '', collection_id, per_page, cuisine_id) }}">Clear search</a>{% endif %}</p></div>
+  <div class="recipe-grid">
+    {% for row in recipes %}{% set recipe = row.Recipe %}
+    <article class="recipe-card" data-recipe-id="{{ recipe.recipe_id }}">
+      {% with recipe_url='/recipes/' ~ recipe.recipe_id ~ list_url(page, sort, q, collection_id, per_page, cuisine_id)[1:], card_return_to=list_url(page, sort, q, collection_id, per_page, cuisine_id) %}
+        {% include '_recipe_photo.html' %}
+      {% endwith %}
+      <div class="card-body">
+        <div class="card-taxonomy">{% if row.cuisine_name %}<a href="{{ list_url(1, sort, q, collection_id, per_page, recipe.cuisine_id) }}">{{ row.cuisine_name }}</a>{% else %}<span>Recipe</span>{% endif %}</div>
+        <h3><a href="/recipes/{{ recipe.recipe_id }}{{ list_url(page, sort, q, collection_id, per_page, cuisine_id)[1:] }}" hx-boost="false">{{ recipe.name }}</a></h3>
+        <div class="card-meta">{% if recipe.total_time %}<span>{{ icon('clock', 14) }} {{ recipe.total_time }}</span>{% endif %}<span>{{ row.ingredient_count }} {{ 'ingredient' if row.ingredient_count == 1 else 'ingredients' }}</span>{% if recipe.servings %}<span class="card-servings">Serves {{ recipe.servings }}</span>{% endif %}</div>
+        {% if recipe.source_url_short %}<div class="card-bottom"><span class="source">{{ recipe.source_url_short }}</span></div>{% endif %}
       </div>
-      <div class="card-content">
-        <h2>{{ recipe.name }}</h2>
-        <p class="meta">{{ row.ingredient_count }} ingredients{% if recipe.total_time %} · {{ recipe.total_time }}{% endif %}</p>
-        {% if recipe.source_url_short %}<p class="source">{{ recipe.source_url_short }}</p>{% endif %}
-      </div>
-      </a>
-      {% if writes_enabled %}<form class="plan-overlay" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ list_url(page, sort, q, collection_id, per_page) }}"><button type="submit"{% if row.planned %} class="is-planned"{% endif %} title="{{ 'Remove from plan' if row.planned else 'Add to plan' }}" aria-label="{{ 'Remove from plan' if row.planned else 'Add to plan' }}: {{ recipe.name }}">{{ '✓ Planned' if row.planned else '+ Plan' }}</button></form>{% endif %}
     </article>
-    {% else %}<p>No recipes found.</p>{% endfor %}
+    {% else %}<p class="empty-results">No recipes found.</p>{% endfor %}
   </div>
   <nav aria-label="Recipe pages" class="pagination">
-    <label for="per-page">Per page <select id="per-page" name="per_page" form="recipe-search"
-      hx-get="/" hx-trigger="change" hx-include="#search-query,#sort,#collection-filter" hx-params="q,sort,collection_id,per_page"
-      hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">
-      {% for size in (12,24,48,96) %}<option value="{{ size }}"{% if size == per_page %} selected{% endif %}>{{ size }}</option>{% endfor %}
-    </select></label>
-    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q, collection_id, per_page) }}" hx-get="{{ list_url(page - 1, sort, q, collection_id, per_page) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Previous</a>{% endif %}
+    <label for="per-page">Per page <select id="per-page" name="per_page" form="recipe-search" hx-get="/" hx-trigger="change" hx-include="#search-query,#sort,#collection-filter,#cuisine-filter" hx-params="q,sort,collection_id,cuisine_id,per_page" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">{% for size in (12,24,48,96) %}<option value="{{ size }}"{% if size == per_page %} selected{% endif %}>{{ size }}</option>{% endfor %}</select></label>
+    {% if page > 1 %}<a href="{{ list_url(page - 1, sort, q, collection_id, per_page, cuisine_id) }}" hx-get="{{ list_url(page - 1, sort, q, collection_id, per_page, cuisine_id) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Previous</a>{% endif %}
     <span>Page {{ page }} of {{ pages }}</span>
-    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q, collection_id, per_page) }}" hx-get="{{ list_url(page + 1, sort, q, collection_id, per_page) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Next</a>{% endif %}
+    {% if page < pages %}<a href="{{ list_url(page + 1, sort, q, collection_id, per_page, cuisine_id) }}" hx-get="{{ list_url(page + 1, sort, q, collection_id, per_page, cuisine_id) }}" hx-target="#recipes" hx-swap="outerHTML" hx-push-url="true" hx-sync="#recipe-search:replace">Next</a>{% endif %}
   </nav>
 </section>

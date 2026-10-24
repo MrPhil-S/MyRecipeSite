@@ -10,8 +10,9 @@ Connected synonym links form a group: any name finds ingredients using all other
 names in that group. Add multiple other names on separate lines in the synonym
 form. Deleting a connecting link can split the group; no schema change is needed.
 
-The user authorized **dev-only saves** on October 11, 2026. FastAPI always reads
-`[dev] db_uri` from `config.ini` and accepts only
+The user authorized **dev-only saves** on October 11, 2026. The database URL
+comes from `[dev] db_uri` in `config.ini`; Docker startup passes it through the
+process environment, while local runs read the file directly. FastAPI accepts only
 `mysql+pymysql` at `192.168.1.14:3307/MyRecipes_DEV`, without URL query overrides.
 Production deployment, routing and schema changes remain deferred.
 
@@ -50,18 +51,20 @@ typing, sorting and pagination do not save. Suggestions show distinct recent
 queries. Queries over the existing 100-character history limit are not truncated
 or saved; live search still accepts 200 characters.
 
-Alternatively, Docker Desktop must be running:
+Alternatively, Docker Desktop must be running. Start FastAPI from PowerShell
+with the project config loaded into the container environment (the config file
+is not bind-mounted):
 
 ```powershell
-New-Item -ItemType Directory -Force recipe_app_v2/uploads/images, recipe_app_v2/uploads/pdfs | Out-Null
-docker compose -f compose.fastapi.yml up --build -d --wait
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recipe_app_v2\start_docker.ps1
 ```
 
-Compose enables dev saves and binds only `127.0.0.1:8001`. It runs the app as a
-non-root user with a read-only root filesystem. Configuration and legacy assets
-are mounted read-only. The separate `recipe_app_v2/uploads/` folder is writable,
-excluded from Git/builds, and persists when the container is replaced. Include
-this folder in future backups. Stop FastAPI with `docker compose -f compose.fastapi.yml down`.
+Compose enables dev saves and publishes only on `127.0.0.1:8001`. It runs the app as a
+non-root user with a read-only root filesystem. Legacy image/PDF assets are
+included in the image. Uploads and image aliases are migrated once from
+`recipe_app_v2/uploads/` into the persistent Docker volume
+`myrecipesite_recipe_uploads`; include that volume in future backups. Stop
+FastAPI with `docker compose -f compose.fastapi.yml down`.
 
 Open [FastAPI](http://localhost:8001/) or [Create recipe](http://localhost:8001/recipes/new).
 Each recipe detail page links to its edit form.
@@ -166,3 +169,68 @@ Models retain the existing schema. Alembic revision `0001` is an offline baselin
 for an empty database; online upgrade/stamp and destructive downgrade remain
 blocked. No tables are created on application startup. Pi/ARM deployment and
 full application rollback rehearsal remain untested.
+
+## Library / Oxblood UI (October 20, 2026)
+
+The database-backed homepage `/` uses Library / Oxblood, and `/recipes/{id}`
+uses the Split recipe layout. Meal planning, recipe creation/editing, collection,
+cuisine and synonym management, ingredient image aliases/rematches, deletion
+confirmations and not-found pages use the same Oxblood navigation, local DM Sans
+type and shared controls. `/design` remains the sample design workspace. The
+selected recipe layouts omit legacy `app.css`; working forms retain the existing
+editor styling and override its colors and controls with the current design.
+
+Recipe links use normal page navigation. HTMX handles list filtering, sorting,
+pagination and recipe actions. Library fragments also update sidebar navigation
+and counts; recipe actions replace only the detail component. Alpine manages
+dropdowns and ingredient/method checkmarks, whose sections survive action updates.
+Personal notes come from `Recipe.note_from_user` and appear once below the title
+and collections. Ingredient image surfaces are white.
+
+Review corrected legacy style collisions, recipe action swaps, stale sidebar
+links/counts, missing mobile cuisine filters, grouped instruction numbering,
+and inconsistent badge and empty-state layouts. Verification used isolated
+SQLite tests in a network-disabled container and read-only Chrome checks at
+desktop, 390px and 320px widths. Browser review files are in
+`.browser-tools/live-ui-review`.
+
+This UI change introduces no database migration. Planning uses the existing
+add/remove queue: `Recipe_Plan_Date.added_dt` is an addition timestamp, not a
+scheduled cooking date. User accounts and scheduled-day planning remain separate
+implementation work.
+
+
+## Ingredient image review follow-up (October 14, 2026)
+
+All 518 reviewed ingredient rows now have explicit image choices in
+`image-review-analysis-2026-10-14/standardized/ingredient-image-review-decisions-standardized.csv`.
+The original export remains unchanged. `Use selected image` denotes a later explicit
+user choice; CSV consumers must use `selected_image` for this decision.
+No reviewed assignments have been applied to either database.
+
+Matching now uses preparation notes as well as ingredient wording, recognizes
+reviewed aliases, and retains shared nouns in supported alternatives such as
+"corn or flour tortillas". Notes contribute preparation descriptors without
+borrowing ingredients from substitutions or serving suggestions. Incomplete
+ingredient rows split before the food name can use the note to recover it.
+Unresolved ties still use the default image. The new `turnip` image is registered.
+
+Image-alias previews accept a separate preparation note. Rematch previews display
+notes and use the same matching logic when applying selections. Recipe saves use
+notes for new/renamed ingredient rows. Existing image mappings remain preserved
+on unchanged names, including note-only edits; use explicit rematch review to
+change those mappings. Row/catalogue freshness checks still protect saves.
+
+Reviewed aliases are merged into both the packaged seed and the local persisted
+catalogue without replacing existing aliases. Include the persisted catalogue
+and the new turnip image in any later deployment; production was not changed.
+File backups and the change manifest are under
+`image-review-analysis-2026-10-14/matcher-code-backup/`.
+
+Validation: 62 isolated unit tests passed before installation. The complete
+review comparison improved from 195/518 to 492/518 exact selected-image matches.
+This is agreement on the reviewed dataset, not general accuracy. The remaining
+26 differences retain the user's CSV choices and are reported separately;
+several prefer a generic image or a later ingredient alternative. See
+`image-review-analysis-2026-10-14/standardized/implementation-results.md`
+for installed-code validation and the before/after comparison.

@@ -1,7 +1,7 @@
 import os
 import re
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from recipe_app_v2.database import ReadOnlySession, get_session
+from recipe_app_v2.cooked_history import can_undo_cooked
 from recipe_app_v2.main import app
-from recipe_app_v2.models import (Base, Collection, Recipe, Recipe_Ingredient, Recipe_Instruction,
+from recipe_app_v2.models import (Base, Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Instruction,
     Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date)
 
 
@@ -68,6 +69,52 @@ class ActivityTests(unittest.TestCase):
             self.assertEqual(self.count(recipe_view_date), 1)
             self.assertEqual(self.client.post('/recipes/1/actions/cooked', data=data).status_code, 403)
 
+    def test_undo_cooked_removes_only_the_latest_event(self):
+        with Session(self.engine) as session:
+            now = session.scalar(select(func.current_timestamp()))
+            older = now - timedelta(hours=2)
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=older),
+                             recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=1))])
+            session.commit()
+        response = self.client.get('/recipes/1?log_visit=false')
+        self.assertIn('actions/undo-cooked', response.text)
+        result = self.client.post('/recipes/1/actions/undo-cooked', data=self.form(), follow_redirects=False)
+        self.assertEqual(result.status_code, 303)
+        self.assertEqual(self.count(recipe_cooked_date), 1)
+        with Session(self.engine) as session:
+            remaining = session.scalar(select(recipe_cooked_date))
+            self.assertEqual(remaining.recipe_cooked_dt, older)
+
+    def test_undo_cooked_expires_after_24_hours(self):
+        with Session(self.engine) as session:
+            now = session.scalar(select(func.current_timestamp()))
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=25)),
+                             Recipe_Plan_Date(recipe_id=1)])
+            session.commit()
+        self.assertNotIn('actions/undo-cooked', self.client.get('/recipes/1?log_visit=false').text)
+        self.assertNotIn('actions/undo-cooked', self.client.get('/plan').text)
+        result = self.client.post('/recipes/1/actions/undo-cooked', data=self.form(), follow_redirects=False)
+        self.assertEqual(result.status_code, 409)
+        self.assertEqual(self.count(recipe_cooked_date), 1)
+
+    def test_undo_cooked_boundary(self):
+        now = datetime(2026, 1, 1)
+        self.assertTrue(can_undo_cooked(now - timedelta(hours=24) + timedelta(microseconds=1), now))
+        self.assertFalse(can_undo_cooked(now - timedelta(hours=24), now))
+        self.assertFalse(can_undo_cooked(now + timedelta(seconds=1), now))
+
+    def test_cooked_can_be_recorded_again_after_an_existing_event(self):
+        with Session(self.engine) as session:
+            session.add(recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2025, 1, 1)))
+            session.commit()
+        page = self.client.get('/recipes/1?log_visit=false').text
+        self.assertIn('>Mark cooked</button>', page)
+        self.assertNotIn('actions/undo-cooked', page)
+        response = self.client.post('/recipes/1/actions/cooked', data=self.form(), follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(self.count(recipe_cooked_date), 2)
+        self.assertIn('actions/undo-cooked', self.client.get('/recipes/1?log_visit=false').text)
+
     def test_favorites_are_idempotent_existing_collection_links_and_shared_badges(self):
         data = self.form()
         with Session(self.engine) as session:
@@ -83,9 +130,9 @@ class ActivityTests(unittest.TestCase):
             self.assertEqual(session.scalar(select(func.count()).select_from(recipe_collection).where(
                 recipe_collection.c.recipe_id == 2)), 2)
         self.assertIn('aria-pressed="true"', self.client.get('/recipes/2?log_visit=false').text)
-        self.assertEqual(self.client.get('/').text.count('class="favorite-badge"'), 2)
+        self.assertEqual(self.client.get('/').text.count('class="favorite is-favorite"'), 2)
         self.client.post('/recipes/2/actions/plan-add', data=data, follow_redirects=False)
-        self.assertIn('class="favorite-badge"', self.client.get('/plan').text)
+        self.assertIn('class="favorite is-favorite"', self.client.get('/plan').text)
         self.assertIn('data-favorite-collection', self.client.get('/recipes/2/edit').text)
         for _ in range(2):
             self.client.post('/recipes/2/actions/favorite-remove', data=data, follow_redirects=False)
@@ -95,6 +142,25 @@ class ActivityTests(unittest.TestCase):
         self.assertEqual(self.client.post('/recipes/2/actions/favorite-add', data={'csrf_token': 'bad'}).status_code, 403)
         with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '0'}):
             self.assertEqual(self.client.post('/recipes/2/actions/favorite-add', data=data).status_code, 403)
+
+    def test_plan_photo_controls_use_history_and_fragment_updates_nav_count(self):
+        data = self.form()
+        self.client.post('/recipes/1/actions/plan-add', data=data, follow_redirects=False)
+        self.client.post('/recipes/1/actions/cooked', data=data, follow_redirects=False)
+        body = self.client.get('/plan').text
+        self.assertIn('aria-label="Cooked 1 times"', body)
+        self.assertIn('class="favorite is-favorite"', body)
+        self.assertIn('class="plan-trigger is-planned"', body)
+        self.assertIn('name="return_to" value="/plan"', body)
+        self.assertIn('actions/undo-cooked', body)
+        fragment = self.client.get('/plan', headers={'HX-Request': 'true'}).text
+        self.assertNotIn('<html', fragment)
+        self.assertIn('id="app-plan-count" hx-swap-oob="outerHTML">1</span>', fragment)
+        with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '0'}):
+            readonly = self.client.get('/plan').text
+            self.assertIn('class="favorite-badge"', readonly)
+            self.assertIn('class="plan-control plan-trigger is-planned"', readonly)
+            self.assertNotIn('class="favorite-form"', readonly)
 
     def test_never_cooked_uses_history_and_pagination_preserves_filters(self):
         with Session(self.engine) as session:
@@ -136,7 +202,7 @@ class ActivityTests(unittest.TestCase):
             plans = session.scalars(select(Recipe_Plan_Date)).all()
             self.assertEqual(len(plans), 2)
             self.assertTrue(all(p.removed_dt is not None for p in plans))
-        self.assertIn('Your plan is empty', self.client.get('/plan').text)
+        self.assertIn('Your plan is clear.', self.client.get('/plan').text)
 
     def test_collection_search_sort_and_context_preservation(self):
         with Session(self.engine) as session:
@@ -178,10 +244,8 @@ class ActivityTests(unittest.TestCase):
             self.assertEqual(cards[1].image_file, 'soup.jpg')
             self.assertIsNone(cards[2].thumbnail_recipe_id)
         body = self.client.get('/?collection_id=1&q=chicken').text
-        self.assertIn('data-thumbnail-recipe-id="1"', body)
-        self.assertIn('data-thumbnail-recipe-id="3"', body)
-        self.assertLess(body.index('data-collection-id="0"'), body.index('data-collection-id="3"'))
-        self.assertLess(body.index('data-collection-id="3"'), body.index('data-collection-id="2"'))
+        self.assertLess(body.index('data-collection-id="0"'), body.index('data-collection-id="-2"'))
+        self.assertLess(body.index('data-collection-id="-2"'), body.index('data-collection-id="2"'))
         self.assertIn('data-collection-id="2"', body)
         self.assertIn('name="collection_id" value="1"', body)
         self.assertNotIn('<select id="collection-filter"', body)
@@ -210,6 +274,61 @@ class ActivityTests(unittest.TestCase):
             self.assertEqual(detail.status_code, 200)
             self.assertIn('sort=' + reverse, detail.text)
             self.assertEqual(self.client.get(f'/recipes/1/delete?sort={reverse}').status_code, 200)
+
+    def test_detail_htmx_actions_return_fragments_without_extra_visits(self):
+        import json
+        data = self.form('/recipes/1?log_visit=false')
+        target = '/recipes/1?collection_id=-2&cuisine_id=0'
+        response = self.client.post('/recipes/1/actions/cooked',
+            data=dict(data, return_to=target), headers={'HX-Request': 'true'}, follow_redirects=False)
+        self.assertEqual(response.status_code, 204)
+        location = json.loads(response.headers['HX-Location'])
+        self.assertEqual(location['target'], '#recipe-detail-page')
+        self.assertEqual(location['path'], target)
+        fragment = self.client.get(target, headers={'HX-Request': 'true'})
+        self.assertEqual(fragment.status_code, 200)
+        self.assertIn('id="recipe-detail-page"', fragment.text)
+        self.assertIn('Cooked 1 time', fragment.text)
+        self.assertIn('hx-swap-oob="outerHTML"', fragment.text)
+        self.assertNotIn('<html', fragment.text)
+        self.assertEqual(self.count(recipe_view_date), 0)
+        self.assertEqual(self.count(recipe_cooked_date), 1)
+        restored = self.client.get(target, headers={'HX-Request': 'true', 'HX-History-Restore-Request': 'true'})
+        self.assertIn('<!doctype html>', restored.text)
+
+    def test_cuisine_filter_survives_partials_search_and_detail_navigation(self):
+        with Session(self.engine) as session:
+            session.add(Cuisine(cuisine_id=1, cuisine_name='Korean'))
+            session.get(Recipe, 1).cuisine_id = 1
+            session.commit()
+        target = '/?cuisine_id=1&collection_id=-2&per_page=12&sort=name'
+        body = self.client.get(target, headers={'HX-Request': 'true'}).text
+        self.assertIn('data-recipe-id="1"', body)
+        self.assertNotIn('data-recipe-id="2"', body)
+        self.assertIn('cuisine_id=1', body)
+        self.assertIn('id="library-sidebar" class="library-sidebar" hx-swap-oob="outerHTML"', body)
+        self.assertNotIn('<html', body)
+        self.assertIn('id="cuisine-filter" name="cuisine_id"', self.client.get(target).text)
+        detail = self.client.get('/recipes/1?cuisine_id=1&collection_id=-2&per_page=12&log_visit=false').text
+        self.assertIn('collection_id=-2&amp;per_page=12&amp;cuisine_id=1', detail)
+        response = self.client.post('/search', data=dict(self.form(), q='chicken', intent='sort',
+            cuisine_id=1, collection_id=-2, per_page=12), headers={'HX-Request': 'true'})
+        self.assertIn('cuisine_id=1', response.headers['HX-Push-Url'])
+        self.assertEqual(self.client.get('/?cuisine_id=999').status_code, 404)
+        self.assertEqual(self.client.post('/search', data=dict(self.form(), collection_id=999)).status_code, 404)
+
+    def test_library_action_updates_counts_and_collection_membership(self):
+        import json
+        response = self.client.post('/recipes/1/actions/plan-add',
+            data=dict(self.form(), return_to='/?collection_id=-3'),
+            headers={'HX-Request': 'true'}, follow_redirects=False)
+        location = json.loads(response.headers['HX-Location'])
+        self.assertEqual(location['target'], '#recipes')
+        self.assertNotIn('select', location)
+        body = self.client.get(location['path'], headers={'HX-Request': 'true'}).text
+        self.assertIn('id="app-plan-count" hx-swap-oob="outerHTML">1</span>', body)
+        self.assertIn('data-recipe-id="1"', body)
+        self.assertNotIn('data-recipe-id="2"', body)
 
     def test_detail_modal_deletes_using_current_version(self):
         body = self.client.get('/recipes/1?sort=name&q=chicken&collection_id=1&log_visit=false').text

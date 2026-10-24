@@ -1,6 +1,0 @@
-update edit recipe
-update add recipe
-X Search - search for ingredient OR title
-Search - add to navgbar field also
-
-

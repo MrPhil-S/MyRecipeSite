@@ -3,6 +3,8 @@
   <input type="hidden" name="ingredient_id" value="{{ row.id }}">
   <label>Name<input name="ingredient_name" maxlength="100" value="{{ row.name }}"></label>
   <label>Note<input name="ingredient_note" maxlength="100" value="{{ row.note }}"></label>
-  <label>Type<select name="ingredient_group"><option value="0"{% if row.group == '0' %} selected{% endif %}>Ingredient</option><option value="1"{% if row.group == '1' %} selected{% endif %}>Group heading</option></select></label>
-  <label>Action<select name="ingredient_keep"><option value="1"{% if row.keep == '1' %} selected{% endif %}>Keep</option><option value="0"{% if row.keep == '0' %} selected{% endif %}>Remove</option></select></label>
+  <input type="hidden" name="ingredient_group" value="{{ row.group }}">
+  <input type="hidden" name="ingredient_keep" value="1">
+  <label class="ingredient-group-toggle"><input type="checkbox" data-group-toggle{% if row.group == '1' %} checked{% endif %}> Group heading</label>
+  <button type="button" class="ingredient-remove" data-remove-ingredient aria-label="Remove ingredient row" title="Remove row">&#128465;</button>
 </div>

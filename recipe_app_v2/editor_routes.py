@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import logging
+import re
 import secrets
 import time
 
@@ -52,8 +53,34 @@ def render(request, session, recipe, values=None, errors=None, token=None, statu
     cookie = request.cookies.get(COOKIE, '')
     token = token or (cookie if token_valid(cookie) else new_token())
     context = choices(session)
+    errors = errors or []
+    field_errors = {}
+    row_errors = {}
+    for error in errors:
+        match = re.match(r'Ingredient (\d+):', error)
+        if match:
+            row_errors.setdefault(int(match.group(1)) - 1, []).append(error)
+            continue
+        key = next((name for name in ('name', 'source_url', 'whisk_url', 'prep_time', 'cook_time',
+                    'additional_time', 'servings', 'cuisine_id', 'ingredient_bulk', 'instructions',
+                    'source_notes', 'note_from_user') if error.lower().startswith(name.replace('_', ' '))), None)
+        if error.lower().startswith('recipe name is required'):
+            key = 'name'
+        if key:
+            field_errors.setdefault(key, []).append(error)
+        elif error.startswith('Choose existing collections'):
+            field_errors.setdefault('collection_ids', []).append(error)
+        elif error.startswith('Choose an existing cuisine'):
+            field_errors.setdefault('cuisine_id', []).append(error)
+        elif error.startswith('Combined cooking time'):
+            field_errors.setdefault('prep_time', []).append(error)
+        elif error.startswith('Image must') or error.startswith('Upload a JPEG'):
+            field_errors.setdefault('image', []).append(error)
+        elif error.startswith('PDF must') or error.startswith('Upload a PDF'):
+            field_errors.setdefault('pdf', []).append(error)
     context.update(recipe=recipe, values=values if values is not None else form_values(session, recipe),
-                   errors=errors or [], csrf_token=token,
+                   collection_labels={str(c.collection_id): c.collection_name for c in context['collection_choices']},
+                   errors=errors, field_errors=field_errors, row_errors=row_errors, csrf_token=token,
                    row=empty_row(), writes_enabled=writes_enabled())
     partial = request.headers.get('HX-Request') == 'true'
     response = templates.TemplateResponse(request=request,

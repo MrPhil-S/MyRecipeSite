@@ -68,4 +68,8 @@ class edit_recipe_form(FlaskForm):
 
 class add_collection_form(FlaskForm):
     collection_name = StringField('Name')#, validators=[DataRequired(), Length(min=2, max=200)])
-    
+
+
+class add_synonym_form(FlaskForm):
+    primary_term = StringField('Primary term', validators=[DataRequired(), Length(min=1, max=100)])
+    secondary_term = StringField('Synonym', validators=[DataRequired(), Length(min=1, max=100)])

@@ -8,7 +8,7 @@ from sqlalchemy import text
 from werkzeug.utils import secure_filename
 
 from myrecipes import app, db
-from myrecipes.models import Recipe, Recipe_Ingredient
+from myrecipes.models import Ingredient_Synonym, Recipe, Recipe_Ingredient
 
 
 # Function to parse the search query and identify excluded words after "NOT"
@@ -49,19 +49,30 @@ def search_recipe(token):
     # Execute the query and retrieve the distinct recipe IDs
     return [result[0] for result in search_query.distinct().all()]
 
+def expand_ingredient_search_terms(token):
+    terms = {token}
+    synonym_rows = Ingredient_Synonym.query.filter(
+        db.or_(
+            Ingredient_Synonym.primary_term.like(f"%{token}%"),
+            Ingredient_Synonym.secondary_term.like(f"%{token}%"),
+        )
+    ).all()
+    for row in synonym_rows:
+        terms.add(row.primary_term)
+        terms.add(row.secondary_term)
+    return terms
+
+
 def search_recipe_ingredient(token):
-    # Build a dynamic SQLAlchemy query for the Recipe_Ingredient table
-    search_query = db.session.query(Recipe_Ingredient.recipe_id)
-
-    # Create an OR condition for the case-insensitive exact word match with MariaDB word boundaries
-    #token_upper = token.upper()
-    or_condition = db.func.concat(Recipe_Ingredient.name_written, ' ', Recipe_Ingredient.note).like(f"%{token}%")
-
-    # Apply the condition to the query
-    search_query = search_query.filter(or_condition)
-
-    # Execute the query and retrieve the distinct recipe IDs
-    return [result[0] for result in search_query.distinct().all()]
+    recipe_ids = set()
+    for term in expand_ingredient_search_terms(token):
+        search_query = db.session.query(Recipe_Ingredient.recipe_id)
+        or_condition = db.func.concat(
+            Recipe_Ingredient.name_written, ' ', Recipe_Ingredient.note
+        ).like(f"%{term}%")
+        search_query = search_query.filter(or_condition)
+        recipe_ids.update(result[0] for result in search_query.distinct().all())
+    return list(recipe_ids)
 
 
 def save_image(form_image, recipe_id):

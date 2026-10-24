@@ -4,10 +4,16 @@
   "agave_nectar": [],
   "alcohol": [],
   "aleppo_pepper": [],
-  "all_purpose_enriched_bleached_flour": [],
-  "allspice": [],
+  "all_purpose_enriched_bleached_flour": [
+    "all purpose flour"
+  ],
+  "allspice": [
+    "all spice"
+  ],
   "almond": [],
-  "aluminum_grilling_pan": [],
+  "aluminum_grilling_pan": [
+    "aluminum pan"
+  ],
   "amber_ale": [],
   "ancho_chilli_powder": [],
   "anchovy_fillet": [],
@@ -17,18 +23,24 @@
   "apple": [],
   "apple_cider_vinegar": [],
   "apple_juice": [],
-  "apple_wood_chip": [],
+  "apple_wood_chip": [
+    "applewood chips"
+  ],
   "arborio_rice": [],
   "artichoke": [],
   "asian_chili_sauce": [
     "asian chile pepper sauce"
   ],
   "asparagus": [],
-  "aubergine": [],
+  "aubergine": [
+    "eggplant"
+  ],
   "avocado": [],
   "avocado_oil": [],
   "baby_bok_choy": [],
-  "baby_broccoli": [],
+  "baby_broccoli": [
+    "broccolini"
+  ],
   "baby_carrots": [],
   "baby_peppers": [],
   "baby_potato": [],
@@ -56,23 +68,37 @@
   ],
   "bean_sprout": [],
   "beef_bouillon_granules": [],
-  "beef_brisket_roast": [],
+  "beef_brisket_roast": [
+    "beef brisket"
+  ],
   "beef_broth": [],
-  "beef_chuck_roast": [],
-  "beef_flank_steak": [],
-  "beef_flat_iron_steak": [],
+  "beef_chuck_roast": [
+    "chuck roast",
+    "beef chuck"
+  ],
+  "beef_flank_steak": [
+    "flank steak"
+  ],
+  "beef_flat_iron_steak": [
+    "flat iron steak"
+  ],
   "beef_mince": [
     "ground beef"
   ],
   "beef_rib_eye_steak": [],
   "beef_round_steak": [],
   "beef_sirloin_roast": [],
-  "beef_sirloin_steak": [],
+  "beef_sirloin_steak": [
+    "beef sirloin",
+    "beef top sirloin"
+  ],
   "beef_skirt_steak": [],
   "beef_stock": [],
   "beef_strip_loin_steak": [],
   "beef_tenderloin_roast": [],
-  "beef_tenderloin_steak": [],
+  "beef_tenderloin_steak": [
+    "beef tenderloin filet"
+  ],
   "beef_tri_tip_steak": [],
   "beer": [],
   "beetroot": [],
@@ -82,8 +108,14 @@
     "baking soda"
   ],
   "birds_eye_chili_flakes": [],
-  "birds_eye_chili_pepper": [],
-  "bisquick_baking_mix": [],
+  "birds_eye_chili_pepper": [
+    "Thai chili",
+    "birds eye chili",
+    "bird s eye chili"
+  ],
+  "bisquick_baking_mix": [
+    "bisquick mix"
+  ],
   "bittersweet_chocolate": [],
   "black_bean": [],
   "black_cod_fillet": [],
@@ -91,12 +123,21 @@
   "black_pepper": [],
   "black_peppercorn": [],
   "black_sesame_seeds": [],
-  "black_vinegar": [],
-  "boneless_beef_chuck_roast": [],
+  "black_vinegar": [
+    "Chinese vinegar"
+  ],
+  "boneless_beef_chuck_roast": [
+    "boneless chuck roast"
+  ],
   "boneless_beef_short_rib": [],
   "boneless_chicken_breast": [],
-  "boneless_chicken_thigh": [],
-  "boneless_pork_butt_roast": [],
+  "boneless_chicken_thigh": [
+    "boneless skinless chicken thigh"
+  ],
+  "boneless_pork_butt_roast": [
+    "boneless pork shoulder",
+    "boneless pork butt"
+  ],
   "boneless_pork_chop": [],
   "boneless_skinless_chicken_meat": [],
   "bonito_flakes": [],
@@ -104,12 +145,16 @@
   "bread_flour": [],
   "breadcrumbs": [],
   "breakfast_sausage": [],
-  "brie_cheese": [],
+  "brie_cheese": [
+    "brie"
+  ],
   "brioche_bun": [],
   "broccoli": [],
   "broccoli_floret": [],
   "broth": [],
-  "brown_onion": [],
+  "brown_onion": [
+    "yellow onion"
+  ],
   "brown_rice": [],
   "brown_sugar": [],
   "brussels_sprouts": [],
@@ -129,22 +174,32 @@
   "canned_chickpeas": [],
   "canned_chopped_black_olives": [],
   "canned_chopped_chillies": [],
-  "canned_chopped_stewed_tomato": [],
+  "canned_chopped_stewed_tomato": [
+    "canned stewed diced tomato"
+  ],
   "canned_chopped_tomato": [],
   "canned_coconut_milk": [],
   "canned_condensed_cream_of_mushroom_soup": [],
-  "canned_crushed_tomato": [],
+  "canned_crushed_tomato": [
+    "crushed tomato"
+  ],
   "canned_diced_green_chili": [],
   "canned_diced_tomato_with_garlic_and_onion": [],
-  "canned_diced_tomato_with_juice": [],
+  "canned_diced_tomato_with_juice": [
+    "canned diced tomato"
+  ],
   "canned_fire_roasted_tomato": [],
   "canned_great_northern_beans": [],
   "canned_green_chilies": [],
   "canned_italian_tomato": [],
-  "canned_light_coconut_milk": [],
+  "canned_light_coconut_milk": [
+    "light coconut milk"
+  ],
   "canned_no_salt_added_tomato_sauce": [],
   "canned_peeled_tomato": [],
-  "canned_pineapple_slices": [],
+  "canned_pineapple_slices": [
+    "canned pineapple rings"
+  ],
   "canned_san_marzano_peeled_tomato": [],
   "canned_stewed_tomato": [],
   "canned_tomato_paste": [],
@@ -170,19 +225,25 @@
   "celery": [],
   "celery_seed": [],
   "celery_stalk": [],
-  "cellophane_noodle": [],
+  "cellophane_noodle": [
+    "glass noodle"
+  ],
   "chaat_masala": [],
   "cheese_tortellini": [],
   "cherry": [],
   "cherry_tomato": [],
   "chicken": [],
   "chicken_bouillon_powder": [],
-  "chicken_breast": [],
+  "chicken_breast": [
+    "chicken cutlet"
+  ],
   "chicken_broth": [],
   "chicken_drumstick": [],
   "chicken_leg": [],
   "chicken_liver": [],
-  "chicken_mince": [],
+  "chicken_mince": [
+    "ground chicken"
+  ],
   "chicken_piece": [],
   "chicken_stock": [],
   "chicken_tenderloin": [],
@@ -190,16 +251,24 @@
   "chicken_thigh_fillet": [],
   "chicken_wing": [],
   "chili_paste": [],
-  "chili_pepper": [],
+  "chili_pepper": [
+    "chile"
+  ],
   "chili_powder": [],
-  "chilli_infused_oil": [],
+  "chilli_infused_oil": [
+    "chili oil"
+  ],
   "chinese_cabbage": [],
   "chinese_noodles": [],
-  "chinese_rice_wine": [],
+  "chinese_rice_wine": [
+    "shaohsing rice wine"
+  ],
   "chipotle_peppers_in_adobo_sauce": [],
   "chive": [],
   "chocolate_chip": [],
-  "chocolate_syrup": [],
+  "chocolate_syrup": [
+    "chocolate flavored syrup"
+  ],
   "chocolate_toffee": [],
   "chopped_garlic": [],
   "chopped_hazelnut": [],
@@ -208,7 +277,9 @@
   "chopped_roasted_almond": [],
   "chopped_roasted_pecan_nut": [],
   "chopped_walnut": [],
-  "chorizo_sausage": [],
+  "chorizo_sausage": [
+    "Spanish chorizo"
+  ],
   "chunky_peanut_butter": [],
   "cider_vinegar": [],
   "cilantro_(coriander_herb)": [
@@ -222,7 +293,9 @@
   "coarse_ground_pepper": [],
   "coarse_salt": [],
   "coarse_sea_salt": [],
-  "coarsely_ground_cornmeal": [],
+  "coarsely_ground_cornmeal": [
+    "cornmeal"
+  ],
   "cobb_salad": [],
   "cocoa_powder": [],
   "coconut": [],
@@ -247,24 +320,33 @@
   "cotija_cheese": [],
   "cottage_cheese": [],
   "country_bread": [],
-  "country_white_bread": [],
+  "country_white_bread": [
+    "country style white bread"
+  ],
   "courgette": [
     "zucchini"
   ],
-  "cracked_black_pepper": [],
+  "cracked_black_pepper": [
+    "cracked pepper"
+  ],
   "cream": [],
   "cream_cheese": [],
   "creamy_peanut_butter": [],
-  "creme_de_menthe_liqueur": [],
+  "creme_de_menthe_liqueur": [
+    "creme de menthe"
+  ],
   "creme_fraiche": [],
   "cremini_mushrooms": [],
   "croissant": [],
   "crumbled_blue_cheese": [],
   "crumbled_feta_cheese": [
-    "feta cheese crumbled"
+    "feta cheese crumbled",
+    "crumbled feta"
   ],
   "crushed_chili_pepper": [],
-  "crushed_garlic": [],
+  "crushed_garlic": [
+    "crushed garlic clove"
+  ],
   "crushed_red_chilli_peppers": [
     "red pepper flakes",
     "crushed red pepper flakes",
@@ -278,27 +360,44 @@
   "cumin": [],
   "cumin_seed": [],
   "curry_paste": [],
-  "curry_powder": [],
+  "curry_powder": [
+    "curry power"
+  ],
   "daikon_radish": [],
   "dark_brown_sugar": [],
   "dark_chicken_meat": [],
   "dark_soy_sauce": [],
   "diced_onion": [],
-  "diced_pancetta": [],
-  "dijon_mustard": [],
+  "diced_pancetta": [
+    "chopped pancetta",
+    "chopped pancetta bacon"
+  ],
+  "dijon_mustard": [
+    "dijon style mustard"
+  ],
   "dill": [],
   "distilled_white_vinegar": [],
-  "dried_active_baking_yeast": [],
-  "dried_arbol_chili": [],
+  "dried_active_baking_yeast": [
+    "active dry yeast"
+  ],
+  "dried_arbol_chili": [
+    "chili de arbol"
+  ],
   "dried_basil": [],
   "dried_bay_leaves": [],
-  "dried_breadcrumbs": [],
+  "dried_breadcrumbs": [
+    "dry bread crumbs"
+  ],
   "dried_cascabel_chili": [],
   "dried_cherries": [],
   "dried_fenugreek": [],
   "dried_guajillo_chili": [],
-  "dried_italian_seasoning": [],
-  "dried_kashmiri_chili": [],
+  "dried_italian_seasoning": [
+    "Italian seasoning"
+  ],
+  "dried_kashmiri_chili": [
+    "dried Kashmiri"
+  ],
   "dried_mexican_oregano": [],
   "dried_mexican_tea_herb": [],
   "dried_minced_garlic": [],
@@ -315,7 +414,9 @@
   "dry_sherry": [],
   "dry_white_wine": [],
   "dumpling_wrapper": [],
-  "edamame_bean": [],
+  "edamame_bean": [
+    "edamame"
+  ],
   "egg": [],
   "egg_noodles": [],
   "egg_white": [],
@@ -332,33 +433,50 @@
   "fat_free_lower_sodium_beef_broth": [],
   "fat_free_plain_yogurt": [],
   "fennel_bulb": [],
-  "fennel_powder": [],
+  "fennel_powder": [
+    "ground fennel"
+  ],
   "fennel_seed": [],
   "fine_sea_salt": [],
   "fish_sauce": [],
-  "five_spice_mix": [],
+  "five_spice_mix": [
+    "Chinese five spice powder",
+    "five spice powder"
+  ],
   "flat_rice_noodles": [],
-  "flatleaf_parsley": [],
+  "flatleaf_parsley": [
+    "flat leaf parsley"
+  ],
   "flavourless_oil": [],
   "flour": [],
   "french_bread": [],
   "fresh_grapefruit_juice": [],
-  "fresh_lemon_juice": [],
-  "fresh_lime_juice": [],
+  "fresh_lemon_juice": [
+    "freshly squeezed lemon juice"
+  ],
+  "fresh_lime_juice": [
+    "freshly squeezed lime juice"
+  ],
   "fresh_mozzarella_cheese": [
     "fresh mozzarella"
   ],
-  "fresh_oregano_leaves": [],
+  "fresh_oregano_leaves": [
+    "oregano leaves"
+  ],
   "fresh_thyme": [],
   "fresh_water_chestnut": [],
-  "fresno_chili": [],
+  "fresno_chili": [
+    "red Fresno chili"
+  ],
   "fried_pork_rind": [],
   "frozen_chopped_spinach": [],
   "frozen_edamame": [],
   "frozen_french_fries": [],
   "frozen_lime_juice_concentrate": [],
   "frozen_orange_juice_concentrate": [],
-  "frozen_peas": [],
+  "frozen_peas": [
+    "frozen green peas"
+  ],
   "frozen_pound_cake": [],
   "frozen_shelled_edamame": [],
   "frozen_skinless_boneless_chicken_breast": [],
@@ -367,14 +485,18 @@
   "frying_oil": [],
   "fudge_topping": [],
   "fuji_apple": [],
-  "full_fat_plain_greek_yogurt": [],
+  "full_fat_plain_greek_yogurt": [
+    "plain whole milk Greek yogurt"
+  ],
   "gala_apple": [],
   "galangal": [],
   "garam_masala_powder": [
     "garam masala"
   ],
   "garlic": [],
-  "garlic_chili_sauce": [],
+  "garlic_chili_sauce": [
+    "chili garlic sauce"
+  ],
   "garlic_chives": [],
   "garlic_clove": [],
   "garlic_granules": [],
@@ -392,7 +514,9 @@
   "goat_cheese": [],
   "gochugaru": [],
   "gochujang": [],
-  "graham_cracker_crumbs": [],
+  "graham_cracker_crumbs": [
+    "crushed graham crackers"
+  ],
   "granny_smith_apple": [],
   "granulated_sugar": [],
   "grape_tomato": [],
@@ -402,25 +526,41 @@
   "grated_parmesan_cheese": [
     "grated parmesan"
   ],
-  "grated_parmigiano_reggiano_cheese": [],
+  "grated_parmigiano_reggiano_cheese": [
+    "grated parmigiano reggiano",
+    "grated parmigiano"
+  ],
   "greek_style_plain_yogurt": [],
   "greek_yogurt": [],
   "green_bean": [],
-  "green_birds_eye_chili_pepper": [],
+  "green_birds_eye_chili_pepper": [
+    "green Thai chili"
+  ],
   "green_cabbage": [],
-  "green_capsicum": [],
-  "green_salad": [],
+  "green_capsicum": [
+    "green bell pepper",
+    "sweet green pepper"
+  ],
+  "green_salad": [
+    "salad greens"
+  ],
   "green_salsa": [],
   "grey_salt": [],
   "ground_allspice": [],
-  "ground_black_pepper": [],
+  "ground_black_pepper": [
+    "pepper",
+    "pepper ground",
+    "freshly ground pepper"
+  ],
   "ground_cardamom": [],
   "ground_cayenne_pepper": [
     "cayenne",
     "cayenne pepper",
     "cayenne powder"
   ],
-  "ground_chipotle_chili_pepper": [],
+  "ground_chipotle_chili_pepper": [
+    "ground chipotle pepper"
+  ],
   "ground_cinnamon": [],
   "ground_cloves": [],
   "ground_coffee": [],
@@ -429,21 +569,31 @@
   ],
   "ground_cumin": [],
   "ground_ginger": [],
-  "ground_nutmeg": [],
+  "ground_nutmeg": [
+    "nutmeg"
+  ],
   "ground_oregano": [],
   "ground_pepper": [],
   "ground_red_pepper": [],
   "ground_sage": [],
-  "ground_sichuan_pepper": [],
+  "ground_sichuan_pepper": [
+    "ground Sichuan peppercorns"
+  ],
   "ground_white_pepper": [],
   "grouper_fillet": [],
-  "gruyere_cheese": [],
+  "gruyere_cheese": [
+    "Gruyere"
+  ],
   "guacamole": [],
   "guilin_chili_sauce": [],
   "half_and_half": [],
-  "hass_avocado": [],
+  "hass_avocado": [
+    "Haas avocado"
+  ],
   "hawaiian_roll": [],
-  "heavy_whipping_cream": [],
+  "heavy_whipping_cream": [
+    "heavy cream"
+  ],
   "herb": [],
   "heritage_tomato": [],
   "hoagie_roll": [],
@@ -461,9 +611,15 @@
   ],
   "hot_pepper_sauce": [],
   "hot_red_chili": [],
-  "hot_sauce": [],
+  "hot_sauce": [
+    "hot chili sauce"
+  ],
   "ice": [],
-  "icing_sugar": [],
+  "icing_sugar": [
+    "powdered sugar",
+    "confectioners sugar",
+    "confectioner s sugar"
+  ],
   "instant_chocolate_pudding_mix": [],
   "instant_coffee_granules": [
     "instant coffee"
@@ -474,7 +630,8 @@
   "italian_dressing": [],
   "italian_style_seasoned_breadcrumbs": [],
   "jalapeno_pepper": [
-    "jalapeno"
+    "jalapeno",
+    "jalapeno chile"
   ],
   "jarlsberg_cheese": [],
   "jasmine_rice": [],
@@ -484,24 +641,39 @@
   "kahlua": [],
   "kale": [],
   "kashmiri_chilli_powder": [],
-  "ketchup": [],
-  "kewpie_mayonnaise": [],
+  "ketchup": [
+    "sriracha ketchup"
+  ],
+  "kewpie_mayonnaise": [
+    "Kewpie mayo"
+  ],
   "kombu": [],
   "kosher_salt": [],
   "labneh": [],
-  "lady_finger_biscuit": [],
+  "lady_finger_biscuit": [
+    "savoiardi",
+    "ladyfingers"
+  ],
   "lager_beer": [],
   "lamb": [],
-  "lamb_leg": [],
+  "lamb_leg": [
+    "leg of lamb"
+  ],
   "lamb_loin_chop": [],
-  "lamb_mince": [],
+  "lamb_mince": [
+    "ground lamb"
+  ],
   "lamb_rib_chop": [],
-  "lamb_shoulder_roast": [],
+  "lamb_shoulder_roast": [
+    "lamb shoulder"
+  ],
   "lasagne_noodle": [
     "lasagna noodle",
     "lasagna sheet"
   ],
-  "leaf_lettuce": [],
+  "leaf_lettuce": [
+    "lettuce leaves"
+  ],
   "lean_beef_mince": [
     "lean ground beef"
   ],
@@ -533,7 +705,9 @@
   "low_fat_greek_yogurt": [],
   "low_fat_plain_greek_yogurt": [],
   "low_fat_sour_cream": [],
-  "low_sodium_chicken_broth": [],
+  "low_sodium_chicken_broth": [
+    "lower salt chicken broth"
+  ],
   "low_sodium_chicken_stock": [],
   "low_sodium_soya_sauce": [],
   "lower_sodium_soya_sauce": [],
@@ -555,8 +729,12 @@
   "mezcal": [],
   "mild_chilli_powder": [],
   "milk": [],
-  "minced_garlic": [],
-  "minced_ginger": [],
+  "minced_garlic": [
+    "minced garlic clove"
+  ],
+  "minced_ginger": [
+    "minced ginger root"
+  ],
   "mini_twisted_pretzel": [],
   "mint": [],
   "mint_leaf": [],
@@ -568,7 +746,9 @@
   "mixed_mushrooms": [],
   "mixed_vegetables": [],
   "molasses": [],
-  "monosodium_glutaminate": [],
+  "monosodium_glutaminate": [
+    "MSG powder"
+  ],
   "montreal_steak_seasoning_mix": [],
   "morita_chili": [],
   "mortar_and_pestle": [],
@@ -579,13 +759,17 @@
   "mushroom": [],
   "mushroom_stock": [],
   "mustard": [],
-  "mustard_powder": [],
+  "mustard_powder": [
+    "ground mustard"
+  ],
   "mustard_seed": [],
   "naan_bread": [],
   "natural_peanut_butter": [],
   "no_salt_added_chicken_broth": [],
   "nonpareil_caper": [],
-  "oil": [],
+  "oil": [
+    "canola oil"
+  ],
   "olive_oil": [],
   "onion": [],
   "onion_granules": [],
@@ -599,8 +783,12 @@
   "oreo_cookie": [],
   "oyster_sauce": [],
   "palm_sugar": [],
-  "pancetta": [],
-  "panko": [],
+  "pancetta": [
+    "pancetta bacon"
+  ],
+  "panko": [
+    "panko breadcrumbs"
+  ],
   "paprika_powder": [
     "paprika",
     "ground paprika"
@@ -610,24 +798,42 @@
   ],
   "parmesan_cheese_rind": [],
   "parmesan_shavings": [],
-  "parmigiano_reggiano_cheese": [],
+  "parmigiano_reggiano_cheese": [
+    "parmigiano reggiano",
+    "parmigiano"
+  ],
   "parsley": [],
-  "parsley_flakes": [],
+  "parsley_flakes": [
+    "dried parsley flakes"
+  ],
   "parsley_leaves": [],
-  "parsley_stalks": [],
+  "parsley_stalks": [
+    "parsley sprigs"
+  ],
   "part_skim_mozzarella_cheese": [],
   "part_skim_ricotta_cheese": [],
   "pasta": [],
   "pasta_sauce": [],
-  "pasta_water": [],
+  "pasta_water": [
+    "pasta cooking water"
+  ],
   "pate": [],
   "peanut": [],
   "peanut_butter": [],
   "peanut_oil": [],
-  "peas": [],
-  "pecan_nut": [],
-  "peeled_and_deveined_prawn": [],
-  "penne_pasta": [],
+  "peas": [
+    "sugar snap peas"
+  ],
+  "pecan_nut": [
+    "pecan"
+  ],
+  "peeled_and_deveined_prawn": [
+    "peeled deveined shrimp",
+    "shelled deveined shrimp"
+  ],
+  "penne_pasta": [
+    "penne"
+  ],
   "peperoncino_chili_pepper": [],
   "pepper%2Fspice": [],
   "pepper%2Fveg": [],
@@ -643,7 +849,9 @@
   "pineapple_juice": [],
   "pineapple_ring": [],
   "pink_curing_salt": [],
-  "pita_bread": [],
+  "pita_bread": [
+    "pita"
+  ],
   "pita_chips": [],
   "pitted_kalamata_olive": [],
   "pitted_medjool_dates": [],
@@ -653,29 +861,47 @@
   "plain_yogurt": [],
   "plum_sauce": [],
   "plum_tomato": [],
-  "poblano_chili_pepper": [],
+  "poblano_chili_pepper": [
+    "poblano pepper"
+  ],
   "polenta": [],
   "pomegranate_juice": [],
   "pomegranate_molasses": [],
   "pomegranate_seed": [],
-  "pork_baby_back_rib": [],
+  "pork_baby_back_rib": [
+    "baby back pork ribs",
+    "baby back ribs"
+  ],
   "pork_baby_back_rib_rack": [],
   "pork_belly": [],
-  "pork_butt_roast": [],
+  "pork_butt_roast": [
+    "pork butt"
+  ],
   "pork_chop": [],
   "pork_fat": [],
-  "pork_fatback": [],
-  "pork_loin_chop": [],
+  "pork_fatback": [
+    "fatback"
+  ],
+  "pork_loin_chop": [
+    "center cut pork chop"
+  ],
   "pork_mince": [
     "ground pork"
   ],
   "pork_rib_chop": [],
   "pork_steak": [],
-  "pork_tenderloin_roast": [],
+  "pork_tenderloin_roast": [
+    "pork tenderloin"
+  ],
   "port_wine": [],
   "portobello_mushroom": [],
-  "prawn": [],
-  "prosciutto_ham": [],
+  "prawn": [
+    "shrimp"
+  ],
+  "prosciutto_ham": [
+    "prosciutto",
+    "proscuitto"
+  ],
   "pure_vanilla_extract": [],
   "purple_sticky_rice": [],
   "quail": [],
@@ -690,8 +916,13 @@
   "ras_el_hanout": [],
   "raw_pistachio": [],
   "red_cabbage": [],
-  "red_capsicum": [],
-  "red_chili": [],
+  "red_capsicum": [
+    "red bell pepper",
+    "sweet red pepper"
+  ],
+  "red_chili": [
+    "red chili pepper"
+  ],
   "red_curry_paste": [],
   "red_food_colouring": [],
   "red_lentil": [],
@@ -704,17 +935,24 @@
   "red_wine_vinegar": [],
   "reduced_sodium_beef_stock": [],
   "reduced_sodium_chicken_broth": [],
-  "reduced_sodium_soya_sauce": [],
+  "reduced_sodium_soya_sauce": [
+    "reduced sodium soy sauce",
+    "low sodium soy sauce"
+  ],
   "rice": [],
   "rice_vinegar": [],
   "rice_wine": [],
   "rice_wine_vinegar": [],
-  "ricotta_cheese": [],
+  "ricotta_cheese": [
+    "ricotta"
+  ],
   "roasted_chopped_peanuts": [],
   "roasted_peanuts": [],
   "roasted_pecan_nut": [],
   "roasted_pumpkin_seed": [],
-  "roasted_red_pepper": [],
+  "roasted_red_pepper": [
+    "roasted red bell pepper"
+  ],
   "roasted_salted_cashew": [],
   "rolled_oat": [],
   "roma_tomato": [],
@@ -724,9 +962,12 @@
   "rosemary": [],
   "rosemary_leaves": [],
   "rotisserie_chicken_(ready_made)": [],
-  "rotisserie_chicken_breast_(ready_made)": [],
+  "rotisserie_chicken_breast_(ready_made)": [
+    "rotisserie chicken breast"
+  ],
   "rucola": [
-    "arugula"
+    "arugula",
+    "baby arugula"
   ],
   "russet_potato": [],
   "rye_bread": [],
@@ -746,7 +987,10 @@
   "salted_butter": [],
   "salted_roasted_peanut": [],
   "saltine_crackers": [],
-  "sambal_chili_sauce": [],
+  "sambal_chili_sauce": [
+    "sambal oelek",
+    "sambal oelek chile paste"
+  ],
   "sea_salt": [],
   "sea_salt_flakes": [],
   "seasoned_breadcrumb": [],
@@ -755,7 +999,9 @@
   "seasoning": [],
   "seedless_watermelon": [],
   "semi_skimmed_milk": [],
-  "semi_sweet_chocolate": [],
+  "semi_sweet_chocolate": [
+    "semisweet chocolate"
+  ],
   "semi_sweet_chocolate_chip": [],
   "serrano_pepper": [],
   "sesame_oil": [],
@@ -771,7 +1017,9 @@
   "shredded_fontina_cheese": [],
   "shredded_iceberg_lettuce": [],
   "shredded_monterey_jack_cheese": [],
-  "shredded_mozzarella_cheese": [],
+  "shredded_mozzarella_cheese": [
+    "grated mozzarella cheese"
+  ],
   "shredded_parmesan_cheese": [],
   "shredded_rotisserie_chicken": [],
   "sichuan_peppercorn": [],
@@ -779,13 +1027,19 @@
   "skin_on_salmon_fillet": [],
   "skinless_boneless_chicken_breast": [],
   "skinless_chicken_thigh": [],
-  "sliced_bacon": [],
+  "sliced_bacon": [
+    "slices bacon"
+  ],
   "sliced_cheese": [],
   "sliced_cremini_mushroom": [],
   "sliced_fresh_mozzarella_cheese": [],
   "sliced_mozzarella_cheese": [],
-  "sliced_mushroom": [],
-  "sliced_pepperoni_salami": [],
+  "sliced_mushroom": [
+    "presliced mushroom"
+  ],
+  "sliced_pepperoni_salami": [
+    "sliced pepperoni sausage"
+  ],
   "sliced_prosciutto_ham": [],
   "slivered_almond": [],
   "smoked_bacon": [],
@@ -796,9 +1050,13 @@
   "smoked_paprika_powder": [
     "smoked paprika"
   ],
-  "snow_pea": [],
+  "snow_pea": [
+    "snow peas"
+  ],
   "soba_noodles": [],
-  "sodium_free_chicken_stock": [],
+  "sodium_free_chicken_stock": [
+    "unsalted chicken stock"
+  ],
   "sodium_free_vegetable_broth": [],
   "soft_goats_cheese": [],
   "sour_cream": [],
@@ -806,7 +1064,9 @@
   "soy_sauce": [],
   "soya_sauce": [],
   "soybean_paste": [],
-  "spaghetti_pasta": [],
+  "spaghetti_pasta": [
+    "spaghetti"
+  ],
   "spaghetti_sauce": [],
   "spanish_onion": [],
   "spanish_smoked_paprika": [
@@ -845,7 +1105,10 @@
   "sweetener": [],
   "syrup": [],
   "tabasco_sauce": [],
-  "tahini_sauce": [],
+  "tahini_sauce": [
+    "tahini",
+    "tahini paste"
+  ],
   "tamari": [],
   "tamarind_paste": [],
   "tamarind_pulp": [],
@@ -859,8 +1122,14 @@
   "thai_basil": [],
   "thai_fish_sauce": [],
   "thai_peanut_sauce": [],
-  "thyme_leaves": [],
-  "thyme_sprigs": [],
+  "thyme_leaves": [
+    "thyme",
+    "chopped thyme",
+    "fresh thyme leaves"
+  ],
+  "thyme_sprigs": [
+    "sprig thyme"
+  ],
   "tikka_masala_sauce": [],
   "toasted_sesame_oil": [],
   "toasted_sesame_seed": [],
@@ -870,22 +1139,38 @@
   "tomato_sauce": [],
   "tri_colored_spiral_pasta": [],
   "triple_sec": [],
-  "turbinado_sugar": [],
+  "turbinado_sugar": [
+    "brown turbinado sugar"
+  ],
   "turkey": [],
   "turkey_breast": [],
-  "turkey_breast_mince": [],
-  "turkey_mince": [],
+  "turkey_breast_mince": [
+    "ground turkey breast"
+  ],
+  "turkey_mince": [
+    "ground turkey",
+    "ground turkey meat"
+  ],
   "turkey_stock": [],
   "turmeric": [],
-  "tzatziki": [],
+  "turnip": [
+    "pickled turnip"
+  ],
+  "tzatziki": [
+    "tzatziki sauce"
+  ],
   "unsalted_butter": [],
   "unsweetened_baking_chocolate": [],
   "unsweetened_cocoa_powder": [],
   "unsweetened_dairy_free_milk": [],
   "vanilla_extract": [],
   "vanilla_ice_cream": [],
-  "veal_mince": [],
-  "vegetable": [],
+  "veal_mince": [
+    "ground veal"
+  ],
+  "vegetable": [
+    "veggies"
+  ],
   "vegetable_broth": [],
   "vegetable_oil": [],
   "vegetable_stock": [],
@@ -916,9 +1201,13 @@
   "whole_chicken": [],
   "whole_cloves": [],
   "whole_milk": [],
-  "wholegrain_mustard": [],
+  "wholegrain_mustard": [
+    "whole grain mustard"
+  ],
   "wholemeal_bread": [],
-  "wholemeal_egg_noodle": [],
+  "wholemeal_egg_noodle": [
+    "whole wheat egg noodle"
+  ],
   "wholemeal_pita_bread": [],
   "wild_salmon": [],
   "wine": [],
@@ -927,7 +1216,9 @@
     "worcestershire"
   ],
   "yeast": [],
-  "yellow_capsicum": [],
+  "yellow_capsicum": [
+    "yellow bell pepper"
+  ],
   "yellow_curry_paste": [],
   "yellow_mustard": [],
   "yogurt": [],

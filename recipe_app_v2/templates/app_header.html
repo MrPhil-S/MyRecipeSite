@@ -1,0 +1,30 @@
+{% from 'design_home_macros.html' import icon %}
+<header class="app-header">
+  <a class="wordmark" href="/">{% include '_brand_image.html' %}</a>
+  <nav class="app-nav" aria-label="Main navigation">
+    <a href="/" {% if nav_page == 'recipes' %}aria-current="page"{% endif %}>Recipes</a>
+    <a href="/plan" {% if nav_page == 'plan' %}aria-current="page"{% endif %}>Meal plan{% if planned_count is defined %}<span class="nav-count" id="app-plan-count">{{ planned_count }}</span>{% endif %}</a>
+    <div class="manage" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+      <button type="button"{% if nav_page == 'manage' %} aria-current="page"{% endif %} @click="open = !open" :aria-expanded="open" aria-controls="app-manage-menu">Manage {{ icon('chevron', 13) }}</button>
+      <div class="manage-menu" id="app-manage-menu" x-show="open" x-cloak>
+        <a href="/tags/collections">Collections</a><a href="/tags/cuisines">Cuisines</a>
+        <a href="/tags/synonyms">Ingredients &amp; synonyms</a><a href="/image-aliases">Ingredient images</a>
+        <a href="/recipe-book">Print recipe book</a>
+      </div>
+    </div>
+  </nav>
+  {% if show_header_search %}
+  <form class="recipe-nav-search" id="navbar-query-form" action="/search" method="post" role="search"
+        x-data="{ historyOpen: false }" @submit="historyOpen = false" @keydown.escape="historyOpen = false">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token | default(request.cookies.get('recipe_editor_csrf', '')) }}"><input type="hidden" name="intent" value="search">
+    <div class="search-input-wrap" @click.outside="historyOpen = false">{{ icon('search', 16) }}<label class="sr-only" for="navbar-query">Search recipes</label>
+    <input type="search" id="navbar-query" name="q" value="{{ q | default('') }}" maxlength="200" placeholder="Find a recipe"
+           autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true" :aria-expanded="historyOpen" aria-controls="navbar-query-history">
+    <div class="search-history" id="navbar-query-history" x-show="historyOpen" x-cloak>
+      <div hx-get="/search/history" hx-trigger="focus from:#navbar-query, input changed delay:150ms from:#navbar-query" hx-include="#navbar-query" hx-params="q" hx-target="this" hx-swap="innerHTML">{% include '_search_history.html' %}</div>
+    </div></div>
+    <button type="submit">Search</button>
+  </form>
+  {% endif %}
+  <a href="/recipes/new" class="button primary add-recipe">{{ icon('plus', 17) }} Add recipe</a>
+</header>

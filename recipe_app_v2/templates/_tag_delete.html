@@ -1,0 +1,12 @@
+<div id="tag-delete-content">
+  <h2 id="tag-delete-title">Delete {{ values.values() | join(' ↔ ') }}?</h2>
+  {% if error %}<p class="form-errors" role="alert">{{ error }}</p>{% endif %}
+  {% if kind != 'synonyms' %}<p>This removes {{ assigned }} recipe assignment{{ 's' if assigned != 1 else '' }}. The recipes are kept.</p>{% else %}<p>This removes this synonym link. Names remain interchangeable if other links still connect them.</p>{% endif %}
+  <form method="post" action="/tags/{{ kind }}/{{ tag_id }}/delete"
+        hx-post="/tags/{{ kind }}/{{ tag_id }}/delete" hx-target="#tag-delete-content" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="version" value="{{ version }}">
+    <button class="button primary" type="submit"{% if not writes_enabled %} disabled{% endif %}>Delete {{ singular }}</button>
+    <button class="button" type="button" @click="$el.closest('dialog').close()" autofocus>Cancel</button>
+  </form>
+</div>

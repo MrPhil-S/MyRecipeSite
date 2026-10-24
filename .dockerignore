@@ -6,3 +6,11 @@ recipe_app_v2/**/__pycache__/
 recipe_app_v2/tests/
 recipe_app_v2/.browser-tools/
 recipe_app_v2/uploads/
+!myrecipes/
+!myrecipes/static/
+!myrecipes/static/recipe_images/
+!myrecipes/static/recipe_images/**
+!myrecipes/static/ingredient_images/
+!myrecipes/static/ingredient_images/**
+!myrecipes/static/custom_prints/
+!myrecipes/static/custom_prints/**

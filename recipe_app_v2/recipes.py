@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from .config import ROOT
 from .uploads import upload_root
 from .image_aliases import image_url
+from .cooked_history import can_undo_cooked
 from .models import (Collection, Cuisine, Recipe, Recipe_Ingredient,
                      Recipe_Instruction, Recipe_Plan_Date, recipe_collection,
                      recipe_cooked_date, recipe_view_date)
@@ -37,21 +38,28 @@ def detail_context(session, recipe_id):
         Collection.collection_name, Collection.collection_id).distinct()).all()
     cuisine = session.get(Cuisine, recipe.cuisine_id) if recipe.cuisine_id is not None else None
     # Preserve Flask numbering without modifying mapped instruction objects.
-    step_count = sum(step.is_group_header == False for step in instructions)
+    step_count = sum(not step.is_group_header for step in instructions)
     number = 0
     steps = []
+    method_group_labels = {}
     for step in instructions:
         if step.is_group_header:
             number = 0
             display = step.text_contents
+            method_group_labels.setdefault((step.text_contents or "").strip().casefold(), step.text_contents)
         else:
             number += 1
             display = f"{number}. {step.text_contents}" if step_count > 1 else step.text_contents
-        steps.append({"id": step.recipe_instruction_id, "text": display,
+        steps.append({"id": step.recipe_instruction_id, "text": display, "raw_text": step.text_contents,
+                      "number": number,
                       "is_group_header": bool(step.is_group_header)})
     items = []
     for ingredient in ingredients:
-        items.append({"id": ingredient.recipe_ingredient_id, "name": ingredient.name_written,
+        ingredient_name = ingredient.name_written
+        if ingredient.is_group_header:
+            ingredient_name = method_group_labels.get(
+                (ingredient_name or "").strip().casefold(), ingredient_name)
+        items.append({"id": ingredient.recipe_ingredient_id, "name": ingredient_name,
                       "note": ingredient.note, "is_group_header": bool(ingredient.is_group_header),
                       "image_url": image_url(ingredient.name_official)})
     history = session.execute(select(
@@ -59,15 +67,22 @@ def detail_context(session, recipe_id):
             recipe_view_date.recipe_id == recipe_id).scalar_subquery(),
         select(func.count()).select_from(recipe_cooked_date).where(
             recipe_cooked_date.recipe_id == recipe_id).scalar_subquery(),
+        select(recipe_cooked_date.recipe_cooked_dt).where(
+            recipe_cooked_date.recipe_id == recipe_id).order_by(
+            recipe_cooked_date.recipe_cooked_dt.desc(),
+            recipe_cooked_date.recipe_cooked_date_id.desc()).limit(1).scalar_subquery(),
         select(Recipe_Plan_Date.recipe_plan_date_id).where(
             Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None)).exists(),
+        func.current_timestamp(),
     )).one()
     pdf = ROOT / "myrecipes/static/custom_prints" / f"{recipe_id}.pdf"
-    return {"recipe": recipe, "ingredients": items, "steps": steps,
+    return {"recipe": recipe, "ingredients": items, "steps": steps, "step_count": step_count,
             "source_notes": source_notes, "collections": collections, "cuisine": cuisine,
             "favorite": any(c.collection_name.strip().lower() in ('favorites', 'favorite') for c in collections),
             "ingredient_count": sum(not item["is_group_header"] for item in items),
-            "view_count": history[0], "cook_count": history[1], "planned": history[2],
+            "view_count": history[0], "cook_count": history[1], "latest_cooked": history[2],
+            "planned": history[3],
+            "undo_cooked_available": can_undo_cooked(history[2], history[4]),
             "source_link": web_link(recipe.source_url), "whisk_link": web_link(recipe.whisk_url),
             "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() or
                 (upload_root() / 'pdfs' / f'{recipe_id}.pdf').is_file() else None}

@@ -129,7 +129,8 @@ def render_form(request, session, kind, tag=None, action='edit', values=None, er
         'assigned': len(linked_recipes(session, kind, getattr(tag, id_field))) if tag else 0,
         'error': error, 'csrf_token': token, 'writes_enabled': writes_enabled()}
     response = templates.TemplateResponse(request=request,
-        name='_tag_form.html' if request.headers.get('HX-Request') == 'true' else 'tag_form.html',
+        name=('_tag_delete.html' if action == 'delete' and request.headers.get('HX-Target') == 'tag-delete-content'
+              else '_tag_form.html') if request.headers.get('HX-Request') == 'true' else 'tag_form.html',
         context=context, status_code=status)
     response.set_cookie(COOKIE, token, httponly=True, samesite='strict', max_age=7200,
                         secure=request.url.scheme == 'https')

@@ -4,32 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}My Recipes{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}?v=kitchen-window-1">
+  {% block core_styles %}<link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">{% endblock %}
+  {% block page_styles %}<link rel="stylesheet" href="{{ url_for('static', path='design-home.css') }}?v=clear-search-recipe-groups-2"><link rel="stylesheet" href="{{ url_for('static', path='live-app.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='app-pages.css') }}">{% endblock %}
   <script defer src="{{ url_for('static', path='vendor/htmx.min.js') }}"></script>
   <script defer src="{{ url_for('static', path='image-upload.js') }}"></script>
   <script defer src="{{ url_for('static', path='search-controls.js') }}"></script>
   <script defer src="{{ url_for('static', path='recipe-controls.js') }}"></script>
   <script defer src="{{ url_for('static', path='vendor/alpine.min.js') }}"></script>
-</head>
-<body id="page-top">
-  <header><a href="/">My Recipes</a><nav aria-label="Main navigation"><a href="/plan">Meal plan</a><a href="/tags/collections">Manage tags</a><a href="/image-aliases">Image aliases</a>
-    <form class="navbar-search" action="/search" method="post" role="search"
-          x-data="{ historyOpen: false }" @submit="historyOpen = false" @keydown.escape="historyOpen = false">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token | default(request.cookies.get('recipe_editor_csrf', '')) }}">
-      <label class="visually-hidden" for="navbar-query">Search recipes</label>
-      <div class="search-input-wrap" @click.outside="historyOpen = false">
-        <input id="navbar-query" type="search" name="q" maxlength="200" placeholder="Search recipes" value="{{ q | default('') }}"
-               autocomplete="off" @focus="historyOpen = true" @input="historyOpen = true" :aria-expanded="historyOpen" aria-controls="navbar-history">
-        <div class="search-history" x-show="historyOpen" x-cloak>
-          <div id="navbar-history" hx-get="/search/history" hx-trigger="focus from:#navbar-query, input changed delay:150ms from:#navbar-query"
-               hx-include="#navbar-query" hx-params="q" hx-target="this" hx-swap="innerHTML" hx-sync="this:replace">
-            <p class="meta">Loading recent searches…</p>
-          </div>
-        </div>
-      </div>
-      <button type="submit" aria-label="Search recipes">Search</button>
-    </form><span>Preview</span></nav></header>
-  <main>{% block content %}{% endblock %}</main>
-<div class="floating-actions"><a class="floating-create" href="/recipes/new" aria-label="Create recipe">+</a><a href="#page-top" aria-label="Back to top">&#8593;</a></div>
+<link rel="stylesheet" href="{{ url_for('static', path='brand/brand.css') }}"></head>
+<body id="page-top" class="app-body {% block body_class %}{% endblock %}">
+  {% block shell_header %}<div class="utility-header"><div class="utility-header-inner">{% set nav_page = 'plan' if request.url.path == '/plan' else 'manage' if request.url.path.startswith('/tags') or request.url.path.startswith('/image-aliases') or request.url.path.startswith('/recipe-book') else 'recipes' %}{% set show_header_search = true %}{% include 'app_header.html' %}</div></div>{% endblock %}
+  <main class="utility-main {% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
+  {% block app_footer %}<footer class="utility-footer"><a href="/">My recipe library</a><a href="#page-top">Back to top</a></footer>{% endblock %}
+  {% block floating_actions %}{% include '_library_floating_actions.html' %}{% endblock %}
 </body>
 </html>

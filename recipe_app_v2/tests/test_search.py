@@ -91,6 +91,7 @@ class SearchTests(unittest.TestCase):
             for recipe_id, name in ((5, 'spring onion'), (6, 'scallion'), (7, 'green onion')):
                 session.add(Recipe(recipe_id=recipe_id, name=f'Ingredient test {recipe_id}'))
                 session.add(Recipe_Ingredient(recipe_id=recipe_id, name_written=name))
+            session.add(Recipe(recipe_id=8, name='Green onion 2'))
             session.add_all([
                 Ingredient_Synonym(primary_term=' Green Onion ', secondary_term='spring onion'),
                 Ingredient_Synonym(primary_term='GREEN ONION', secondary_term='scallion'),
@@ -99,7 +100,7 @@ class SearchTests(unittest.TestCase):
             ])
             session.commit()
         for q in ('green onion', 'spring onion', 'scallion', '"green onion"', '"spring onion"', 'SCALL'):
-            self.assertEqual(set(self.ids(q)), {5, 6, 7}, q)
+            self.assertEqual(set(self.ids(q)), {5, 6, 7, 8}, q)
         self.assertEqual(set(self.ids('NOT "spring onion"')), {1, 2, 3, 4})
         self.assertEqual(self.ids('"red onion"'), [])
         with ReadOnlySession(self.engine) as session:

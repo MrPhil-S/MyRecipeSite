@@ -20,3 +20,11 @@ __pycache__/
 *.pyc
 recipe_app_v2/.browser-tools/
 recipe_app_v2/uploads/
+
+# Local previews, review exports, and generated artifacts
+/output/
+/recipe_app_v2/design-assets/
+/recipe_app_v2/static/title-options/
+/recipe_app_v2/image-review-analysis-2026-10-14/
+/recipe_app_v2/ingredient-image-review-decisions*.csv
+/Gochujang Yogurt Chicken Recipe _ Bon Appétit.pdf

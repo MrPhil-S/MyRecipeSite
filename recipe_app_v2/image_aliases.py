@@ -36,6 +36,10 @@ PLURALS = {
     'olives': 'olive', 'lentils': 'lentil', 'oats': 'oat', 'peppercorns': 'peppercorn',
     'artichokes': 'artichoke', 'apples': 'apple', 'chestnuts': 'chestnut',
     'chips': 'chip', 'shells': 'shell', 'juiced': 'juice',
+    'stalks': 'stalk', 'sprigs': 'sprig', 'rings': 'ring', 'pieces': 'piece',
+    'pickles': 'pickle', 'pistachios': 'pistachio', 'raisins': 'raisin',
+    'dates': 'date', 'oranges': 'orange', 'cans': 'can', 'cutlets': 'cutlet',
+    'crackers': 'cracker', 'bitters': 'bitter', 'slices': 'slice',
 }
 
 # These words identify a different food, cut or product; matching just a
@@ -43,7 +47,57 @@ PLURALS = {
 IMAGE_HEADS = frozenset(('sauce', 'paste', 'jelly', 'tortilla', 'chestnut',
     'juice', 'zest', 'noodle', 'starch', 'syrup', 'vinegar', 'broth', 'stock',
     'sausage', 'meatball', 'breast', 'thigh', 'wing', 'drumstick', 'liver',
-    'tenderloin', 'chop', 'shell', 'chip', 'rind', 'dressing', 'soup', 'powder'))
+    'tenderloin', 'chop', 'shell', 'chip', 'rind', 'dressing', 'soup', 'powder',
+    'yogurt', 'ketchup'))
+
+# Only preparation descriptors may augment an already named ingredient.
+# Notes containing serving suggestions or substitutes must not supply another food.
+PREPARATION = frozenset('minced crushed chopped crumbled roasted toasted ground cracked '
+    'grated shredded sliced diced peeled shelled deveined pitted canned frozen '
+    'boneless skinless fresh dried raw unsalted salted light low reduced sodium '
+    'seed leaf stalk sprig wedge juice zest whole can inch mexican '
+    'center cut piece 10 12'.split())
+FORM_WORDS = frozenset('minced crushed chopped crumbled roasted toasted ground cracked '
+    'grated shredded sliced diced peeled shelled deveined pitted canned frozen '
+    'boneless skinless dried unsalted light'.split())
+MEASURES = frozenset('lb lbs pound pounds ounce ounces oz g gm grams kg cup cups '
+    'tablespoon tablespoons tbsp teaspoon teaspoons tsp bunch bunches large small '
+    'medium x one two a an of fresh raw skin on bone in full fat low moisture '
+    'finely coarsely toasted chopped boneless skinless'.split())
+
+
+def primary_text(text):
+    text = re.sub(r'(\d)\s+or\s+(\d)', r'\1 to \2', text, flags=re.I)
+    text = re.sub(r'\((?:or|such as|can substitute)\b[^)]*\)', '', text, flags=re.I)
+    text = re.sub(r'\bhomemade\s+or\s+store[- ]bought\b', '', text, flags=re.I)
+    # Recover shared nouns in these common alternatives, keeping the first option.
+    for alternatives, noun in ((r'corn|flour', r'tortillas?'),
+                               (r'plain|Greek', 'yogurt'),
+                               (r'feta|goat', 'cheese'),
+                               (r'light|dark', 'brown sugar'),
+                               (r'red|white', 'wine'),
+                               (r'white|apple cider', 'vinegar'),
+                               (r'rapid rise|instant', 'yeast')):
+        text = re.sub(r'\b(' + alternatives + r')\s+or\s+(?:' + alternatives
+                      + r')\s+(' + noun + r')\b', r'\1 \2', text, flags=re.I)
+    return re.split(r'\bor\b|\bsuch as\b|\bcan substitute\b|//|\+\s*\d',
+                    text, maxsplit=1, flags=re.I)[0]
+
+
+def preparation_context(text, note):
+    primary = normalize(primary_text(text))
+    # Ignore instructions that introduce other ingredients and removed parts.
+    note = re.split(r'\b(?:or|such as|plus|for|with|serve|serving)\b',
+                    note or '', maxsplit=1, flags=re.I)[0]
+    note = re.sub(r'\b(?:seeds?|stems?|skins?)\s+removed\b', '', note, flags=re.I)
+    note = re.sub(r'\bjuice\s+(?:drained|reserved)\b', '', note, flags=re.I)
+    note = normalize(note)
+    note = re.sub(r'\blite\b', 'light', note)
+    # Recover rows split after quantity/modifiers: "1 lb boneless", "skinless chicken thighs".
+    identity = {w for w in primary.split() if not any(c.isdigit() for c in w)} - MEASURES - PREPARATION
+    if not identity:
+        return primary + ' ' + note
+    return primary + ' ' + ' '.join(w for w in note.split() if w in PREPARATION)
 
 
 def normalize(value):
@@ -60,6 +114,9 @@ def normalize(value):
     normalized = re.sub(r'\blemon grass\b', 'lemongrass', normalized)
     normalized = re.sub(r'\bcornstarch\b', 'corn starch', normalized)
     normalized = re.sub(r'\bclove garlic\b', 'garlic clove', normalized)
+    normalized = re.sub(r'\bgingerroot\b', 'ginger root', normalized)
+    normalized = re.sub(r'\bzested\b', 'zest', normalized)
+    normalized = re.sub(r'\bcan\b', 'canned', normalized)
     return normalized
 
 
@@ -92,29 +149,39 @@ class Matcher:
         self.catalogue = load_catalogue() if values is None else values
         self.version = revision(self.catalogue)
         for name, aliases in self.catalogue.items():
+            target_words = frozenset(normalize(name).split())
             for term, explicit in [(name, False)] + [(alias, True) for alias in aliases]:
                 phrase = normalize(term)
                 if phrase:
                     self.entries.append((name, phrase, explicit,
-                        re.compile(r'(?<!\w)' + re.escape(phrase) + r'(?!\w)')))
+                        re.compile(r'(?<!\w)' + re.escape(phrase) + r'(?!\w)'),
+                        frozenset(phrase.split()), target_words))
 
-    def match(self, text):
-        # Alternatives/examples never outrank the primary ingredient.
-        # Quantity alternatives retain the common ingredient: 2 or 3 cloves.
-        text = re.sub(r'(\d)\s+or\s+(\d)', r'\1 to \2', text, flags=re.I)
-        # Remove complete parenthetical substitutions while keeping a shared
-        # noun after them ("red kuri (or butternut) squash").
-        text = re.sub(r'\((?:or|such as|can substitute)\b[^)]*\)', '', text, flags=re.I)
-        primary = re.split(r'\bor\b|\bsuch as\b|\bcan substitute\b|//', text, maxsplit=1, flags=re.I)[0]
-        normalized = normalize(primary)
+    def match(self, text, note=''):
+        normalized = preparation_context(text, note)
         words = set(normalized.split())
+        primary_words = set(normalize(primary_text(text)).split())
+        # A fruit providing both juice and zest uses its whole-fruit illustration.
+        fruits = words & {'lemon', 'lime', 'orange'}
+        if len(fruits) == 1 and {'juice', 'zest'} <= words:
+            fruit = next(iter(fruits))
+            if fruit in self.catalogue:
+                return fruit
         candidates = []
         opposites = [('fresh', 'dried'), ('red', 'white'), ('salted', 'unsalted'),
                      ('sweet', 'hot'), ('ground', 'whole')]
-        for name, phrase, explicit, pattern in self.entries:
-            if not pattern.search(normalized):
+        for name, phrase, explicit, pattern, phrase_words, target in self.entries:
+            # Multiword identities and preparation can be reordered (garlic,
+            # minced; boneless skinless chicken breast). Never use substrings.
+            if not pattern.search(normalized) and not (len(phrase_words) > 1 and phrase_words <= words):
                 continue
-            target = set(normalize(name).split())
+            # The reviewed "pepper" convention is for unspecified seasoning,
+            # not an alias for every vegetable or pepper-containing product.
+            if name == 'ground_black_pepper' and phrase == 'pepper':
+                seasoning = MEASURES | PREPARATION | {'pepper', 'to', 'taste', 'optional', 'pinch', 'freshly'}
+                if (any(w not in seasoning and not any(c.isdigit() for c in w) for w in words)
+                        or re.search(r'\bpeppers\b', text, flags=re.I)):
+                    continue
             # An explicit full alias can describe a form not present in its
             # image filename (red pepper flakes -> crushed red chili peppers).
             semantic_target = target | (set(phrase.split()) if explicit else set())
@@ -132,7 +199,11 @@ class Matcher:
             if (('root' in words or 'seed' in words)
                     and name in ('cilantro_(coriander_herb)', 'coriander_leaves')):
                 continue
-            candidates.append(((len(phrase.split()), int(explicit)), name))
+            # A longer ingredient phrase remains important; matching explicit
+            # preparation breaks ties against unprepared clove/root images.
+            score = len(phrase_words) + len(phrase_words & FORM_WORDS)
+            primary_identity = len((phrase_words - PREPARATION) & primary_words)
+            candidates.append(((score, primary_identity, len(phrase_words), int(explicit)), name))
         if not candidates:
             return 'default_ingredient'
         best = max(score for score, _ in candidates)

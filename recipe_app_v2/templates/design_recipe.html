@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff"><title>{{ state.title }} | Oxblood recipe page</title>
+  <link rel="stylesheet" href="/static/design-home.css?v=selected-sample-pages-v1"><link rel="stylesheet" href="/static/design-recipe.css?v=oxblood-badges-v2">
+  <link rel="preload" href="/static/fonts/dm-sans.ttf" as="font" type="font/ttf" crossorigin>
+  <script defer src="/static/vendor/htmx.min.js"></script><script defer src="/static/vendor/alpine.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', path='brand/brand.css') }}"><link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}?v=kitchen-window-1">
+</head>
+<body class="recipe-studies" x-data="{ checked: [], completed: [], error: false }" @htmx:response-error.window="error = true" @htmx:send-error.window="error = true" @htmx:before-request.window="error = false">
+  <a class="skip-link" href="#recipe-title">Skip to recipe</a>
+  {% include 'design_recipe_preview.html' %}
+  <p class="request-error" role="alert" x-show="error" x-cloak>That update couldn’t load. Please try again. <button @click="error = false" aria-label="Dismiss error">×</button></p>
+</body></html>

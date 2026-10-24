@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>My Recipes kitchen window</title>
+  <rect width="64" height="64" rx="6" fill="#8c3544"/>
+  <path d="M30.5 0h3v64h-3zM0 30.5h64v3H0z" fill="#fff"/>
+  <g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">
+    <circle cx="13" cy="19" r="7"/>
+    <path d="m18 14 8-8"/>
+  </g>
+  <path d="M40 20 56 5Q58 13 48 23L45 21 39 28Q36 30 35 27Z" fill="#fff"/>
+  <ellipse cx="16" cy="45" rx="5" ry="7" fill="#fff"/>
+  <path d="M14.5 49h3v15h-3zM36 64l13-13 13 13z" fill="#fff"/>
+</svg>

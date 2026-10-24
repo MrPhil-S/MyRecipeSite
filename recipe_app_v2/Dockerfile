@@ -4,7 +4,12 @@ WORKDIR /app
 COPY recipe_app_v2/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 COPY recipe_app_v2 /app/recipe_app_v2
-RUN useradd --uid 10001 --create-home recipes
+COPY myrecipes/static/recipe_images /app/myrecipes/static/recipe_images
+COPY myrecipes/static/ingredient_images /app/myrecipes/static/ingredient_images
+COPY myrecipes/static/custom_prints /app/myrecipes/static/custom_prints
+RUN useradd --uid 10001 --create-home recipes \
+    && mkdir -p /app/recipe_uploads \
+    && chown recipes:recipes /app/recipe_uploads
 USER recipes
 EXPOSE 8001
 CMD ["uvicorn", "recipe_app_v2.main:app", "--host", "0.0.0.0", "--port", "8001"]

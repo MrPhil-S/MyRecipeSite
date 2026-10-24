@@ -1,0 +1,15 @@
+{% from 'design_home_macros.html' import icon %}
+      <div class="card-photo recipe-card-photo">
+        <a class="photo-link" href="{{ recipe_url }}" hx-boost="false" aria-label="Open {{ recipe.name }}">
+          <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}" width="640" height="480">
+        </a>
+        {% if writes_enabled %}<form class="favorite-form" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'favorite-remove' if row.favorite else 'favorite-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'favorite-remove' if row.favorite else 'favorite-add' }}" hx-disabled-elt="find button">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ card_return_to }}">
+          <button class="favorite{% if row.favorite %} is-favorite{% endif %}" type="submit" aria-pressed="{{ 'true' if row.favorite else 'false' }}" aria-label="{{ 'Remove from' if row.favorite else 'Add to' }} favorites: {{ recipe.name }}">{{ icon('star', 19) }}</button>
+        </form>{% elif row.favorite %}<span class="favorite-badge" aria-label="Favorite">{{ icon('star', 18) }}</span>{% endif %}
+        <span class="cooked-badge" aria-label="Cooked {{ row.cook_count }} times">{{ row.cook_count }}× cooked</span>
+        {% if writes_enabled %}<form class="plan-control" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-post="/recipes/{{ recipe.recipe_id }}/actions/{{ 'plan-remove' if row.planned else 'plan-add' }}" hx-disabled-elt="find button">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="{{ card_return_to }}">
+          <button class="plan-trigger{% if row.planned %} is-planned{% endif %}" type="submit" aria-label="{{ 'Remove from plan' if row.planned else 'Plan' }}: {{ recipe.name }}">{{ icon('calendar', 14) }}{{ 'Planned' if row.planned else 'Plan' }}</button>
+        </form>{% elif row.planned %}<span class="plan-control plan-trigger is-planned">{{ icon('calendar', 14) }} Planned</span>{% endif %}
+      </div>

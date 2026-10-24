@@ -55,3 +55,4 @@ dialog form { display:flex; gap:.75rem; }
 .is-reordering{background:#e2e7d8;outline:2px dashed #234938;outline-offset:-2px}
 .ingredient-dragging,.ingredient-dragging *{cursor:grabbing!important;user-select:none}
 @media(max-width:600px){.ingredient-row{grid-template-columns:auto 1fr 1fr}.ingredient-row>.drag-handle{grid-row:span 2}.ingredient-row label{min-width:0}.navbar-search .search-history{min-width:0;width:100%}}
+.detail-intro .recipe-deck{font-size:1.05rem;line-height:1.65;max-width:48rem;margin:1rem 0;white-space:pre-wrap;overflow-wrap:anywhere}

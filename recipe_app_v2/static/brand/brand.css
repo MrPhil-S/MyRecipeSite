@@ -1,0 +1,3 @@
+.wordmark:has(.brand-logo) { display:inline-flex; align-items:center; flex-shrink:0; line-height:1; }
+.brand-logo { display:block; width:220px; max-width:42vw; height:auto; mix-blend-mode:multiply; }
+@media (max-width:600px) { .brand-logo { width:180px; } }

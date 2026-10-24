@@ -93,7 +93,7 @@ def save_recipe(recipe_id, values, image=None, pdf=None):
                 if row['group'] == '1':
                     ingredient.name_official = None
                 elif ingredient.name_written != row['name'] or not ingredient.name_official:
-                    ingredient.name_official = matcher.match(row['name'])
+                    ingredient.name_official = matcher.match(row['name'], row['note'])
                 ingredient.name_written = row['name']
                 ingredient.note = row['note'] or None
                 ingredient.sequence = sequence

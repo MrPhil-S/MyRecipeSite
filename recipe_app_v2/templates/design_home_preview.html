@@ -1,0 +1,55 @@
+{% from 'design_home_macros.html' import icon, collections_nav with context %}
+<div id="design-preview" hx-boost="true" hx-target="#design-preview" hx-swap="outerHTML show:none" hx-push-url="true" hx-sync="#design-preview:replace">
+  {% include 'design_home_palette.html' %}
+  <div class="study-bar">
+    <a class="study-title" href="{{ url(layout='library') }}"><span class="palette-mark"></span>Library <span>Five color studies</span></a>
+    <nav class="palette-options" aria-label="Choose a Library color">{% for id, option in palettes.items() %}<a href="{{ url(layout='library', palette=id) }}" {% if palette_id == id %}aria-current="page"{% endif %}><span class="color-swatch" style="--swatch: {{ option.accent }}" aria-hidden="true"></span>{{ option.name }}</a>{% endfor %}</nav>
+  </div>
+  <div class="study-caption"><span><strong>{{ palette.name }}</strong> {{ palette.accent|upper }} — {{ palette.description }}</span><a href="/design/recipe" hx-boost="false">Explore the five Oxblood recipe pages</a></div>
+  <div class="homepage homepage--{{ layout }}" id="page-top">
+    <header class="app-header">
+      <a class="wordmark" href="{{ url(collection='All recipes', q='', cuisine='') }}">{% include '_brand_image.html' %}</a>
+      <nav class="app-nav" aria-label="Main navigation">
+        <a href="{{ url(collection='All recipes', q='', cuisine='') }}" {% if collection != 'Meal plan' %}aria-current="page"{% endif %}>Recipes</a>
+        <a href="{{ url(collection='Meal plan', q='', cuisine='') }}" {% if collection == 'Meal plan' %}aria-current="page"{% endif %}>Meal plan <span class="nav-count">{{ planned|length }}</span></a>
+        <div class="manage" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+          <button @click="open = !open" :aria-expanded="open" aria-controls="manage-menu">Manage {{ icon('chevron', 13) }}</button>
+          <div class="manage-menu" id="manage-menu" x-show="open" x-cloak hx-boost="false"><a href="/tags/collections">Collections</a><a href="/tags/cuisines">Cuisines</a><a href="/tags/synonyms">Ingredients & synonyms</a><a href="/image-aliases">Ingredient images</a></div>
+        </div>
+      </nav>
+      <a href="/recipes/new" class="button primary add-recipe" hx-boost="false">{{ icon('plus', 17) }} Add recipe</a>
+    </header>
+    <div class="page-layout">
+      {% if layout == 'library' %}
+      <aside class="library-sidebar">
+        <h2>Your library</h2>{{ collections_nav(true) }}
+        <div class="sidebar-cuisines"><h2>Cuisines</h2><a href="{{ url(cuisine='') }}" {% if not cuisine %}aria-current="true"{% endif %}>All cuisines</a>{% for name in cuisines %}<a href="{{ url(cuisine=name) }}" {% if cuisine == name %}aria-current="true"{% endif %}>{{ name }}</a>{% endfor %}</div>
+        <a class="manage-collections" href="/tags/collections" hx-boost="false">{{ icon('plus', 15) }} Manage collections</a>
+      </aside>
+      {% endif %}
+      <main class="main-content">
+        <div class="page-heading">
+          <div><h1>{{ 'A little dinner inspiration.' if layout == 'spotlight' else 'Make room for dinner.' if layout == 'weekboard' else 'Your recipe library.' if layout == 'library' else 'The recipe index.' if layout == 'index' else 'What sounds good?' }}</h1>
+          <p>{{ 'A recipe to come back to, and more to discover below.' if layout == 'spotlight' else 'Pick a recipe. Give it a day. Dinner is taking shape.' if layout == 'weekboard' else 'The recipes you save. The meals you make.' }}</p></div>
+          {% if layout == 'gallery' %}<div class="heading-note">A place for<br>your good food.{{ icon('book', 32) }}</div>{% endif %}
+        </div>
+        {% if layout != 'library' %}{{ collections_nav() }}{% endif %}
+        <form class="filter-form" id="filter-form" action="/design" method="get" hx-get="/design" hx-target="#design-preview" hx-swap="outerHTML show:none" hx-trigger="submit, input changed delay:350ms from:#recipe-search, change" role="search">
+          <input type="hidden" name="layout" value="{{ layout }}"><input type="hidden" name="palette" value="{{ palette_id }}"><input type="hidden" name="collection" value="{{ collection }}">
+          <div class="search-field" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+            {{ icon('search', 20) }}<label class="sr-only" for="recipe-search">Find a recipe or ingredient</label>
+            <input id="recipe-search" name="q" type="search" value="{{ q }}" placeholder="Find a recipe or ingredient" maxlength="200" autocomplete="off" @focus="open = true" aria-controls="search-history" :aria-expanded="open">
+            <button type="submit" name="remember" value="1" aria-label="Search recipes" @click="open = false">Search</button>
+            <div class="search-history" id="search-history" x-show="open" x-cloak><p>Recent searches</p>{% for term in history %}<a href="{{ url(q=term) }}">{{ icon('clock', 14) }} {{ term }}</a>{% else %}<span>Your searches will appear here after you select Search.</span>{% endfor %}</div>
+          </div>
+          <label class="select-field"><span>Cuisine</span><select name="cuisine" aria-label="Filter by cuisine"><option value="">All cuisines</option>{% for name in cuisines %}<option {% if cuisine == name %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></label>
+          <label class="select-field sort-field"><span>Sort by</span><select name="sort" aria-label="Sort recipes">{% for value, label in sort_choices %}<option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <input type="hidden" name="per_page" value="{{ per_page }}">
+        </form>
+        {% include 'design_home_results.html' %}
+      </main>
+    </div>
+    <footer class="app-footer"><span>my recipes<span class="accent">.</span> <span class="footer-note">Good food, kept close.</span></span><span class="preview-note">Sample recipes. Changes stay in this preview.</span><a href="#page-top" hx-boost="false">Back to top ↑</a></footer>
+    <a class="floating-add" href="/recipes/new" hx-boost="false" aria-label="Add a recipe">{{ icon('plus', 23) }}</a>
+  </div>
+</div>

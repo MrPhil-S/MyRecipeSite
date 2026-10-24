@@ -1,0 +1,21 @@
+{% from 'design_home_macros.html' import icon %}
+<div id="meal-plan" aria-live="polite">
+  <header class="utility-page-heading"><div><p class="page-kicker">Your cooking queue</p><h1>Meal plan</h1><p>{{ total }} {{ 'recipe' if total == 1 else 'recipes' }} in your cooking queue.</p></div><a class="button primary" href="/">Browse recipes</a></header>
+  {% for day, group in groups.items() %}
+  <section class="plan-group"><header class="plan-group-heading"><h2>Added {{ day }}</h2><span>{{ group.age }} {{ 'day' if group.age == 1 else 'days' }} ago</span></header>
+    <div class="plan-recipe-grid">
+      {% for row in group.recipes %}{% set recipe = row.Recipe %}
+      <article class="plan-recipe-card" data-plan-recipe-id="{{ recipe.recipe_id }}">
+        {% with recipe_url='/recipes/' ~ recipe.recipe_id ~ '?from_plan=true', card_return_to='/plan' %}
+          {% include '_recipe_photo.html' %}
+        {% endwith %}
+        <div class="card-body"><div class="card-taxonomy">Added {{ day }}</div><h3><a href="/recipes/{{ recipe.recipe_id }}?from_plan=true" hx-boost="false">{{ recipe.name }}</a></h3>
+          <div class="card-meta">{% if recipe.total_time %}<span>{{ icon('clock', 14) }} {{ recipe.total_time }}</span>{% endif %}</div>
+          {% if writes_enabled %}<form class="plan-cooked-form" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/cooked" hx-post="/recipes/{{ recipe.recipe_id }}/actions/cooked" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="/plan"><button class="button" type="submit">Mark cooked</button></form>{% if recipe.recipe_id in undo_cooked_ids %}<form class="plan-cooked-form" method="post" action="/recipes/{{ recipe.recipe_id }}/actions/undo-cooked" hx-post="/recipes/{{ recipe.recipe_id }}/actions/undo-cooked" hx-disabled-elt="find button"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="return_to" value="/plan"><button class="button" type="submit">Undo cooked on {{ row.last_marked_cook_dt.strftime('%b %d, %Y') }}</button></form>{% endif %}{% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}<section class="empty-state"><h2>Your plan is clear.</h2><p>Add a recipe when you know what you want to cook.</p><a class="button primary" href="/">Browse the recipe library</a></section>{% endfor %}
+</div>

@@ -123,6 +123,26 @@ class TagTests(unittest.TestCase):
         self.assertIn('&lt;script&gt;', body)
         self.assertNotIn('<script>100', body)
 
+    def test_delete_dialog_loads_current_revision_and_keeps_conflicts_in_dialog(self):
+        for kind, values in [('collections', {'collection_name': 'Dinner'}),
+                             ('cuisines', {'cuisine_name': 'Korean'}),
+                             ('synonyms', {'primary_term': 'chilli', 'secondary_term': 'chili'})]:
+            tag_id = self.create(kind, values)
+            path = f'/tags/{kind}/{tag_id}/delete'
+            headers = {'HX-Request': 'true', 'HX-Target': 'tag-delete-content'}
+            response = self.client.get(path, headers=headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('id="tag-delete-content"', response.text)
+            self.assertNotIn('<html', response.text)
+            self.assertNotIn('class="back-link"', response.text)
+            data = {key: re.search(f'name="{key}" value="([^"]*)"', response.text)[1]
+                    for key in ('csrf_token', 'version')}
+            stale = self.client.post(path, data=dict(data, version='stale'), headers=headers)
+            self.assertEqual(stale.status_code, 409)
+            self.assertIn('id="tag-delete-content"', stale.text)
+            deleted = self.client.post(path, data=data, headers=headers, follow_redirects=False)
+            self.assertEqual(deleted.headers['HX-Redirect'], '/tags/' + kind)
+
     def test_stale_edit_and_changed_assignments_block_deletion(self):
         tag_id = self.create('collections', {'collection_name': 'Before'})
         path = f'/tags/collections/{tag_id}/edit'

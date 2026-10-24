@@ -1,0 +1,17 @@
+{% from 'design_home_macros.html' import icon %}
+<aside id="library-sidebar" class="library-sidebar"{% if partial %} hx-swap-oob="outerHTML"{% endif %}>
+  <h2>Your library</h2>
+  <nav class="collection-nav collection-nav--sidebar" aria-label="Collections">
+    {% for item in sidebar_collections %}
+    <a data-collection-id="{{ item.collection_id }}" href="{{ list_url(1, sort, q, item.collection_id, per_page, cuisine_id) }}"{% if collection_id == item.collection_id %} aria-current="true"{% endif %}>
+      {% if item.collection_id == 0 %}{{ icon('grid', 17) }}{% elif item.collection_id == -2 %}{{ icon('star', 17) }}{% elif item.collection_id == -3 %}{{ icon('calendar', 17) }}{% endif %}
+      <span>{{ item.collection_name }}</span><small>{{ item.count }}</small>
+    </a>
+    {% endfor %}
+  </nav>
+  <nav class="sidebar-cuisines" aria-label="Cuisines"><h2>Cuisines</h2>
+    <a href="{{ list_url(1, sort, q, collection_id, per_page, 0) }}"{% if not cuisine_id %} aria-current="true"{% endif %}>All cuisines</a>
+    {% for item in cuisines %}<a href="{{ list_url(1, sort, q, collection_id, per_page, item.cuisine_id) }}"{% if cuisine_id == item.cuisine_id %} aria-current="true"{% endif %}>{{ item.cuisine_name }}</a>{% endfor %}
+  </nav>
+  <a class="manage-collections" href="/tags/collections">Manage collections</a>
+</aside>
