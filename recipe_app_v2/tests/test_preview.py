@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 import runpy
@@ -10,8 +11,9 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
-from recipe_app_v2.config import dev_database_url
-from recipe_app_v2.database import ReadOnlySession, get_session, guard_statement
+from recipe_app_v2.config import database_url, dev_database_url, production_database_url
+from recipe_app_v2.database import ReadOnlySession, get_session, guard_statement, writes_enabled
+from recipe_app_v2.editor_routes import signing_secret
 from recipe_app_v2.main import app
 from recipe_app_v2.models import (Base, Collection, Cuisine, Recipe, Recipe_Ingredient,
                                  Recipe_Instruction, recipe_cooked_date)
@@ -40,6 +42,38 @@ class SafetyTests(unittest.TestCase):
             config = Path(folder) / "config.ini"
             config.write_text("[dev]\ndb_uri=mysql+pymysql://user:pass%25word@192.168.1.14:3307/MyRecipes_DEV")
             self.assertEqual(dev_database_url(config).password, "pass%word")
+
+    def test_production_target_and_write_gate_are_explicit(self):
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "config.ini"
+            config.write_text("[prod]\ndb_uri=mysql+pymysql://user:pass%25word@192.168.1.14:3307/MyRecipes")
+            with patch.dict(os.environ, {'RECIPE_APP_ENV': 'production', 'RECIPE_CONFIG': str(config)}, clear=True):
+                production_database_url.cache_clear()
+                self.assertEqual(database_url().database, 'MyRecipes')
+                self.assertFalse(writes_enabled())
+                with patch.dict(os.environ, {'RECIPE_PROD_WRITES': '1'}):
+                    self.assertTrue(writes_enabled())
+                with patch.dict(os.environ, {'RECIPE_DEV_WRITES': '1'}):
+                    with self.assertRaisesRegex(RuntimeError, 'Development database settings'):
+                        database_url()
+                config.write_text("[prod]\ndb_uri=mysql+pymysql://user:secret@192.168.1.14:3307/MyRecipes_DEV")
+                production_database_url.cache_clear()
+                with self.assertRaises(RuntimeError) as error:
+                    database_url()
+                self.assertNotIn('secret', str(error.exception))
+            production_database_url.cache_clear()
+
+    def test_production_signing_secret_is_required_and_stable(self):
+        with patch.dict(os.environ, {'RECIPE_APP_ENV': 'production'}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, 'RECIPE_CSRF_SECRET_HEX is required'):
+                signing_secret()
+            with patch.dict(os.environ, {'RECIPE_CSRF_SECRET_HEX': 'ab' * 32}):
+                self.assertEqual(signing_secret(), bytes.fromhex('ab' * 32))
+
+    def test_dev_mode_rejects_production_settings(self):
+        with patch.dict(os.environ, {'RECIPE_PROD_WRITES': '1'}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, 'Production database settings'):
+                database_url()
 
     def test_sql_write_and_override_statements_rejected(self):
         for sql in ["INSERT INTO recipe VALUES (1)", "DELETE FROM recipe",

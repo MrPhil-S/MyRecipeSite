@@ -238,7 +238,7 @@ def catalogue_lock():
 
 def save_entry(name, aliases, version, original='', action='save'):
     if not writes_enabled():
-        raise PermissionError('Dev saves are disabled.')
+        raise PermissionError('Image changes are currently disabled.')
     if (not re.fullmatch(r'[A-Za-z0-9_%() -]{1,100}', name) or not normalize(name)
             or name.casefold() == 'default_ingredient'):
         raise ValueError('Use an image name of up to 100 characters without a path or extension.')

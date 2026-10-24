@@ -13,6 +13,6 @@
 <p class="meta">One name per line. Case, accents, punctuation and supported plurals are normalized. Keep different ingredients and meaningful variants separate.</p>
 {% if writes_enabled %}<div class="form-actions"><button type="submit" name="action" value="save">Save aliases</button></div>
 {% if original %}<details><summary>Delete this image name</summary><p>Removes this name and its aliases from future matching. Existing recipe mappings and image files stay in place.</p><label><input type="checkbox" name="confirm_delete" value="yes"> Confirm deletion</label><button class="danger" type="submit" name="action" value="delete">Delete entry</button></details>{% endif %}
-{% else %}<p>Dev saves are disabled.</p>{% endif %}
+{% else %}<p>Image changes are currently disabled.</p>{% endif %}
 </form>
 {% endblock %}

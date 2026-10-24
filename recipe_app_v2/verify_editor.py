@@ -99,7 +99,7 @@ def verify(save=False):
                 checked += 1
             summary['legacy_edit_forms_compared'] = checked
             if save:
-                assert health['dev_saves_enabled']
+                assert health['saves_enabled']
                 fields = FormParser(client.get('/recipes/new').text).fields
                 values = dict(fields)
                 values.update(name=prefix, ingredient_mode='bulk',

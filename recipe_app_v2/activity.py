@@ -1,4 +1,4 @@
-"""Dev-only cooking, visit, plan and recipe deletion operations."""
+"""Cooking, visit, plan and recipe deletion operations."""
 import hashlib
 import json
 from typing import Literal
@@ -47,7 +47,7 @@ def record_visit(recipe_id):
 
 def mutate(recipe_id, action):
     if not writes_enabled():
-        raise HTTPException(403, 'Dev saves are disabled.')
+        raise HTTPException(403, 'Recipe changes are currently disabled.')
     with Session(get_write_engine()) as session:
         recipe = session.scalar(select(Recipe).where(Recipe.recipe_id == recipe_id).with_for_update())
         if recipe is None:
@@ -101,7 +101,7 @@ def deletion_version(session, recipe):
 
 def delete_recipe_data(recipe_id, version):
     if not writes_enabled():
-        raise HTTPException(403, 'Dev saves are disabled.')
+        raise HTTPException(403, 'Recipe changes are currently disabled.')
     with Session(get_write_engine(), autoflush=False) as session:
         recipe = session.scalar(select(Recipe).where(Recipe.recipe_id == recipe_id).with_for_update())
         if recipe is None:

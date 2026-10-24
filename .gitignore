@@ -23,6 +23,7 @@ recipe_app_v2/uploads/
 
 # Local previews, review exports, and generated artifacts
 /output/
+/tmp/
 /recipe_app_v2/design-assets/
 /recipe_app_v2/static/title-options/
 /recipe_app_v2/image-review-analysis-2026-10-14/

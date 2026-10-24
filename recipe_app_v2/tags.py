@@ -52,7 +52,7 @@ class TagError(Exception):
 
 def save_tag(kind, tag_id, action, values, version):
     if not writes_enabled():
-        raise TagError('Dev saves are disabled.', 403)
+        raise TagError('Tag changes are currently disabled.', 403)
     model, id_field, fields, singular = SPECS[kind]
     with Session(get_write_engine(), autoflush=False) as session:
         tag = None

@@ -1,4 +1,4 @@
-"""Dev-only recipe saves with validation and a single database commit."""
+"""Recipe saves with validation and a single database commit."""
 from urllib.parse import urlsplit
 
 from sqlalchemy import select
@@ -27,7 +27,7 @@ def short_url(value):
 
 def save_recipe(recipe_id, values, image=None, pdf=None):
     if not writes_enabled():
-        raise SaveError(['Saving to the dev database is disabled.'], 403)
+        raise SaveError(['Recipe saving is currently disabled.'], 403)
     staged = StagedUploads()
     with Session(get_write_engine(), autoflush=False) as session:
         try:

@@ -84,7 +84,7 @@ def affected_ingredients(session, name='', recipe_query='', current='', scope='c
 
 def apply_selected(tokens):
     if not writes_enabled():
-        raise RematchError('Dev saves are disabled.', 403)
+        raise RematchError('Image changes are currently disabled.', 403)
     if not 1 <= len(tokens) <= 50:
         raise RematchError('Select 1–50 ingredient image changes to apply.')
     try:

@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from .config import ROOT, dev_database_url
+from .config import ROOT, app_environment, database_url
 from .database import get_session, writes_enabled
 from .uploads import upload_root
 from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date
@@ -31,8 +31,8 @@ from .recipe_book import router as recipe_book_router
 
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
-dev_database_url()
-app = FastAPI(title="My Recipes preview", docs_url=None, redoc_url=None, openapi_url=None)
+database_url()
+app = FastAPI(title="My Recipes", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=PACKAGE / "static"), name="static")
 # Serve explicit legacy asset directories, never templates or write routes.
 images = ROOT / "myrecipes" / "static" / "recipe_images"
@@ -111,15 +111,16 @@ def design_preview(request: Request):
 @app.exception_handler(SQLAlchemyError)
 async def database_unavailable(request: Request, exc: SQLAlchemyError):
     # DB exception strings can contain credentials and SQL parameters.
-    logging.getLogger(__name__).error("Dev database request failed (%s)", type(exc).__name__)
-    return HTMLResponse("<h1>Recipe database unavailable</h1><p>Check the dev database connection.</p>", status_code=503)
+    logging.getLogger(__name__).error("Recipe database request failed (%s)", type(exc).__name__)
+    return HTMLResponse("<h1>Recipe database unavailable</h1><p>Check the database connection.</p>", status_code=503)
 
 
 @app.get("/health")
 def health(session: Session = Depends(get_session)):
     session.execute(select(1)).scalar_one()
-    return {"status": "ok", "database": "MyRecipes_DEV", "read_only": not writes_enabled(),
-            "browse_read_only": not writes_enabled(), "dev_saves_enabled": writes_enabled(),
+    return {"status": "ok", "environment": app_environment(), "database": database_url().database,
+            "read_only": not writes_enabled(), "browse_read_only": True,
+            "saves_enabled": writes_enabled(),
             "read_connections_read_only": True,
             "visit_tracking_enabled": writes_enabled()}
 

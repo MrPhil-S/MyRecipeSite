@@ -10,11 +10,13 @@ Connected synonym links form a group: any name finds ingredients using all other
 names in that group. Add multiple other names on separate lines in the synonym
 form. Deleting a connecting link can split the group; no schema change is needed.
 
-The user authorized **dev-only saves** on October 11, 2026. The database URL
-comes from `[dev] db_uri` in `config.ini`; Docker startup passes it through the
-process environment, while local runs read the file directly. FastAPI accepts only
-`mysql+pymysql` at `192.168.1.14:3307/MyRecipes_DEV`, without URL query overrides.
-Production deployment, routing and schema changes remain deferred.
+The development database URL comes from `[dev] db_uri` in `config.ini`; Docker
+startup passes it through the process environment, while local runs read the file
+directly. Development mode accepts only `MyRecipes_DEV` at
+`192.168.1.14:3307`. For Pi deployment, `RECIPE_APP_ENV=production` selects
+`[prod] db_uri` (or `RECIPE_PROD_DB_URI`) and accepts only `MyRecipes` at the
+same server. Production saves require the separate `RECIPE_PROD_WRITES=1` flag.
+See [the Pi release runbook](../deployment/README.md) before enabling them.
 
 [Current migration status](../migration_audit_2026-10-11.md) ·
 [Phase 1 backup evidence](../phase1_backup_completed_2026-10-11.md)
@@ -45,7 +47,7 @@ Omit the variable, or set it to `0`, for form previews without saves. Browsing
 uses a separate server-enforced read-only connection. With dev saves enabled,
 opening a recipe detail records a visit through the dev write pool, matching
 Flask. Verification uses `log_visit=false` to preserve existing visit history.
-GETs never record search history. Saves use a separate dev-only connection pool.
+GETs never record search history. Saves use a separate connection pool.
 Search history is saved only on Enter, Search or selection of a previous query;
 typing, sorting and pagination do not save. Suggestions show distinct recent
 queries. Queries over the existing 100-character history limit are not truncated
@@ -117,7 +119,7 @@ the chosen order. The Image column sorts by image availability.
 The packaged `image_alias_seed.json` seeds image names and reviewed initial aliases.
 Edits persist separately in `uploads/ingredient-image-aliases.json`, using a lock,
 stale-version checks and atomic file replacement. Include it in uploads backups.
-No MariaDB schema changes or production writes are required.
+No MariaDB schema changes are required for this release.
 
 Images accept JPEG/PNG up to 8 MB and 20 million pixels, re-encoded to a maximum
 1000×1000 JPEG. PDFs accept up to 8 MB with header/end-marker checks. Uploads use
@@ -165,10 +167,10 @@ passed. All 12 dev tables matched their pre-test data after fixture cleanup.
 Earlier list/detail/search verification remains in Git history and the existing
 verification scripts. No production contact was needed for this feature.
 
-Models retain the existing schema. Alembic revision `0001` is an offline baseline
-for an empty database; online upgrade/stamp and destructive downgrade remain
-blocked. No tables are created on application startup. Pi/ARM deployment and
-full application rollback rehearsal remain untested.
+Models retain the existing production schema. Alembic revision `0001` is an
+offline baseline for an empty database; online upgrade/stamp and destructive
+downgrade remain blocked. No tables are created on application startup. Pi/ARM
+deployment and full application rollback rehearsal are still pending.
 
 ## Library / Oxblood UI (October 20, 2026)
 

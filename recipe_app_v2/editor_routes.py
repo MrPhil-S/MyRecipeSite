@@ -1,7 +1,8 @@
-"""Create/edit forms with optional dev-only saves."""
+"""Create/edit forms with configurable saves."""
 import hashlib
 import hmac
 import logging
+import os
 import re
 import secrets
 import time
@@ -13,6 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import UploadFile
 
+from .config import app_environment
 from .database import get_session, writes_enabled
 from .editor import choices, empty_row, form_values, submitted_values, validate
 from .models import Recipe
@@ -20,7 +22,24 @@ from .recipe_saves import SaveError, save_recipe
 from .uploads import MAX_UPLOAD, image_bytes, pdf_bytes
 
 router = APIRouter()
-SECRET = secrets.token_bytes(32)
+
+
+def signing_secret():
+    configured = os.environ.get('RECIPE_CSRF_SECRET_HEX')
+    if configured:
+        try:
+            secret = bytes.fromhex(configured)
+        except ValueError:
+            raise RuntimeError('RECIPE_CSRF_SECRET_HEX must contain hexadecimal bytes.') from None
+        if len(secret) < 32:
+            raise RuntimeError('RECIPE_CSRF_SECRET_HEX must contain at least 32 bytes.')
+        return secret
+    if app_environment() == 'production':
+        raise RuntimeError('RECIPE_CSRF_SECRET_HEX is required in production.')
+    return secrets.token_bytes(32)
+
+
+SECRET = signing_secret()
 COOKIE = 'recipe_editor_csrf'
 
 
@@ -128,7 +147,7 @@ async def submit(request, session, recipe):
         token = str(form.get('csrf_token', ''))
         check_token(request, token)
         if not writes_enabled():
-            raise HTTPException(403, 'Saving to the dev database is disabled.')
+            raise HTTPException(403, 'Recipe saving is currently disabled.')
         if form.get('intent') not in (None, 'save'):
             raise HTTPException(400, 'This form has changed. Reload it before submitting.')
         try:
@@ -164,7 +183,7 @@ async def submit(request, session, recipe):
             except SQLAlchemyError as exc:
                 logging.getLogger(__name__).error('Dev recipe save failed (%s)', type(exc).__name__)
                 return render(request, session, recipe, values=values,
-                    errors=['The dev database could not save this recipe. Your entered values are shown below.'],
+                    errors=['The database could not save this recipe. Your entered values are shown below.'],
                     token=token, status=503)
             target = f'/recipes/{recipe_id}'
             if request.headers.get('HX-Request') == 'true':

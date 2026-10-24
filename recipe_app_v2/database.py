@@ -4,7 +4,7 @@ import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
-from .config import dev_database_url
+from .config import app_environment, database_url
 
 
 class ReadOnlySession(Session):
@@ -26,7 +26,7 @@ def guard_statement(conn, cursor, statement, parameters, context, executemany):
 @lru_cache(maxsize=1)
 def get_engine():
     engine = create_engine(
-        dev_database_url(), pool_pre_ping=True, pool_recycle=300,
+        database_url(), pool_pre_ping=True, pool_recycle=300,
         connect_args={"connect_timeout": 5, "read_timeout": 15, "write_timeout": 5},
     )
 
@@ -49,16 +49,16 @@ def get_session():
 
 
 def writes_enabled():
-    return os.environ.get('RECIPE_DEV_WRITES', '0') == '1'
+    variable = 'RECIPE_PROD_WRITES' if app_environment() == 'production' else 'RECIPE_DEV_WRITES'
+    return os.environ.get(variable, '0') == '1'
 
 
 @lru_cache(maxsize=1)
 def get_write_engine():
     # A separate pool prevents a save from changing read-only browse sessions.
-    # Reuse the exact dev target allowlist; no production URL override exists.
     if not writes_enabled():
-        raise RuntimeError('Dev saves are disabled.')
-    engine = create_engine(dev_database_url(), pool_pre_ping=True, pool_recycle=300,
+        raise RuntimeError('Recipe saves are disabled.')
+    engine = create_engine(database_url(), pool_pre_ping=True, pool_recycle=300,
         isolation_level='READ COMMITTED',
         connect_args={'connect_timeout': 5, 'read_timeout': 15, 'write_timeout': 15})
 

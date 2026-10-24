@@ -1,0 +1,23 @@
+[Unit]
+Description=My Recipes FastAPI production candidate
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/myrecipes-v2/current
+EnvironmentFile=/home/pi/myrecipes-v2/production.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/home/pi/myrecipes-v2/current/.venv/bin/uvicorn recipe_app_v2.main:app --host 127.0.0.1 --port 8012
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/myrecipesite/recipe_images /var/lib/myrecipesite/custom_prints /var/www/MyRecipeSite/myrecipes/static/ingredient_images
+ReadWritePaths=/var/lib/myrecipesite-v2/uploads
+
+[Install]
+WantedBy=multi-user.target
