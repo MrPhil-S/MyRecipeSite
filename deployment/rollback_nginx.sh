@@ -8,6 +8,12 @@ printf '%s  %s\n' "$expected" "$legacy" | sha256sum -c
 sudo install -m 644 "$legacy" "$site"
 sudo nginx -t
 sudo systemctl reload nginx
+for attempt in {1..15}; do
+    if curl --fail --silent --max-time 5 -o /dev/null http://192.168.1.13:5000/; then
+        break
+    fi
+    sleep 1
+done
 curl --fail --silent --show-error --max-time 20 -o /dev/null http://192.168.1.13:5000/
 systemctl is-active uwsgi.service
 echo LEGACY_ROUTING_RESTORED

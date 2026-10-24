@@ -34,7 +34,9 @@ def main():
     health = json.loads(get("/health"))
     assert health["environment"] == "production"
     assert health["database"] == "MyRecipes"
-    assert health["read_only"] and not health["saves_enabled"]
+    expected_writes = os.environ.get("RECIPE_SMOKE_WRITES", "0") == "1"
+    assert health["read_only"] != expected_writes
+    assert health["saves_enabled"] == expected_writes
     for path in (
         "/", "/plan", "/tags", "/tags/collections", "/tags/cuisines",
         "/tags/synonyms", "/image-aliases", "/recipes/new",

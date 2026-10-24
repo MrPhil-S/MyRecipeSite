@@ -1,4 +1,4 @@
-# FastAPI migration preview
+# FastAPI recipe app
 
 Phase 4 features 1–6 are implemented: recipe list, details, search, create/edit,
 tag management and meal planning. The user chose production's plan list grouped
@@ -169,8 +169,10 @@ verification scripts. No production contact was needed for this feature.
 
 Models retain the existing production schema. Alembic revision `0001` is an
 offline baseline for an empty database; online upgrade/stamp and destructive
-downgrade remain blocked. No tables are created on application startup. Pi/ARM
-deployment and full application rollback rehearsal are still pending.
+downgrade remain blocked. No tables are created on application startup. The
+non-Docker Pi/ARM release went live on October 24, 2026. The original uWSGI
+service remains available for routing rollback; a full rollback rehearsal has
+not been performed. See [the release evidence](../deployment/release_20261024.md).
 
 ## Library / Oxblood UI (October 20, 2026)
 
