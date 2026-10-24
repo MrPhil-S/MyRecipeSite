@@ -52,6 +52,12 @@ rollback. The existing port 8011 test app stays separate.
 
 Rollback for an app or layout failure: restore the original Nginx site file,
 run `nginx -t`, reload Nginx, and verify a production page and uWSGI health.
+For this staging run, the original site file is also copied to
+`/home/pi/myrecipes-v2/incoming/myrecipesite_app.legacy`; the tested candidate
+is `/home/pi/myrecipes-v2/incoming/myrecipesite_app.v2`. The replacement sends
+the public port 5000 to the local port 8012 and preserves the Host header and
+its port. If Nginx validation fails, restore the legacy file before any reload.
+If post-switch smoke checks fail, restore it and reload immediately.
 Database restore is only for verified data corruption, after stopping both
 writers, taking a new incident snapshot, and confirming the restore point with
 the user. An automatic database restore could discard recipes edited after the
@@ -72,3 +78,5 @@ state. Validate it before opening traffic and again after cutover. Test list,
 detail, search, plan, tags, ingredient images, and PDFs. Only after those checks
 and a second explicit checkpoint should production writes be enabled and a
 create/edit/action flow be tested with a recoverable fixture.
+
+[Staging evidence for the current release](release_20261024.md).
