@@ -1,13 +1,14 @@
 """Read-only HTTP smoke check for the Pi's isolated FastAPI candidate."""
 
 import json
+import os
 import time
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from urllib.request import urlopen
 
 
-BASE = "http://127.0.0.1:8012"
+BASE = os.environ.get("RECIPE_SMOKE_BASE", "http://127.0.0.1:8012")
 
 
 class Images(HTMLParser):

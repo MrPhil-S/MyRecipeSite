@@ -5,7 +5,7 @@ set -Eeuo pipefail
 umask 077
 
 backup_base=/home/pi/myrecipesite-deploy-backups
-backup_dir="$backup_base/pre-v2-$(date -u +%Y%m%dT%H%M%SZ)"
+backup_dir="$backup_base/snapshot-$(date -u +%Y%m%dT%H%M%SZ)"
 config_file=/var/www/MyRecipeSite/config.ini
 prod_options=
 dev_options=
@@ -101,12 +101,15 @@ paths=(
     var/www/MyRecipeSite
     var/lib/myrecipesite
     home/pi/fastapi-preview
+    home/pi/myrecipes-v2
+    var/lib/myrecipesite-v2
     etc/nginx/sites-available/myrecipesite_app
     etc/nginx/sites-available/testapp_proxy
     etc/nginx/sites-enabled/myrecipesite_app
     etc/nginx/sites-enabled/testapp_proxy
     etc/uwsgi/apps-available/myrecipesite.ini
     etc/uwsgi/apps-enabled/myrecipesite.ini
+    etc/systemd/system/recipe-fastapi-production.service
     lib/systemd/system/myrecipessite.service
     etc/systemd/system/recipe-fastapi-preview.service
 )

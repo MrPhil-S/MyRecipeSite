@@ -36,8 +36,8 @@ catalogue does not automatically rematch rows.
 
 The initial Pi backup set is
 `/home/pi/myrecipesite-deploy-backups/pre-v2-20261024T071021Z`.
-`backup_pi.sh` also captures `MyRecipes_DEV`, both application trees, live media,
-and the production Nginx/uWSGI and test service configuration. It validates both
+`backup_pi.sh` also captures `MyRecipes_DEV`, both application trees, v2 uploads,
+live media, and the production Nginx/uWSGI and test/v2 service configuration. It validates both
 database dumps and the archive, then writes `SHA256SUMS`. Copy this set to the
 separate C: archive and verify hashes there before changing the production site.
 The archive contains credentials and recipe data; restrict access to the owner.
@@ -77,6 +77,11 @@ The `/health` endpoint reports the selected environment, database, and write
 state. Validate it before opening traffic and again after cutover. Test list,
 detail, search, plan, tags, ingredient images, and PDFs. Only after those checks
 and a second explicit checkpoint should production writes be enabled and a
-create/edit/action flow be tested with a recoverable fixture.
+create/edit/action flow be tested with a recoverable fixture. The
+`smoke_writes.py` script requires `--execute`, checks that production writes
+are enabled, creates one uniquely named recipe with an image and PDF through
+the public HTTP route, edits and acts on it, deletes it, then removes only its
+owned new upload files. If a step fails, it attempts fixture cleanup and
+reports the recipe ID for review.
 
 [Staging evidence for the current release](release_20261024.md).
