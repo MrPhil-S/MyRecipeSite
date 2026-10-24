@@ -68,7 +68,11 @@ def detail_context(session, recipe_id):
             recipe_cooked_date.recipe_id == recipe_id).scalar_subquery(),
         select(recipe_cooked_date.recipe_cooked_dt).where(
             recipe_cooked_date.recipe_id == recipe_id).order_by(
-            recipe_cooked_date.recipe_cooked_dt.desc(),
+            recipe_cooked_date.recorded_dt.desc(),
+            recipe_cooked_date.recipe_cooked_date_id.desc()).limit(1).scalar_subquery(),
+        select(recipe_cooked_date.recorded_dt).where(
+            recipe_cooked_date.recipe_id == recipe_id).order_by(
+            recipe_cooked_date.recorded_dt.desc(),
             recipe_cooked_date.recipe_cooked_date_id.desc()).limit(1).scalar_subquery(),
         select(Recipe_Plan_Date.recipe_plan_date_id).where(
             Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None)).exists(),
@@ -80,7 +84,8 @@ def detail_context(session, recipe_id):
             "favorite": any(c.collection_name.strip().lower() in ('favorites', 'favorite') for c in collections),
             "ingredient_count": sum(not item["is_group_header"] for item in items),
             "view_count": history[0], "cook_count": history[1], "latest_cooked": history[2],
-            "planned": history[3],
-            "undo_cooked_available": can_undo_cooked(history[2], history[4]),
+            "planned": history[4],
+            "undo_cooked_available": can_undo_cooked(history[3], history[5]),
+            "server_today": history[5].date().isoformat(),
             "source_link": web_link(recipe.source_url), "whisk_link": web_link(recipe.whisk_url),
             "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() else None}

@@ -1,6 +1,7 @@
 """Cooking, visit, plan and recipe deletion operations."""
 import hashlib
 import json
+from datetime import date, datetime
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -45,7 +46,7 @@ def record_visit(recipe_id):
             session.commit()
 
 
-def mutate(recipe_id, action):
+def mutate(recipe_id, action, cooked_date=None):
     if not writes_enabled():
         raise HTTPException(403, 'Recipe changes are currently disabled.')
     with Session(get_write_engine()) as session:
@@ -55,13 +56,21 @@ def mutate(recipe_id, action):
         active = select(Recipe_Plan_Date.recipe_plan_date_id).where(
             Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None))
         if action == 'cooked':
-            session.add(recipe_cooked_date(recipe_id=recipe_id))
+            recorded_at = session.scalar(select(func.current_timestamp()))
+            if cooked_date is not None:
+                if cooked_date > recorded_at.date():
+                    raise HTTPException(422, 'A cooked date cannot be in the future.')
+                cooked_at = datetime.combine(cooked_date, recorded_at.time())
+            else:
+                cooked_at = recorded_at
+            session.add(recipe_cooked_date(recipe_id=recipe_id, recipe_cooked_dt=cooked_at,
+                                           recorded_dt=recorded_at))
         elif action == 'undo-cooked':
             latest = session.scalar(select(recipe_cooked_date).where(
                 recipe_cooked_date.recipe_id == recipe_id).order_by(
-                recipe_cooked_date.recipe_cooked_dt.desc(),
+                recipe_cooked_date.recorded_dt.desc(),
                 recipe_cooked_date.recipe_cooked_date_id.desc()).limit(1).with_for_update())
-            if not can_undo_cooked(latest.recipe_cooked_dt if latest else None,
+            if not can_undo_cooked(latest.recorded_dt if latest else None,
                                    session.scalar(select(func.current_timestamp()))):
                 raise HTTPException(409, 'Only cooking records from the last 24 hours can be undone.')
             session.delete(latest)
@@ -148,7 +157,14 @@ async def recipe_action(request: Request, recipe_id: int,
                         action: Literal['cooked', 'undo-cooked', 'plan-add', 'plan-remove', 'favorite-add', 'favorite-remove']):
     form = await read_form(request)
     target = safe_return(str(form.get('return_to', f'/recipes/{recipe_id}')))
-    await run_in_threadpool(mutate, recipe_id, action)
+    cooked_date = None
+    if action == 'cooked' and 'cooked_date' in form:
+        raw_date = str(form.get('cooked_date', '')).strip()
+        try:
+            cooked_date = date.fromisoformat(raw_date)
+        except ValueError:
+            raise HTTPException(422, 'Choose a valid cooked date.') from None
+    await run_in_threadpool(mutate, recipe_id, action, cooked_date)
     if request.headers.get('HX-Request') == 'true':
         path = urlsplit(target).path
         selector = '#recipes' if path == '/' else '#meal-plan' if path == '/plan' else '#recipe-detail-page'
@@ -167,11 +183,15 @@ def meal_plan(request: Request, session: Session = Depends(get_session)):
         recipe_cooked_date.recipe_id).subquery()
     last_marked_cook = select(recipe_cooked_date.recipe_cooked_dt).where(
         recipe_cooked_date.recipe_id == Recipe.recipe_id).order_by(
-        recipe_cooked_date.recipe_cooked_dt.desc(), recipe_cooked_date.recipe_cooked_date_id.desc()
+        recipe_cooked_date.recorded_dt.desc(), recipe_cooked_date.recipe_cooked_date_id.desc()
+    ).limit(1).scalar_subquery()
+    last_marked_at = select(recipe_cooked_date.recorded_dt).where(
+        recipe_cooked_date.recipe_id == Recipe.recipe_id).order_by(
+        recipe_cooked_date.recorded_dt.desc(), recipe_cooked_date.recipe_cooked_date_id.desc()
     ).limit(1).scalar_subquery()
     rows = session.execute(select(Recipe, active.c.added,
         func.coalesce(cooked.c.cook_count, 0).label('cook_count'), cooked.c.last_cooked,
-        last_marked_cook.label('last_marked_cook_dt'),
+        last_marked_cook.label('last_marked_cook_dt'), last_marked_at.label('last_cook_recorded_dt'),
         favorite_membership().label('favorite'), (active.c.recipe_id.is_not(None)).label('planned'))
         .join(active, Recipe.recipe_id == active.c.recipe_id)
         .outerjoin(cooked, cooked.c.recipe_id == Recipe.recipe_id)
@@ -179,7 +199,7 @@ def meal_plan(request: Request, session: Session = Depends(get_session)):
     grouped = {}
     server_now = session.scalar(select(func.current_timestamp()))
     undo_cooked_ids = {row.Recipe.recipe_id for row in rows
-                       if can_undo_cooked(row.last_marked_cook_dt, server_now)}
+                       if can_undo_cooked(row.last_cook_recorded_dt, server_now)}
     for row in rows:
         added = row.added
         group = grouped.setdefault(added.date(), {'age': max(0, (server_now - added).days), 'recipes': []})

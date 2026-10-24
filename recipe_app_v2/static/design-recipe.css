@@ -33,6 +33,11 @@
 .recipe-time dd span { font-size: 11px; font-weight: 400; }
 .recipe-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .recipe-controls .button { font-size: 11px; padding: 10px 12px; min-height: 40px; }
+.cooked-split-control { display:inline-flex; align-items:stretch; }
+.cooked-split-control .cooked-primary-action { display:inline-flex; margin:0; }
+.cooked-split-control .cooked-primary-action .button { border-radius:3px 0 0 3px; }
+.cooked-split-control .cooked-date-trigger { width:38px; min-width:38px; padding:8px; margin-left:-1px; border-radius:0 3px 3px 0; }
+.cooked-split-control .cooked-date-trigger svg { width:14px; height:14px; }
 .inline-action { display: inline-flex; margin: 0; }
 .recipe-controls .saved { color: var(--accent); border-color: var(--rule); background: var(--quiet); }
 .recipe-controls .saved svg { fill: var(--accent); }

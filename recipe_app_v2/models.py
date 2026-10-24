@@ -59,6 +59,9 @@ class recipe_cooked_date(Base):
     recipe_cooked_date_id = sa.Column(sa.Integer, primary_key=True)
     recipe_id = sa.Column(sa.Integer, sa.ForeignKey('recipe.recipe_id', ondelete='CASCADE'), nullable=False)
     recipe_cooked_dt = sa.Column(sa.DateTime, nullable=False, default=sa.func.current_timestamp())
+    # Keep the time of the click separate from the date the user says they cooked.
+    recorded_dt = sa.Column(sa.DateTime, nullable=False, default=sa.func.current_timestamp(),
+                            server_default=sa.func.current_timestamp())
 
 class Recipe_Plan_Date(Base):
     __tablename__ = 'recipe__plan__date'

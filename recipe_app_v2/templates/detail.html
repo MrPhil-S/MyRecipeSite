@@ -2,7 +2,7 @@
 {% from 'shared/icons.html' import icon %}
 {% block title %}{{ recipe.name }} · My Recipes{% endblock %}
 {% block core_styles %}{% endblock %}
-{% block page_styles %}<link rel="stylesheet" href="{{ url_for('static', path='design-home.css') }}?v=clear-search-recipe-groups-2"><link rel="stylesheet" href="{{ url_for('static', path='design-recipe.css') }}"><link rel="stylesheet" href="{{ url_for('static', path='live-app.css') }}">{% endblock %}
+{% block page_styles %}<link rel="stylesheet" href="{{ url_for('static', path='design-home.css') }}?v=clear-search-recipe-groups-2"><link rel="stylesheet" href="{{ url_for('static', path='design-recipe.css') }}?v=cooked-date-control-1"><link rel="stylesheet" href="{{ url_for('static', path='live-app.css') }}">{% endblock %}
 {% block body_class %}recipe-studies recipe-page-body{% endblock %}
 {% block shell_header %}{% endblock %}
 {% block main_class %}recipe-shell{% endblock %}

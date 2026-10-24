@@ -100,6 +100,12 @@ document.addEventListener('click', event => {
   const dialog = document.getElementById('delete-recipe-modal');
   if (event.target.closest('[data-open-delete]') && dialog) dialog.showModal();
   if (event.target.closest('[data-close-delete]') && dialog) dialog.close();
+  const cookedDateDialog = document.getElementById('cooked-date-modal');
+  if (event.target.closest('[data-open-cooked-date]') && cookedDateDialog) {
+    cookedDateDialog.showModal();
+    cookedDateDialog.querySelector('[name="cooked_date"]')?.focus({preventScroll:true});
+  }
+  if (event.target.closest('[data-close-cooked-date]') && cookedDateDialog) cookedDateDialog.close();
 });
 // Pointer events support mouse, pen and touch. Reading-view rows stay in their
 // section; the editor permits moving any row and keeps its hidden ID attached.
