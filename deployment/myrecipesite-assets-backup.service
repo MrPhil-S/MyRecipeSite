@@ -1,0 +1,14 @@
+[Unit]
+Description=Back up MyRecipeSite uploaded assets to the NAS
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+ExecStart=/usr/bin/python3 /usr/local/sbin/myrecipesite-assets-backup.py
+TimeoutStartSec=45min
+StandardOutput=journal
+StandardError=journal
