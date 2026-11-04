@@ -1,4 +1,4 @@
-{% from 'design_home_macros.html' import icon %}
+{% from 'shared/icons.html' import icon %}
 <div id="meal-plan" aria-live="polite">
   <header class="utility-page-heading"><div><p class="page-kicker">Your cooking queue</p><h1>Meal plan</h1><p>{{ total }} {{ 'recipe' if total == 1 else 'recipes' }} in your cooking queue.</p></div><a class="button primary" href="/">Browse recipes</a></header>
   {% for day, group in groups.items() %}

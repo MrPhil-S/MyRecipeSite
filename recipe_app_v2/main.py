@@ -25,8 +25,6 @@ from .activity import router as activity_router, record_visit, deletion_version
 from .collections import collection_filter, favorite_membership
 from .sorting import SortOrder, SORT_CHOICES
 from .image_alias_routes import router as image_alias_router
-from .design_routes import router as design_router
-from .design_recipe import router as recipe_design_router
 from .recipe_book import router as recipe_book_router
 
 PACKAGE = Path(__file__).resolve().parent
@@ -82,30 +80,7 @@ app.include_router(editor_router)
 app.include_router(tag_router)
 app.include_router(activity_router)
 app.include_router(image_alias_router)
-app.include_router(design_router)
-app.include_router(recipe_design_router)
 app.include_router(recipe_book_router)
-
-
-@app.get("/design/archive/palettes", response_class=HTMLResponse)
-def design_preview(request: Request):
-    """A static visual direction preview; does not read or write recipe data."""
-    ingredients = [
-        {"file": "chicken_thigh.jpg", "amount": "1½ lb.", "name": "boneless chicken thighs"},
-        {"file": "greek_yogurt.jpg", "amount": "½ cup", "name": "plain Greek yogurt"},
-        {"file": "gochujang.jpg", "amount": "3 Tbsp.", "name": "gochujang"},
-        {"file": "garlic.jpg", "amount": "3 cloves", "name": "garlic, grated"},
-        {"file": "maple_syrup.jpg", "amount": "2 Tbsp.", "name": "maple syrup"},
-        {"file": "soy_sauce.jpg", "amount": "2 Tbsp.", "name": "soy sauce"},
-    ]
-    steps = [
-        "Whisk yogurt, gochujang, garlic, maple syrup, and soy sauce until smooth. Reserve a spoonful for serving.",
-        "Turn chicken in the marinade until coated. Rest 20 minutes, or cover and chill for up to 8 hours.",
-        "Broil on an oiled rack, turning once, until cooked through and burnished at the edges, 15–18 minutes. Rest briefly and serve.",
-    ]
-    return templates.TemplateResponse(request=request, name="design_grid_palettes.html", context={
-        "ingredients": ingredients, "steps": steps,
-    })
 
 
 @app.exception_handler(SQLAlchemyError)

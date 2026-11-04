@@ -16,7 +16,10 @@ from recipe_app_v2.activity import delete_recipe_data, deletion_version
 from recipe_app_v2.database import get_write_engine
 from recipe_app_v2.models import Recipe
 from recipe_app_v2.uploads import upload_root
-from recipe_app_v2.verify_editor import FormParser
+try:  # Module invocation from the repo root.
+    from deployment.form_parser import FormParser
+except ModuleNotFoundError:  # Direct script invocation from deployment/.
+    from form_parser import FormParser
 
 
 BASE = "http://192.168.1.13:5000"

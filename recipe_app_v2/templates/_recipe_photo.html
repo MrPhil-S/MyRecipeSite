@@ -1,4 +1,4 @@
-{% from 'design_home_macros.html' import icon %}
+{% from 'shared/icons.html' import icon %}
       <div class="card-photo recipe-card-photo">
         <a class="photo-link" href="{{ recipe_url }}" hx-boost="false" aria-label="Open {{ recipe.name }}">
           <img loading="lazy" src="/recipe-images/{{ (recipe.image_file or 'default.jpg') | urlencode }}" alt="{{ recipe.name }}" width="640" height="480">

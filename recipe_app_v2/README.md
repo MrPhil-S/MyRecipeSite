@@ -10,63 +10,71 @@ Connected synonym links form a group: any name finds ingredients using all other
 names in that group. Add multiple other names on separate lines in the synonym
 form. Deleting a connecting link can split the group; no schema change is needed.
 
-The development database URL comes from `[dev] db_uri` in `config.ini`; Docker
-startup passes it through the process environment, while local runs read the file
-directly. Development mode accepts only `MyRecipes_DEV` at
+The native development database URL comes directly from `[dev] db_uri` in
+the private root `config.ini`. Development mode accepts only `MyRecipes_DEV` at
 `192.168.1.14:3307`. For Pi deployment, `RECIPE_APP_ENV=production` selects
 `[prod] db_uri` (or `RECIPE_PROD_DB_URI`) and accepts only `MyRecipes` at the
 same server. Production saves require the separate `RECIPE_PROD_WRITES=1` flag.
 See [the Pi release runbook](../deployment/README.md) before enabling them.
 
-[Current migration status](../migration_audit_2026-10-11.md) ·
-[Phase 1 backup evidence](../phase1_backup_completed_2026-10-11.md)
-
 ## Run locally
 
-Run from `C:\projects\MyRecipeSite`. Keep the environments separate:
+Run natively from `C:\projects\MyRecipeSite` using a separate Python 3.12
+virtual environment. The verified environment on this workstation is
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\.venv` (Python 3.12.10).
+Replace `<WindowsUser>` with the Windows profile folder name in descriptive
+paths; the PowerShell commands below use `$env:USERPROFILE` automatically.
+The interpreter came from the signed [official Python 3.12.10 installer](https://www.python.org/downloads/release/python-31210/), installed under
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\Python312`; it does not replace the old environments.
+To recreate it in a **new, empty** location using the installed interpreter:
 
 ```powershell
-.\MyRecipesVenv\Scripts\python.exe -m venv recipe_app_v2\.venv
-.\recipe_app_v2\.venv\Scripts\python.exe -m pip install -r recipe_app_v2\requirements.txt
+$localRoot = Join-Path $env:USERPROFILE 'MyRecipeSite_Local'
+& "$localRoot\Python312\python.exe" -m venv "$localRoot\.venv"
+& "$localRoot\.venv\Scripts\python.exe" -m pip install -r recipe_app_v2\requirements.txt
+& "$localRoot\.venv\Scripts\python.exe" -m pip check
 ```
 
-Flask comparison preview on **8080**, unchanged source with writes blocked:
+Start the native app in a PowerShell window; **Ctrl+C** stops it:
 
 ```powershell
-.\MyRecipesVenv\Scripts\python.exe recipe_app_v2\run_flask_preview.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recipe_app_v2\start_native.ps1
 ```
 
-FastAPI on **8001**, with authorized dev saves:
+The launcher always uses the repository working directory, loopback
+`127.0.0.1:8001`, `[dev] db_uri` from the root private `config.ini`, and the
+Windows `recipe_app_v2\uploads` folder. It overrides inherited database,
+environment and upload settings for this process and restores them when it
+exits. Dev saves and visit tracking are enabled by default. Add `-ReadOnly`
+to disable saves and visits, or `-Python C:\path\to\venv\Scripts\python.exe`
+to select another native environment. The app validates that the target is
+`192.168.1.14:3307/MyRecipes_DEV`; this database is shared with Pi staging.
+Use `?log_visit=false` on recipe details during verification to preserve
+existing visit history. GETs never save search history. Search history is saved
+only on Enter, Search or selection of a previous query; typing, sorting and
+pagination do not save. Suggestions show distinct recent queries. Queries over
+the existing 100-character history limit are not truncated or saved; live search
+still accepts 200 characters.
 
-```powershell
-$env:RECIPE_DEV_WRITES = "1"
-.\recipe_app_v2\.venv\Scripts\python.exe -m uvicorn recipe_app_v2.main:app --host 127.0.0.1 --port 8001
-```
+The local recipe Docker fallback was retired in cleanup Phase 02 after explicit
+resource approval. Routine startup uses the native launcher above. The former
+container, image and upload volume are unavailable for immediate rollback.
+The four Docker setup files and both upload trees were preserved outside the
+checkout with SHA256 manifests. The archived cleanup record at
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\cleanup-guidance_20261104`
+contains exact recovery paths; see the [deployment guide](../deployment/README.md)
+for the current workflow.
 
-Omit the variable, or set it to `0`, for form previews without saves. Browsing
-uses a separate server-enforced read-only connection. With dev saves enabled,
-opening a recipe detail records a visit through the dev write pool, matching
-Flask. Verification uses `log_visit=false` to preserve existing visit history.
-GETs never record search history. Saves use a separate connection pool.
-Search history is saved only on Enter, Search or selection of a previous query;
-typing, sorting and pagination do not save. Suggestions show distinct recent
-queries. Queries over the existing 100-character history limit are not truncated
-or saved; live search still accepts 200 characters.
-
-Alternatively, Docker Desktop must be running. Start FastAPI from PowerShell
-with the project config loaded into the container environment (the config file
-is not bind-mounted):
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recipe_app_v2\start_docker.ps1
-```
-
-Compose enables dev saves and publishes only on `127.0.0.1:8001`. It runs the app as a
-non-root user with a read-only root filesystem. Legacy image/PDF assets are
-included in the image. Uploads and image aliases are migrated once from
-`recipe_app_v2/uploads/` into the persistent Docker volume
-`myrecipesite_recipe_uploads`; include that volume in future backups. Stop
-FastAPI with `docker compose -f compose.fastapi.yml down`.
+For native recovery, stop local writes, back up the current upload tree, verify
+the selected backup manifest and restore into a new empty location for comparison.
+Reconcile newer files and alias changes before restoring the configured Windows
+uploads path; preserve `images/8a665686f0440c45.jpg` and subsequent writes.
+Keep private `config.ini`, the native environment, alias seed and legacy media.
+Recreate a broken environment using the Python setup above, then launch and check
+`/health` and media. A Docker recovery requires restoring the archived setup files,
+rebuilding an image, creating a new volume and seeding it from the reconciled current
+Windows uploads. A code/runtime rollback does not restore the shared development
+database; never replace it with an older dump as part of runtime recovery.
 
 Open [FastAPI](http://localhost:8001/) or [Create recipe](http://localhost:8001/recipes/new).
 Each recipe detail page links to its edit form.
@@ -130,16 +138,24 @@ are not crash-atomic; prior images and replaced dev PDFs are retained for recove
 ## Validation
 
 ```powershell
-.\recipe_app_v2\.venv\Scripts\python.exe -m unittest discover -s recipe_app_v2/tests -v
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_dev
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_http
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_editor
-.\recipe_app_v2\.venv\Scripts\python.exe -m recipe_app_v2.verify_activity
+& "$env:USERPROFILE\MyRecipeSite_Local\.venv\Scripts\python.exe" -m unittest discover -s recipe_app_v2/tests -v
+& "$env:USERPROFILE\MyRecipeSite_Local\.venv\Scripts\python.exe" -m tools.verify_dev
 ```
 
-`verify_editor` compares edit fields with local Flask. Add `--save` with
-`RECIPE_DEV_WRITES=1` to create/edit/remove a new dev fixture and compare every
-table's data before/after. It does not edit existing recipes. Unit tests use SQLite.
+The maintained unit tests use isolated SQLite fixtures. Cleanup Phase 01 on
+October 28, 2026 passed all 76 tests, native home/detail and HTMX responses,
+media hashes, alias catalogue, and one owned create/edit/upload/delete fixture
+with persistence across restart. All 12 dev-table data hashes and upload hashes
+matched after fixture cleanup. The external cleanup archive named above holds
+the Phase 01 record, including exact commands and backup locations.
+
+`tools.verify_dev` is read-only, targets `MyRecipes_DEV`, and recognizes the
+documented local `recipe_cooked_date.recorded_dt` timestamp/default. It reports
+other schema differences for review. Historical Flask parity and Selenium
+verifier scripts have been archived; use the isolated maintained unit suite and
+the supported native app checks described in cleanup status. The operational
+production smoke helper is `deployment/smoke_writes.py`, which requires its
+adjacent `deployment/form_parser.py`; it is not a local validation command.
 
 Validated October 12, 2026: 50 tests passed. Central affected-recipe review,
 selected-column-only updates, stale-selection rollback and the JavaScript-disabled
@@ -170,9 +186,11 @@ verification scripts. No production contact was needed for this feature.
 Models retain the existing production schema. Alembic revision `0001` is an
 offline baseline for an empty database; online upgrade/stamp and destructive
 downgrade remain blocked. No tables are created on application startup. The
-non-Docker Pi/ARM release went live on October 24, 2026. The original uWSGI
-service remains available for routing rollback; a full rollback rehearsal has
-not been performed. See [the release evidence](../deployment/release_20261024.md).
+non-Docker Pi/ARM release went live on October 24, 2026. At the dated
+inspection, the original uWSGI service remained installed; its current state
+has not been checked. A future v2 release needs a v2-to-v2 rollback plan.
+The dated release evidence is preserved in the private Phase 06 archive named
+in the [deployment guide](../deployment/README.md).
 
 ## Library / Oxblood UI (October 20, 2026)
 
@@ -180,8 +198,9 @@ The database-backed homepage `/` uses Library / Oxblood, and `/recipes/{id}`
 uses the Split recipe layout. Meal planning, recipe creation/editing, collection,
 cuisine and synonym management, ingredient image aliases/rematches, deletion
 confirmations and not-found pages use the same Oxblood navigation, local DM Sans
-type and shared controls. `/design` remains the sample design workspace. The
-selected recipe layouts omit legacy `app.css`; working forms retain the existing
+type and shared controls. The selected Library and recipe layouts remain the
+production UI; the design studies have been retired. The selected recipe layouts
+omit legacy `app.css`; working forms retain the existing
 editor styling and override its colors and controls with the current design.
 
 Recipe links use normal page navigation. HTMX handles list filtering, sorting,
@@ -195,8 +214,8 @@ Review corrected legacy style collisions, recipe action swaps, stale sidebar
 links/counts, missing mobile cuisine filters, grouped instruction numbering,
 and inconsistent badge and empty-state layouts. Verification used isolated
 SQLite tests in a network-disabled container and read-only Chrome checks at
-desktop, 390px and 320px widths. Browser review files are in
-`.browser-tools/live-ui-review`.
+desktop, 390px and 320px widths. Browser review files are archived at
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\phase03_20261103_231500\recipe_app_v2\.browser-tools\live-ui-review`.
 
 This UI change introduces no database migration. Planning uses the existing
 add/remove queue: `Recipe_Plan_Date.added_dt` is an addition timestamp, not a
@@ -207,7 +226,7 @@ implementation work.
 ## Ingredient image review follow-up (October 14, 2026)
 
 All 518 reviewed ingredient rows now have explicit image choices in
-`image-review-analysis-2026-10-14/standardized/ingredient-image-review-decisions-standardized.csv`.
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\phase03_20261103_231500\recipe_app_v2\image-review-analysis-2026-10-14\standardized\ingredient-image-review-decisions-standardized.csv`.
 The original export remains unchanged. `Use selected image` denotes a later explicit
 user choice; CSV consumers must use `selected_image` for this decision.
 No reviewed assignments have been applied to either database.
@@ -229,12 +248,12 @@ Reviewed aliases are merged into both the packaged seed and the local persisted
 catalogue without replacing existing aliases. Include the persisted catalogue
 and the new turnip image in any later deployment; production was not changed.
 File backups and the change manifest are under
-`image-review-analysis-2026-10-14/matcher-code-backup/`.
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\phase03_20261103_231500\recipe_app_v2\image-review-analysis-2026-10-14\matcher-code-backup\`.
 
 Validation: 62 isolated unit tests passed before installation. The complete
 review comparison improved from 195/518 to 492/518 exact selected-image matches.
 This is agreement on the reviewed dataset, not general accuracy. The remaining
 26 differences retain the user's CSV choices and are reported separately;
 several prefer a generic image or a later ingredient alternative. See
-`image-review-analysis-2026-10-14/standardized/implementation-results.md`
+`C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\phase03_20261103_231500\recipe_app_v2\image-review-analysis-2026-10-14\standardized\implementation-results.md`
 for installed-code validation and the before/after comparison.

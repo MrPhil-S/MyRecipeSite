@@ -1,4 +1,4 @@
-# Separate environment: never install these over the legacy Flask environment.
+# Pinned dependencies for the FastAPI recipe application.
 fastapi==0.115.14
 uvicorn==0.34.3
 SQLAlchemy==2.0.41

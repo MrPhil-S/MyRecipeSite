@@ -1,4 +1,4 @@
-"""Fetch pinned upstream browser libraries for local serving; run once."""
+"""Fetch pinned browser libraries. Run: ``python -m tools.download_vendor``."""
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -9,9 +9,12 @@ ASSETS = {
     "ALPINE-LICENSE.txt": "https://raw.githubusercontent.com/alpinejs/alpine/v3.14.9/LICENSE.md",
 }
 
-if __name__ == "__main__":
-    target = Path(__file__).resolve().parent / "static/vendor"
-    target.mkdir(exist_ok=True)
+
+def download(target=None):
+    target = Path(target) if target is not None else (
+        Path(__file__).resolve().parents[1] / "recipe_app_v2" / "static" / "vendor"
+    )
+    target.mkdir(parents=True, exist_ok=True)
     for filename, url in ASSETS.items():
         with urlopen(url, timeout=30) as response:
             content = response.read()
@@ -19,3 +22,7 @@ if __name__ == "__main__":
             raise RuntimeError("Unexpected empty vendor response")
         (target / filename).write_bytes(content)
         print(filename, len(content), "bytes")
+
+
+if __name__ == "__main__":
+    download()

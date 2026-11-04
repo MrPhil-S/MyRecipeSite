@@ -1,14 +1,31 @@
-"""Read-only live dev schema and recipe-card parity check. Run from repo root."""
+"""Read-only dev schema and recipe-card audit. Run: ``python -m tools.verify_dev``."""
 import json
 
 from sqlalchemy import UniqueConstraint, func, inspect, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from recipe_app_v2.config import app_environment
 from recipe_app_v2.database import get_engine
-from recipe_app_v2.models import Base, Recipe, Recipe_Ingredient, recipe_cooked_date
+from recipe_app_v2.models import Base, Recipe
+
+
+def expected_local_recorded_dt_extra(table_name, column_name, column):
+    """Recognize only the documented local migration's extra timestamp column."""
+    return (
+        table_name == 'recipe_cooked_date'
+        and column_name == 'recorded_dt'
+        and str(column['type']).strip().upper() in ('DATETIME', 'TIMESTAMP')
+        and column['nullable'] is False
+        and column['default'] is not None
+        and str(column['default']).strip().upper() in (
+            'CURRENT_TIMESTAMP', 'CURRENT_TIMESTAMP()'
+        )
+    )
 
 
 def verify():
+    if app_environment() != 'dev':
+        raise RuntimeError('The dev audit requires the development environment before connecting.')
     engine = get_engine()
     differences = []
     with engine.connect() as conn:
@@ -18,11 +35,15 @@ def verify():
         for table in Base.metadata.sorted_tables:
             actual = {col["name"]: col for col in inspector.get_columns(table.name)}
             expected = {col.name: col for col in table.columns}
-            if set(actual) != set(expected):
+            extras = set(actual) - set(expected)
+            expected_extras = {
+                name for name in extras
+                if expected_local_recorded_dt_extra(table.name, name, actual[name])
+            }
+            if (set(actual) - expected_extras) != set(expected):
                 differences.append(f"{table.name}: column names differ")
             for name in set(actual) & set(expected):
                 model_col, db_col = expected[name], actual[name]
-                # MariaDB reflects Boolean as TINYINT(1).
                 actual_type = str(db_col["type"]).upper()
                 expected_type = str(model_col.type).upper()
                 if actual_type != expected_type and not (
@@ -51,8 +72,9 @@ def verify():
                                for constraint in table.constraints if isinstance(constraint, UniqueConstraint)}
             if actual_unique != expected_unique:
                 differences.append(f"{table.name}: unique constraints differ")
-            if any(c["default"] is not None for c in actual.values()):
-                differences.append(f"{table.name}: unexpected server defaults require review")
+            for name, column in actual.items():
+                if column["default"] is not None and not expected_local_recorded_dt_extra(table.name, name, column):
+                    differences.append(f"{table.name}: unexpected server default on {name} requires review")
         count = conn.scalar(select(func.count()).select_from(Recipe))
         top_ids = list(conn.scalars(select(Recipe.recipe_id).order_by(Recipe.create_dt.desc(), Recipe.recipe_id.desc()).limit(24)))
         print(json.dumps({"database": "MyRecipes_DEV", "read_only": True,

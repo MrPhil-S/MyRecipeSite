@@ -1,4 +1,4 @@
-{% from 'design_home_macros.html' import icon %}
+{% from 'shared/icons.html' import icon %}
 <section id="recipes" class="recipe-results" data-collection-id="{{ collection_id }}" data-cuisine-id="{{ cuisine_id }}" aria-label="Recipe list" aria-live="polite">
   {% if history_notice %}<p class="meta" role="status">{{ history_notice }}</p>{% endif %}
   <div class="results-heading"><h2>{{ collection_label or 'All recipes' }}</h2><p>{{ total }} {{ 'recipe' if total == 1 else 'recipes' }}{% if q %} matching “{{ q }}” · <a class="clear-search-link" href="{{ list_url(1, sort, '', collection_id, per_page, cuisine_id) }}">Clear search</a>{% endif %}</p></div>

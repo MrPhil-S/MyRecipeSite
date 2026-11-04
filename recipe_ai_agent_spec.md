@@ -101,21 +101,21 @@ All operations must be synchronous and request-driven.
 
 ## 5. Infrastructure and Deployment
 
-Containerize the existing FastAPI recipe application using Docker so it runs consistently on the Raspberry Pi. Use Docker Compose to manage the FastAPI service (running via Uvicorn) and connect it to the existing database setup. The current Nginx and related infrastructure already in place on the Pi may need to be updated to route traffic properly to the new containerized service.
-
-### Containerization
-Use Docker and Docker Compose where possible.
-Do not use Docker for the database.
+Run local development natively on Windows Python 3.12 using
+`recipe_app_v2/start_native.ps1` at `http://127.0.0.1:8001/`. Use the private
+root `config.ini` dev section and `recipe_app_v2\uploads`; the native environment
+is `C:\Users\<WindowsUser>\MyRecipeSite_Local\.venv`. See the app README for setup.
+The existing Pi staging and production apps run natively with Uvicorn/systemd.
+Local Docker project support has been retired; Docker is not required for startup
+or deployment. Pi changes require a separate, explicitly authorized deployment.
 
 ### Services
-- FastAPI application container
-- MariaDB (external or containerized)
+- FastAPI/Uvicorn application in its own Python virtual environment
+- External MariaDB; local and Pi staging share `MyRecipes_DEV`
 
 ### Application Server
-Uvicorn runs the FastAPI application.
-
-Responsibilities:
-- Serve ASGI application inside container
+Uvicorn runs the FastAPI ASGI application. The local launcher binds to loopback;
+existing Pi services and Nginx routing remain governed by deployment runbooks.
 
 ### Reverse Proxy
 Nginx is used as reverse proxy.
@@ -126,9 +126,9 @@ Responsibilities:
 - Optional TLS termination
 
 ### Raspberry Pi Requirements
-- ARM-compatible containers
+- ARM-compatible Python dependencies
 - Lightweight services only
-- Single command deployment via docker-compose
+- Reviewed versioned releases with dedicated virtual environments and systemd services
 
 ---
 
@@ -146,7 +146,7 @@ Clear separation:
 - HTMX: dynamic UI updates
 - Alpine.js: UI state
 - Nginx: reverse proxy
-- Docker: deployment
+- Python virtual environments and systemd: runtime isolation and Pi service management
 
 ---
 
@@ -158,7 +158,7 @@ System must include:
 - Alembic migrations
 - HTMX UI
 - Alpine.js interactions
-- Docker + Docker Compose setup
+- Native Windows launcher and Python environment setup
 - Nginx configuration
 - Uvicorn server configuration
 - Raspberry Pi deployment ready setup
@@ -196,7 +196,7 @@ navbar search fields should have the same 'Recent searches' functionality as the
   - Scraper: maybe use Crawl4ai
 
 
-- Update the cookbook PDF generator (C:\projects\MyRecipeSite\cookbook.py) to resolve PDF formatting issues 
+- Improve the current recipe-book PDF generator in `recipe_app_v2/recipe_book.py`
 - Add LLMs to synonym and spelling error lookup
 - Use Plotly? Add a Recently Visited section to the home page
 - What are your thoughts on moving image storage to NAS (192.168.1.14)?
@@ -205,7 +205,7 @@ navbar search fields should have the same 'Recent searches' functionality as the
 
 - For public usage
   - Login + authentication
-  - Flask-Limiter
+  - Rate limiting for the FastAPI app
 
 ### Backlog from Codex agent
 - DONE add the same sort options on the home page recipe list that exist on prod
