@@ -6,15 +6,23 @@ per environment. It does not authorize the deferred cooked-date picker or a
 database migration. Keep the public URLs `/recipe-images/`, `/source-pdfs/`,
 and `/ingredient-images/` unchanged.
 
-As of 2026-11-05, the local media copy was SHA256-verified and the native
-candidate passed its read checks. The Pi staging copy was also SHA256-verified;
-the running staging service still uses its old code. Production media and
-production routing have not been changed. A fresh full Pi snapshot was
-verified on Pi and copied to
+As of 2026-11-05, the local media copy was SHA256-verified. The native app on
+port 8001 was restarted with the consolidated root and passed health, recipe
+image, and ingredient-image read checks. The Pi staging copy was
+SHA256-verified, and port 8011 now runs release `media-430f3d2` from
+`/home/pi/fastapi-preview-releases/media-430f3d2`. Existing image/PDF reads
+passed. An owned staging fixture passed create, image/PDF upload, edit, plan,
+cooked, favorite, and delete checks; its rows and files were cleaned up.
+The staging switch is a reversible systemd drop-in at
+`/etc/systemd/system/recipe-fastapi-preview.service.d/10-media-430f3d2.conf`.
+Production media and production routing have not been changed. A fresh full
+Pi snapshot was verified on Pi and copied to
 `$env:USERPROFILE\MyRecipeSite_Local\archives\media-consolidation_20261105T074558Z`;
 all three off-Pi artifact hashes matched. The separate staging uploads copy
 was also verified. The Pi source snapshot is
 `/home/pi/myrecipesite-deploy-backups/snapshot-20261105T074558Z`.
+Production read-only preflight found 443 images, 48 PDFs, and 844 ingredient
+images still to copy, with no filename conflicts.
 
 ## Destination layout
 
