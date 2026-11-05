@@ -25,6 +25,7 @@ recipe_app_v2/uploads/
 /output/
 /tmp/
 /deployment/cleanup/
+/deployment/DEPLOYMENT_GUIDE_FOR_HUMANS.html
 /CLEANUP_REVIEW_recipe_app_v2.html
 /deployment/LOCAL_DOCKER_RETIREMENT_HANDOFF_2026-10-28.md
 /deployment/PI_PRODUCTION_PATHS_AND_BACKUP_HANDOFF_2026-11-04.md
