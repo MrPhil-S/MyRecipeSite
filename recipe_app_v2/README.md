@@ -42,8 +42,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\recipe_app_v2\start_na
 ```
 
 The launcher always uses the repository working directory, loopback
-`127.0.0.1:8001`, `[dev] db_uri` from the root private `config.ini`, and the
-Windows `recipe_app_v2\uploads` folder. It overrides inherited database,
+`127.0.0.1:8001`, `[dev] db_uri` from the root private `config.ini`, and
+`$env:USERPROFILE\MyRecipeSite_Local\media` for all persistent media. Its
+`images/`, `pdfs/`, and `ingredient_images/` directories hold both existing and
+new files; the editable alias catalogue sits at the media root. It overrides inherited database,
 environment and upload settings for this process and restores them when it
 exits. Dev saves and visit tracking are enabled by default. Add `-ReadOnly`
 to disable saves and visits, or `-Python C:\path\to\venv\Scripts\python.exe`
@@ -65,15 +67,15 @@ checkout with SHA256 manifests. The archived cleanup record at
 contains exact recovery paths; see the [deployment guide](../deployment/README.md)
 for the current workflow.
 
-For native recovery, stop local writes, back up the current upload tree, verify
+For native recovery, stop local writes, back up the current media tree, verify
 the selected backup manifest and restore into a new empty location for comparison.
 Reconcile newer files and alias changes before restoring the configured Windows
-uploads path; preserve `images/8a665686f0440c45.jpg` and subsequent writes.
-Keep private `config.ini`, the native environment, alias seed and legacy media.
+media path; preserve `images/8a665686f0440c45.jpg` and subsequent writes.
+Keep private `config.ini`, the native environment and alias seed.
 Recreate a broken environment using the Python setup above, then launch and check
 `/health` and media. A Docker recovery requires restoring the archived setup files,
 rebuilding an image, creating a new volume and seeding it from the reconciled current
-Windows uploads. A code/runtime rollback does not restore the shared development
+Windows media root. A code/runtime rollback does not restore the shared development
 database; never replace it with an older dump as part of runtime recovery.
 
 Open [FastAPI](http://localhost:8001/) or [Create recipe](http://localhost:8001/recipes/new).

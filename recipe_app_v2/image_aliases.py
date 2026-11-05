@@ -11,7 +11,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import quote, unquote
 
-from .config import ROOT
 from .database import writes_enabled
 from .uploads import upload_root
 
@@ -137,7 +136,7 @@ def revision(values):
 
 
 def image_url(name):
-    folder = ROOT / 'myrecipes/static/ingredient_images'
+    folder = upload_root() / 'ingredient_images'
     valid = bool(name and re.fullmatch(r'[A-Za-z0-9_%() -]{1,100}', name))
     filename = name + '.jpg' if valid and (folder / (name + '.jpg')).is_file() else 'default_ingredient.jpg'
     return '/ingredient-images/' + quote(filename, safe='')

@@ -16,7 +16,6 @@ RestartSec=3
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ReadOnlyPaths=/var/lib/myrecipesite/recipe_images /var/lib/myrecipesite/custom_prints /var/www/MyRecipeSite/myrecipes/static/ingredient_images
 ReadWritePaths=/var/lib/myrecipesite-v2/uploads
 
 [Install]

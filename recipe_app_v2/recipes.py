@@ -3,7 +3,6 @@ from urllib.parse import urlsplit
 
 from sqlalchemy import func, select
 
-from .config import ROOT
 from .uploads import upload_root
 from .image_aliases import image_url
 from .cooked_history import can_undo_cooked
@@ -75,7 +74,7 @@ def detail_context(session, recipe_id):
             Recipe_Plan_Date.recipe_id == recipe_id, Recipe_Plan_Date.removed_dt.is_(None)).exists(),
         func.current_timestamp(),
     )).one()
-    pdf = ROOT / "myrecipes/static/custom_prints" / f"{recipe_id}.pdf"
+    pdf = upload_root() / 'pdfs' / f'{recipe_id}.pdf'
     return {"recipe": recipe, "ingredients": items, "steps": steps, "step_count": step_count,
             "source_notes": source_notes, "collections": collections, "cuisine": cuisine,
             "favorite": any(c.collection_name.strip().lower() in ('favorites', 'favorite') for c in collections),
@@ -84,5 +83,4 @@ def detail_context(session, recipe_id):
             "planned": history[3],
             "undo_cooked_available": can_undo_cooked(history[2], history[4]),
             "source_link": web_link(recipe.source_url), "whisk_link": web_link(recipe.whisk_url),
-            "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() or
-                (upload_root() / 'pdfs' / f'{recipe_id}.pdf').is_file() else None}
+            "pdf_url": f"/source-pdfs/{recipe_id}.pdf" if pdf.is_file() else None}

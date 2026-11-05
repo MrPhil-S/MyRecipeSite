@@ -27,11 +27,7 @@ MOUNT_OPTIONS = (
     "file_mode=0600,dir_mode=0700"
 )
 SOURCES = {
-    "recipe_images": Path("/var/lib/myrecipesite/recipe_images"),
-    "custom_prints": Path("/var/lib/myrecipesite/custom_prints"),
-    "ingredient_images": Path(
-        "/var/www/MyRecipeSite/myrecipes/static/ingredient_images"
-    ),
+    "media": Path("/var/lib/myrecipesite-v2/uploads"),
 }
 DAILY_RE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 MONTHLY_RE = re.compile(r"\d{4}-\d{2}\Z")

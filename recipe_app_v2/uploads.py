@@ -1,4 +1,4 @@
-"""Validate uploads and stage them separately from the legacy static files."""
+"""Validate uploads and store all persistent media under one root."""
 import io
 import os
 import secrets

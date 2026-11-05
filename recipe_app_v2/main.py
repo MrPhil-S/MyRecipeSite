@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from .config import ROOT, app_environment, database_url
+from .config import app_environment, database_url
 from .database import get_session, writes_enabled
 from .uploads import upload_root
 from .models import Collection, Cuisine, Recipe, Recipe_Ingredient, Recipe_Plan_Date, recipe_collection, recipe_cooked_date, recipe_view_date
@@ -32,33 +32,34 @@ PACKAGE = Path(__file__).resolve().parent
 database_url()
 app = FastAPI(title="My Recipes", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=PACKAGE / "static"), name="static")
-# Serve explicit legacy asset directories, never templates or write routes.
-images = ROOT / "myrecipes" / "static" / "recipe_images"
+# Persistent media lives under RECIPE_UPLOADS, outside versioned app releases.
 @app.get('/recipe-images/{filename}')
 def recipe_image(filename: str):
     if any(c in filename for c in ('/', '\\', ':')) or filename in ('.', '..'):
         raise HTTPException(404)
-    for directory in (upload_root() / 'images', images):
-        target = directory / filename
-        if target.is_file():
-            return FileResponse(target)
+    target = upload_root() / 'images' / filename
+    if target.is_file():
+        return FileResponse(target)
     raise HTTPException(404)
 
 
 @app.get('/source-pdfs/{recipe_id}.pdf')
 def source_pdf(recipe_id: int):
-    for directory in (upload_root() / 'pdfs', ROOT / 'myrecipes/static/custom_prints'):
-        target = directory / f'{recipe_id}.pdf'
-        if target.is_file():
-            return FileResponse(target, media_type='application/pdf',
-                                headers={'Content-Disposition': f'attachment; filename="{recipe_id}.pdf"'})
+    target = upload_root() / 'pdfs' / f'{recipe_id}.pdf'
+    if target.is_file():
+        return FileResponse(target, media_type='application/pdf',
+                            headers={'Content-Disposition': f'attachment; filename="{recipe_id}.pdf"'})
     raise HTTPException(404)
 
 
-for route, folder in (("ingredient-images", "ingredient_images"),):
-    directory = ROOT / "myrecipes" / "static" / folder
-    if directory.is_dir():
-        app.mount("/" + route, StaticFiles(directory=directory), name=folder)
+@app.get('/ingredient-images/{filename}')
+def ingredient_image(filename: str):
+    if any(c in filename for c in ('/', '\\', ':')) or filename in ('.', '..'):
+        raise HTTPException(404)
+    target = upload_root() / 'ingredient_images' / filename
+    if target.is_file():
+        return FileResponse(target)
+    raise HTTPException(404)
 templates = Jinja2Templates(directory=PACKAGE / "templates")
 
 

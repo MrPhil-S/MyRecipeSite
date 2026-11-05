@@ -39,8 +39,10 @@ facts before a separately authorized deployment.
 templates, static assets and licenses, alias seed, and pinned app requirements.
 It excludes tests, tools, docs, migrations, local launchers, caches and uploads.
 Migration files remain source history; packaging them would not authorize
-schema execution. Persistent recipe images, ingredient images, custom prints,
-uploads and the editable alias catalogue are outside the source archive.
+schema execution. Persistent recipe images, ingredient images, source PDFs,
+uploads and the editable alias catalogue belong under the environment's
+`RECIPE_UPLOADS` root, outside the source archive. The Pi media copy and
+cutover are tracked in [the consolidation runbook](MEDIA_CONSOLIDATION.md).
 
 For a local, **non-deployable** review artifact:
 
@@ -52,8 +54,7 @@ $localPython = Join-Path $env:USERPROFILE 'MyRecipeSite_Local\.venv\Scripts\pyth
 
 Choose a new output path for each run. Inspect `RELEASE_MANIFEST.json`: it
 records the base HEAD, dirty state, each member's hash and whether its preview
-bytes came from tracked or untracked working tree source. In particular, the
-shared icons template is currently untracked and included in the preview.
+bytes came from tracked or untracked working tree source.
 Preview artifacts must never be transferred to either Pi.
 
 `release` mode requires a clean working tree and reads each runtime member
@@ -76,18 +77,16 @@ imports. The app archive intentionally excludes `deployment/*.py`.
 The production write-flag helper remains for review with a future procedure;
 none of these tools were run on Pi in Phase 06.
 
-The installed assets backup definition and timer remain in source. Their
-Python source list covers three media locations but omits
-`/var/lib/myrecipesite-v2/uploads`, including persisted aliases. The dated
-2026-11-04 handoff says the Pi timer was disabled after that gap was found;
-its current state has not been rechecked. Do not treat the existing NAS asset
-snapshots as complete v2 backups or enable that timer until all sources,
-including v2 uploads, are approved and a complete backup is verified. The
-`backup_pi.sh` full-snapshot script includes uploads and both databases, but
-also expects old Pi paths; review its source list against the live Pi before
-running it. Copy a fresh complete backup off Pi and verify its hashes before
-any production change. Never replace persistent media or alias state with
-packaged seed data.
+The Pi asset-backup timer was confirmed disabled on 2026-11-05. Its installed
+script still covers only the three legacy directories. This branch updates
+the source list to the single production media root, but that definition must
+not be installed or enabled until media has been copied and a complete new
+snapshot verified. Existing NAS snapshots lack v2 uploads and remain
+untouched. The `backup_pi.sh` full-snapshot script includes the old media,
+production uploads, code, configuration, and both databases; it still expects
+old Pi paths. Refresh its source list before later releases. Copy a fresh
+complete backup off Pi and verify its hashes before any production change.
+Never replace editable aliases with packaged seed data.
 
 ## Next FastAPI release
 
@@ -115,10 +114,11 @@ packaged seed data.
    rollback procedure before doing any of these Pi steps.
 
 The original Flask cutover scripts in the archive do not apply to a
-FastAPI-to-FastAPI release. Persistent recipe images, ingredient images and
-custom prints are reached through release symlinks; v2 uploads are selected by
-`RECIPE_UPLOADS` and remain outside source archives. Preserve these data paths
-until a separately scoped storage change updates readers, backups and tests.
+FastAPI-to-FastAPI release. Before media consolidation, the three legacy trees
+are reached through release symlinks and new uploads through `RECIPE_UPLOADS`.
+The consolidation branch changes readers and backups to one root per
+environment; preserve the old trees for rollback until that release is
+verified. Follow [the consolidation runbook](MEDIA_CONSOLIDATION.md).
 
 ## Deferred cooked-date picker
 

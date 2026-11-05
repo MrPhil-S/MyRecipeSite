@@ -140,13 +140,12 @@ class ImageAliasTests(unittest.TestCase):
             self.assertEqual(Matcher(entries).match(text), 'default_ingredient', text)
 
     def test_fallback_is_safe_and_keeps_existing_images(self):
-        folder = Path(self.folder.name) / 'myrecipes/static/ingredient_images'
+        folder = Path(self.folder.name) / 'ingredient_images'
         folder.mkdir(parents=True)
         (folder / 'mint.jpg').write_bytes(b'test image file')
-        with patch('recipe_app_v2.image_aliases.ROOT', Path(self.folder.name)):
-            for value in (None, '', '../gin', 'not_a_real_ingredient', 'gin'):
-                self.assertEqual(image_url(value), '/ingredient-images/default_ingredient.jpg')
-            self.assertEqual(image_url('mint'), '/ingredient-images/mint.jpg')
+        for value in (None, '', '../gin', 'not_a_real_ingredient', 'gin'):
+            self.assertEqual(image_url(value), '/ingredient-images/default_ingredient.jpg')
+        self.assertEqual(image_url('mint'), '/ingredient-images/mint.jpg')
 
     def test_table_sorting_applies_before_pagination_and_preserves_filters(self):
         entries = {f'ingredient_{i:02d}': [f'alias {59-i:02d}'] for i in range(60)}

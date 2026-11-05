@@ -18,7 +18,6 @@ from reportlab.platypus import Image as PDFImage, PageBreak, Paragraph, SimpleDo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .config import ROOT
 from .database import get_session
 from .models import Recipe, Recipe_Ingredient, Recipe_Instruction
 from .uploads import upload_root
@@ -44,10 +43,9 @@ def _photo_path(recipe):
     filename = recipe.image_file or ""
     if not filename or Path(filename).name != filename or filename in (".", ".."):
         return None
-    for directory in (upload_root() / "images", ROOT / "myrecipes/static/recipe_images"):
-        candidate = directory / filename
-        if candidate.is_file():
-            return candidate
+    candidate = upload_root() / "images" / filename
+    if candidate.is_file():
+        return candidate
     return None
 
 

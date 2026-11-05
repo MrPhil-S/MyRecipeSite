@@ -221,6 +221,27 @@ class EditorTests(unittest.TestCase):
         with Session(self.engine) as session:
             self.assertEqual(session.get(Recipe, second).ingredient_count, 1)
 
+    def test_existing_media_is_served_from_the_upload_root(self):
+        recipe_id = self.create()
+        root = Path(self.folder.name)
+        images, pdfs, ingredients = (root / 'images', root / 'pdfs', root / 'ingredient_images')
+        for folder in (images, pdfs, ingredients):
+            folder.mkdir()
+        photo = io.BytesIO()
+        Image.new('RGB', (16, 16), 'red').save(photo, 'JPEG')
+        (images / 'historic.jpg').write_bytes(photo.getvalue())
+        pdf = b'%PDF-1.4\nExisting recipe PDF\n%%EOF\n'
+        (pdfs / f'{recipe_id}.pdf').write_bytes(pdf)
+        (ingredients / 'mint.jpg').write_bytes(photo.getvalue())
+        with Session(self.engine) as session:
+            session.get(Recipe, recipe_id).image_file = 'historic.jpg'
+            session.commit()
+        self.assertEqual(self.client.get('/recipe-images/historic.jpg').content, photo.getvalue())
+        self.assertEqual(self.client.get(f'/source-pdfs/{recipe_id}.pdf').content, pdf)
+        self.assertEqual(self.client.get('/ingredient-images/mint.jpg').content, photo.getvalue())
+        self.assertIn(f'/source-pdfs/{recipe_id}.pdf',
+                      self.client.get(f'/recipes/{recipe_id}?log_visit=false').text)
+
     def test_uploads_and_commit_failure_restore_database_and_files(self):
         recipe_id = self.create()
         png = io.BytesIO()

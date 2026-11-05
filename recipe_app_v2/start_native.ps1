@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
 $settings = @{
     RECIPE_APP_ENV = 'dev'
     RECIPE_CONFIG = $configPath
-    RECIPE_UPLOADS = (Join-Path $PSScriptRoot 'uploads')
+    RECIPE_UPLOADS = (Join-Path $env:USERPROFILE 'MyRecipeSite_Local\media')
     RECIPE_DEV_WRITES = $(if ($ReadOnly) { '0' } else { '1' })
     RECIPE_DEV_DB_URI = $null
     RECIPE_PROD_DB_URI = $null
