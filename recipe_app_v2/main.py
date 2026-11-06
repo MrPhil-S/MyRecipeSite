@@ -30,6 +30,7 @@ from .recipe_book import router as recipe_book_router
 PACKAGE = Path(__file__).resolve().parent
 # Validate the target at import time, without opening a database connection.
 database_url()
+upload_root()
 app = FastAPI(title="My Recipes", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=PACKAGE / "static"), name="static")
 # Persistent media lives under RECIPE_UPLOADS, outside versioned app releases.

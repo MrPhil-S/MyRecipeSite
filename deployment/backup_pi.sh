@@ -96,26 +96,45 @@ for section in prod dev; do
     printf '%s tables=%s dump_tables=%s\n' "$database" "$table_count" "$dumped_tables" >> "$backup_dir/MANIFEST.txt"
 done
 
-paths=(
+required_paths=(
+    home/pi/fastapi-preview
+    home/pi/fastapi-preview-releases
+    home/pi/fastapi-preview-data/uploads
+    home/pi/myrecipes-v2
+    var/lib/myrecipesite-v2
+    etc/systemd/system/recipe-fastapi-production.service
+    etc/systemd/system/recipe-fastapi-preview.service
+    etc/nginx/sites-available/myrecipesite_app
+)
+optional_paths=(
     home/pi/git/MyRecipeSite
     var/www/MyRecipeSite
     var/lib/myrecipesite
-    home/pi/fastapi-preview
-    home/pi/myrecipes-v2
-    var/lib/myrecipesite-v2
-    etc/nginx/sites-available/myrecipesite_app
     etc/nginx/sites-available/testapp_proxy
     etc/nginx/sites-enabled/myrecipesite_app
     etc/nginx/sites-enabled/testapp_proxy
     etc/uwsgi/apps-available/myrecipesite.ini
     etc/uwsgi/apps-enabled/myrecipesite.ini
-    etc/systemd/system/recipe-fastapi-production.service
     lib/systemd/system/myrecipessite.service
-    etc/systemd/system/recipe-fastapi-preview.service
+    etc/systemd/system/recipe-fastapi-production.service.d
+    etc/systemd/system/recipe-fastapi-preview.service.d
+    etc/systemd/system/myrecipesite-assets-backup.service
+    etc/systemd/system/myrecipesite-assets-backup.timer
+    usr/local/sbin/myrecipesite-assets-backup.py
+    etc/samba/credentials/pi-backup
 )
-for path in "${paths[@]}"; do
+paths=("${required_paths[@]}")
+for path in "${required_paths[@]}"; do
     [[ -e "/$path" || -L "/$path" ]] || { echo "Snapshot source missing: /$path" >&2; exit 1; }
 done
+for path in "${optional_paths[@]}"; do
+    if [[ -e "/$path" || -L "/$path" ]]; then
+        paths+=("$path")
+    else
+        printf 'optional_source_absent=/%s\n' "$path" >> "$backup_dir/MANIFEST.txt"
+    fi
+done
+printf 'archive_source=/%s\n' "${paths[@]}" >> "$backup_dir/MANIFEST.txt"
 
 echo "Archiving application trees, live media, and service configuration"
 tar --acls --xattrs --numeric-owner \

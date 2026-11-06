@@ -7,13 +7,21 @@ from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from .config import ROOT
+from .config import ROOT, app_environment
 
 MAX_UPLOAD = 8 * 1024 * 1024
 
 
 def upload_root():
-    return Path(os.environ.get('RECIPE_UPLOADS', ROOT / 'recipe_app_v2/uploads'))
+    configured = os.environ.get('RECIPE_UPLOADS')
+    if app_environment() == 'production':
+        if not configured or not Path(configured).is_absolute():
+            raise RuntimeError('Production requires an absolute RECIPE_UPLOADS path.')
+        root = Path(configured).resolve()
+        if root == ROOT or ROOT in root.parents or not root.is_dir():
+            raise RuntimeError('Production RECIPE_UPLOADS must be an existing directory outside the release.')
+        return root
+    return Path(configured or ROOT / 'recipe_app_v2/uploads')
 
 
 def image_bytes(data):

@@ -20,7 +20,9 @@ import uuid
 NAS_SHARE = "//192.168.1.14/pi_myRecipes_backup"
 CREDENTIALS = Path("/etc/samba/credentials/pi-backup")
 MOUNT_POINT = Path("/mnt/myrecipesite_backup")
-BACKUP_ROOT = MOUNT_POINT / "MyRecipeSite"
+# A separate snapshot series prevents an old-layout snapshot from satisfying
+# today's backup and keeps legacy recovery snapshots outside this retention job.
+BACKUP_ROOT = MOUNT_POINT / "MyRecipeSite" / "consolidated-media"
 LOCK_FILE = Path("/run/lock/myrecipesite-assets-backup.lock")
 MOUNT_OPTIONS = (
     f"credentials={CREDENTIALS},vers=2.0,iocharset=utf8,uid=0,gid=0,"
