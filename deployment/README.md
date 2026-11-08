@@ -27,6 +27,20 @@ PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 | Pi staging | `http://192.168.1.13:8011/` | `/home/pi/fastapi-preview-releases/current`; `recipe-fastapi-preview.service` | `MyRecipes_DEV` |
 | Pi production | `http://192.168.1.13:5000/` | `/home/pi/myrecipes-v2/current`; `recipe-fastapi-production.service` behind Nginx | `MyRecipes` |
 
+## The five folders under `/home/pi`
+
+| Folder | Purpose and contents | Used by a running app? |
+| --- | --- | --- |
+| `/home/pi/fastapi-preview-data` | **Staging's private data.** `.env` and `config.ini` hold its settings; `uploads/` holds photos, PDFs, ingredient images, and edited aliases. Keep this folder across releases. Old smoke-test files were moved to the operations archive. | Yes: staging reads its settings and media here. |
+| `/home/pi/fastapi-preview-releases` | **Staging's application code.** Each named subfolder is one version. `current` is a shortcut to the version the staging service runs. New code releases go here; uploads do not. | Yes: staging runs `current`. |
+| `/home/pi/myrecipes-v2` | **Production's code and private settings.** `releases/` holds versioned app code, `current` selects the live version, `production.env` sets runtime options, and `database-config.ini` contains the database connection settings. The `v2` name is historical; this is the live production app. | Yes: production runs `current` and reads the two settings files. |
+| `/home/pi/myrecipesite-deploy-backups` | **Operations and recovery material.** Contains the maintained manual full-snapshot script, dated snapshots of databases/files, saved service settings, and release evidence. This is not an app installation. Snapshots contain secrets and belong outside Git. The nightly production-media backup goes to the NAS, not this folder. | No app runs from here; operators use it for backups and recovery. |
+| `/home/pi/myrecipesite-retired` | **Inactive legacy archive.** `legacy-20261108/` contains old Flask checkouts, former media trees, previous releases and old tools. Its `PATHS.json` records original locations. Keep it for recovery; do not deploy from it. | No. |
+
+Production uploads live at `/var/lib/myrecipesite-v2/uploads`, separate from
+`/home/pi/myrecipes-v2` so code releases never replace photos or PDFs. Staging
+uploads remain separate under `/home/pi/fastapi-preview-data/uploads`.
+
 Local development and Pi staging share the same `MyRecipes_DEV` database at
 `192.168.1.14:3307`; a local data or schema change affects staging too.
 The production `current` symlink points to
