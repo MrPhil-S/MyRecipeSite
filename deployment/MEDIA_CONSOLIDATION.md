@@ -77,6 +77,51 @@ same release and the unattended 03:16 backup completed successfully with
 
 ## Remaining cleanup
 
+### Retirement audit on 2026-11-07: NOT cleared for removal
+
+Both current release manifests matched the deployed commit. An isolated
+production candidate passed health, library, plan, tag, alias, recipe-photo,
+ingredient-image and existing PDF-download checks with all three legacy media
+directories and both old versioned releases inaccessible. This verifies the
+tested FastAPI readers, not all remaining services on the Pi.
+
+Retirement blockers found:
+
+- Six uWSGI processes still run with
+  `/etc/uwsgi/apps-enabled/myrecipesite.ini`, whose Python path is
+  `/var/www/MyRecipeSite/`. The old app must be explicitly decommissioned.
+- `myrecipessite.service` is failed but still enabled; it can attempt to start
+  old code under `/home/pi/git/MyRecipeSite` at boot.
+- Production still requires `/var/www/MyRecipeSite/config.ini`; staging
+  requires `/home/pi/fastapi-preview/.env` and its `config.ini`. Do not remove
+  these parent directories wholesale.
+- Older backup scripts at `/home/pi/backup_pi.sh` and
+  `/home/pi/myrecipes-v2/incoming/backup_pi.sh` still require old parent trees.
+  The current nightly backup uses only the consolidated production root;
+  older manual scripts must be retired or clearly superseded.
+- The one-time `consolidate_media.py` script and documented old-release
+  rollback intentionally need legacy media. Update/archive these procedures
+  when retiring their sources.
+
+The full-library `/recipe-book.pdf` test caused severe Pi memory pressure;
+both public health checks and new SSH connections subsequently timed out.
+The user power cycled the Pi. On reboot, both public health checks, sample
+recipe photo, ingredient image and source PDF reads passed again. Production
+and staging services are active, available memory recovered, and both
+temporary test units disappeared. The previous isolated candidate verified
+normal readers but **did not verify full-book PDF generation**. Do not repeat
+that test without a strict memory limit and a small data fixture.
+
+The reboot also confirmed that six legacy uWSGI workers start automatically.
+The old `myrecipessite.service` remains enabled, although its startup fails.
+The nightly consolidated media backup remains enabled; its last recorded run
+on 2026-11-07 completed successfully. The active FastAPI apps do not require
+the old versioned release folders for the tested requests. **Retirement is
+blocked by the remaining legacy service and script references**; confirm a
+replacement configuration path and decommission those dependencies before
+removing any legacy media trees or parent directories. No old files or
+releases were deleted during the audit.
+
 No media cutover remains for local, staging or production. After a suitable
 recovery window, review retirement of the old media trees and releases as a
 separate cleanup. First confirm no active service, backup job or operational
