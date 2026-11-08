@@ -1,5 +1,5 @@
 [Unit]
-Description=Back up MyRecipeSite uploaded assets to the NAS
+Description=Back up MyRecipeSite production media and databases to the NAS
 Wants=network-online.target
 After=network-online.target
 

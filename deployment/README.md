@@ -34,7 +34,7 @@ PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 | `/home/pi/fastapi-preview-data` | **Staging's private data.** `.env` and `config.ini` hold its settings; `uploads/` holds photos, PDFs, ingredient images, and edited aliases. Keep this folder across releases. Old smoke-test files were moved to the operations archive. | Yes: staging reads its settings and media here. |
 | `/home/pi/fastapi-preview-releases` | **Staging's application code.** Each named subfolder is one version. `current` is a shortcut to the version the staging service runs. New code releases go here; uploads do not. | Yes: staging runs `current`. |
 | `/home/pi/myrecipes-v2` | **Production's code and private settings.** `releases/` holds versioned app code, `current` selects the live version, `production.env` sets runtime options, and `database-config.ini` contains the database connection settings. The `v2` name is historical; this is the live production app. | Yes: production runs `current` and reads the two settings files. |
-| `/home/pi/myrecipesite-deploy-backups` | **Operations and recovery material.** Contains the maintained manual full-snapshot script, dated snapshots of databases/files, saved service settings, and release evidence. This is not an app installation. Snapshots contain secrets and belong outside Git. The nightly production-media backup goes to the NAS, not this folder. | No app runs from here; operators use it for backups and recovery. |
+| `/home/pi/myrecipesite-deploy-backups` | **Operations and recovery material.** Contains the maintained manual full-snapshot script, dated snapshots of databases/files, saved service settings, and release evidence. This is not an app installation. Snapshots contain secrets and belong outside Git. Nightly media and database backups go to the NAS; release snapshots are also copied there and to the Windows archive. | No app runs from here; operators use it for backups and recovery. |
 | `/home/pi/myrecipesite-retired` | **Inactive legacy archive.** `legacy-20261108/` contains old Flask checkouts, former media trees, previous releases and old tools. Its `PATHS.json` records original locations. Keep it for recovery; do not deploy from it. | No. |
 
 Production uploads live at `/var/lib/myrecipesite-v2/uploads`, separate from
@@ -106,22 +106,67 @@ imports. The app archive intentionally excludes `deployment/*.py`.
 The production write-flag helper remains for review with a future procedure;
 none of these tools were run on Pi in Phase 06.
 
-The installed asset-backup script now covers the consolidated production
-media root, including new uploads and editable aliases. Its NAS series is
-`//192.168.1.14/pi_myRecipes_backup/MyRecipeSite/consolidated-media`;
-old-layout snapshots remain untouched outside this series. Daily snapshots
-retain 30 days; monthly snapshots retain 12 months. The verified nightly timer
-is enabled for 03:15 Pi local time (up to five minutes randomized delay).
-Asset backups do not include databases. Use the maintained
-`/home/pi/myrecipesite-deploy-backups/backup_pi.sh` for release snapshots:
-it reads the private database config at
+The nightly backup script covers the consolidated production media root,
+including uploads and editable aliases, and dumps `MyRecipes` and
+`MyRecipes_DEV`. The existing `myrecipesite-assets-backup.timer` starts it at
+03:15 Pi local time (up to five minutes randomized delay). The NAS keeps media
+under `//192.168.1.14/pi_myRecipes_backup/MyRecipeSite/media` and
+database dumps under the sibling `databases`. Each series retains
+30 daily and 12 monthly snapshots. The backup verifies every database dump and
+the media copy before marking a snapshot complete. Check the service journal
+and both series regularly; a missing or failed run needs investigation. The
+older media-only snapshots live under `MyRecipeSite/archive/pre-consolidation-2026-10-27`.
+The archive is outside automatic pruning. Database dumps contain private
+recipe data; keep them out of Git and limit access to the NAS share.
+
+App release folders and private service configuration are **not** part of the
+nightly NAS job. Immediately before each production release or configuration
+change, run the Windows release-backup command below. It invokes the maintained
+`/home/pi/myrecipesite-deploy-backups/backup_pi.sh`, copies its artifacts to
+the NAS and this Windows PC, verifies all three SHA256 checksums at each copy,
+and checks that the app release tree and production settings are listed in the
+snapshot. A failed command means **stop the deployment**. The release snapshot
+script reads the private database config at
 `/home/pi/myrecipes-v2/database-config.ini` and includes both
 databases, both Pi media roots, release folders, configuration and service
 overrides. The retired legacy archive is separately protected by the verified
 2026-11-08 snapshot; missing optional legacy paths do not block new backups.
-Copy a fresh
-complete snapshot off Pi and verify its hashes before any production change.
 Never replace editable aliases with packaged seed data.
+
+From `C:\projects\MyRecipeSite` in Windows PowerShell, after staging passes and
+before any production file, schema, or service change:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\deployment\backup_production_release.ps1 -ReleaseName recipe-20261109-abc123 -Phase Before
+```
+
+`recipe-20261109-abc123` is only an example. Replace it with the **new release
+name** for the actual deployment.
+The command prints `BACKUP_READY:` followed by the verified local folder under
+`$env:USERPROFILE\MyRecipeSite_Local\archives\release-backups\<ReleaseName>\<snapshot>`.
+It leaves a same-named Pi snapshot under
+`/home/pi/myrecipesite-deploy-backups` and a verified NAS copy under
+`//192.168.1.14/pi_myRecipes_backup/MyRecipeSite/release-backups/<ReleaseName>/<snapshot>`.
+The Pi helper `copy_release_snapshot_to_nas.py` creates a new NAS folder and
+refuses to overwrite an existing snapshot. These folders contain private data;
+do not add them to Git. An `INCOMPLETE` file in the Windows folder means the copy
+or verification failed. Do not continue. A read-only connection/script check is
+available with the same command plus `-CheckOnly`; that check creates **no** backup.
+The wrapper verifies that both Pi scripts match the reviewed repository copies
+and refuses to run if they differ. `-CheckOnly` does not test NAS access.
+In Synology Hyper Backup, include `MyRecipeSite/release-backups` alongside
+`MyRecipeSite/media` and `MyRecipeSite/databases` for the off-site copy.
+After the new release is active and checks pass, run the same command with
+`-Phase After` to capture the **new** app files and settings. In that phase,
+the script first checks that `/home/pi/myrecipes-v2/current` points to the
+named release. Both snapshots are separate; keep them for rollback and recovery.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\deployment\backup_production_release.ps1 -ReleaseName recipe-20261109-abc123 -Phase After
+```
+
+Use the same actual release name as the `Before` command. A release is not fully
+recorded until this command also prints `BACKUP_READY:`.
 
 ## Next FastAPI release
 
@@ -138,9 +183,10 @@ Never replace editable aliases with packaged seed data.
 3. Compare the actual staging and production schemas. Rehearse any approved
    migration against a suitable test copy and prepare exact rollback checks.
    A code diff alone does not authorize DDL.
-4. Take and verify a fresh production backup covering both databases, code,
-   private configuration, both active media roots and editable aliases.
-   Verify the off-Pi copy before the production checkpoint.
+4. Run `backup_production_release.ps1 -Phase Before` with this release's name.
+   Require its `BACKUP_READY:` output before the production checkpoint. It captures
+   both databases, code, private configuration, both active media roots and
+   editable aliases; it verifies the off-Pi copy.
 5. Start a separate read-only production candidate beside the running release,
    using the same archive tested on staging and the existing persistent media.
    Test it before changing the active production release.
@@ -148,8 +194,11 @@ Never replace editable aliases with packaged seed data.
    to the prepared release and restart `recipe-fastapi-production.service`.
    Nginx stays on port 5000, proxying to 8012. Test the public app and owned
    upload fixture; keep the previous release and service file for rollback.
-   Stop the temporary candidate after verification. A database restore is a separate
-   data-loss decision. Write and review a version-specific promotion and
+   Stop the temporary candidate after verification. Run
+   `backup_production_release.ps1 -Phase After` and require `BACKUP_READY:` so
+   the newly installed app files also have a verified off-Pi snapshot. A
+   database restore is a separate data-loss decision. Write and review a
+   version-specific promotion and
    rollback procedure before doing any of these Pi steps.
 
 The original Flask cutover scripts in the archive do not apply to a

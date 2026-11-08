@@ -1,5 +1,5 @@
 [Unit]
-Description=Nightly MyRecipeSite asset backup
+Description=Nightly MyRecipeSite media and database backup
 
 [Timer]
 OnCalendar=*-*-* 03:15:00

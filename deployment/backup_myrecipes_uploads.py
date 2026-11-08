@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Create dated, verified backups of the live MyRecipeSite asset folders."""
+"""Create dated, verified backups of production media and both databases."""
 
 from __future__ import annotations
 
 import datetime as dt
+import configparser
 import fcntl
+import gzip
 import hashlib
 import json
 import os
@@ -14,15 +16,19 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import uuid
+from urllib.parse import unquote, urlsplit
 
 
 NAS_SHARE = "//192.168.1.14/pi_myRecipes_backup"
 CREDENTIALS = Path("/etc/samba/credentials/pi-backup")
 MOUNT_POINT = Path("/mnt/myrecipesite_backup")
-# A separate snapshot series prevents an old-layout snapshot from satisfying
-# today's backup and keeps legacy recovery snapshots outside this retention job.
-BACKUP_ROOT = MOUNT_POINT / "MyRecipeSite" / "consolidated-media"
+# Each active series has one clear name. Older layouts live under archive/ and
+# are outside the retention job.
+BACKUP_ROOT = MOUNT_POINT / "MyRecipeSite" / "media"
+DATABASE_BACKUP_ROOT = MOUNT_POINT / "MyRecipeSite" / "databases"
+DATABASE_CONFIG = Path("/home/pi/myrecipes-v2/database-config.ini")
 LOCK_FILE = Path("/run/lock/myrecipesite-assets-backup.lock")
 MOUNT_OPTIONS = (
     f"credentials={CREDENTIALS},vers=2.0,iocharset=utf8,uid=0,gid=0,"
@@ -31,6 +37,7 @@ MOUNT_OPTIONS = (
 SOURCES = {
     "media": Path("/var/lib/myrecipesite-v2/uploads"),
 }
+DATABASES = {"prod": "MyRecipes", "dev": "MyRecipes_DEV"}
 DAILY_RE = re.compile(r"\d{4}-\d{2}-\d{2}\Z")
 MONTHLY_RE = re.compile(r"\d{4}-\d{2}\Z")
 
@@ -97,6 +104,133 @@ def verify_tree(source: Path, destination: Path) -> list[dict[str, object]]:
     return records
 
 
+def database_options(section: str, database: str) -> Path:
+    config = configparser.ConfigParser(interpolation=None)
+    if not config.read(DATABASE_CONFIG):
+        raise RuntimeError("Cannot read private database configuration")
+    url = urlsplit(config[section]["db_uri"])
+    if (
+        url.scheme != "mysql+pymysql"
+        or url.hostname != "192.168.1.14"
+        or url.port != 3307
+        or url.path != "/" + database
+        or url.query
+        or not url.username
+        or url.password is None
+    ):
+        raise RuntimeError(f"Unexpected database target for {database}")
+    values = {
+        "host": url.hostname,
+        "port": str(url.port),
+        "user": unquote(url.username),
+        "password": unquote(url.password),
+        "protocol": "tcp",
+    }
+    descriptor, filename = tempfile.mkstemp(prefix="myrecipes-db-", dir="/dev/shm")
+    path = Path(filename)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            output.write("[client]\n")
+            for key, value in values.items():
+                if "\n" in value or "\r" in value:
+                    raise RuntimeError("Invalid database credential")
+                escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+                output.write(f'{key}="{escaped}"\n')
+        os.chmod(path, 0o600)
+        return path
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
+
+
+def dump_database(section: str, database: str, destination: Path) -> dict[str, object]:
+    options = database_options(section, database)
+    try:
+        client = ["mariadb", f"--defaults-extra-file={options}", f"--database={database}"]
+        engines = run(
+            client + ["--batch", "--skip-column-names", "--execute=SELECT DISTINCT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'"],
+            capture=True,
+        ).strip()
+        if engines != "InnoDB":
+            raise RuntimeError(f"Unexpected table engine in {database}: {engines}")
+        table_count = int(run(
+            client + ["--batch", "--skip-column-names", "--execute=SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'"],
+            capture=True,
+        ).strip())
+        if table_count < 1:
+            raise RuntimeError(f"No tables found in {database}")
+        script = (
+            'mariadb-dump --defaults-extra-file="$1" --default-character-set=utf8mb4 '
+            '--single-transaction --quick --hex-blob --routines --triggers --events "$2" '
+            '| gzip -1 > "$3"'
+        )
+        run(["bash", "-o", "pipefail", "-c", script, "bash", str(options), database, str(destination)])
+        run(["gzip", "-t", str(destination)])
+        with gzip.open(destination, "rt", encoding="utf-8") as source:
+            dumped_tables = sum(line.startswith("CREATE TABLE ") for line in source)
+        if dumped_tables != table_count:
+            raise RuntimeError(f"Table count mismatch in {database}: {dumped_tables} vs {table_count}")
+        return {
+            "database": database,
+            "tables": table_count,
+            "bytes": destination.stat().st_size,
+            "sha256": sha256(destination),
+        }
+    finally:
+        options.unlink(missing_ok=True)
+
+
+def verify_database_snapshot(folder: Path) -> None:
+    manifest_path = folder / "MANIFEST.json"
+    if not folder.is_dir() or not manifest_path.is_file():
+        raise RuntimeError(f"Incomplete database snapshot: {folder}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    records = manifest.get("databases")
+    if not isinstance(records, list) or {record.get("database") for record in records} != set(DATABASES.values()) or len(records) != len(DATABASES):
+        raise RuntimeError(f"Unexpected database manifest: {folder}")
+    for record in records:
+        dump = folder / f"{record['database']}.sql.gz"
+        if not dump.is_file() or dump.is_symlink() or dump.stat().st_size != record.get("bytes") or sha256(dump) != record.get("sha256"):
+            raise RuntimeError(f"Database snapshot checksum mismatch: {dump}")
+        run(["gzip", "-t", str(dump)])
+
+
+def make_database_daily_snapshot(day: str) -> Path:
+    daily_root = DATABASE_BACKUP_ROOT / "daily"
+    daily_root.mkdir(parents=True, exist_ok=True)
+    final = daily_root / day
+    if final.exists():
+        verify_database_snapshot(final)
+        log(f"Database daily snapshot already exists; keeping it: {final}")
+        return final
+    stage = daily_root / f".partial-{day}-{uuid.uuid4().hex}"
+    stage.mkdir(mode=0o700)
+    try:
+        records = [
+            dump_database(section, database, stage / f"{database}.sql.gz")
+            for section, database in DATABASES.items()
+        ]
+        manifest = {
+            "snapshot_date": day,
+            "created_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "host": socket.gethostname(),
+            "databases": records,
+        }
+        with (stage / "MANIFEST.json").open("x", encoding="utf-8") as output:
+            json.dump(manifest, output, indent=2)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.rename(stage, final)
+        verify_database_snapshot(final)
+        log(f"Created verified database daily snapshot: {final}")
+        return final
+    except Exception:
+        if stage.exists():
+            shutil.rmtree(stage)
+        raise
+
+
 def verify_mount() -> None:
     result = run(
         ["findmnt", "-n", "-o", "FSTYPE,SOURCE", "--target", str(MOUNT_POINT)],
@@ -121,6 +255,8 @@ def mount_share() -> None:
     for source in SOURCES.values():
         if not source.is_dir() or source.is_symlink():
             raise RuntimeError(f"Missing or unsafe source folder: {source}")
+    if not DATABASE_CONFIG.is_file() or DATABASE_CONFIG.is_symlink():
+        raise RuntimeError(f"Missing or unsafe database config: {DATABASE_CONFIG}")
 
     if not os.path.ismount(MOUNT_POINT):
         if any(MOUNT_POINT.iterdir()):
@@ -203,9 +339,9 @@ def make_daily_snapshot(day: str) -> Path:
         raise
 
 
-def make_monthly_snapshot(day: str, daily_snapshot: Path) -> None:
+def make_monthly_snapshot_for(root: Path, day: str, daily_snapshot: Path) -> None:
     month = day[:7]
-    monthly_root = BACKUP_ROOT / "monthly"
+    monthly_root = root / "monthly"
     monthly_root.mkdir(parents=True, exist_ok=True)
     final = monthly_root / month
     if final.exists():
@@ -258,9 +394,15 @@ def perform_backup() -> None:
     log(f"Starting backup for {day}")
     try:
         mount_share()
+        DATABASE_BACKUP_ROOT.mkdir(parents=True, exist_ok=True)
+        database_daily = make_database_daily_snapshot(day)
+        make_monthly_snapshot_for(DATABASE_BACKUP_ROOT, day, database_daily)
+        verify_database_snapshot(DATABASE_BACKUP_ROOT / "monthly" / day[:7])
+        prune(DATABASE_BACKUP_ROOT / "daily", DAILY_RE, 30)
+        prune(DATABASE_BACKUP_ROOT / "monthly", MONTHLY_RE, 12)
         BACKUP_ROOT.mkdir(parents=True, exist_ok=True)
         daily_snapshot = make_daily_snapshot(day)
-        make_monthly_snapshot(day, daily_snapshot)
+        make_monthly_snapshot_for(BACKUP_ROOT, day, daily_snapshot)
         prune(BACKUP_ROOT / "daily", DAILY_RE, 30)
         prune(BACKUP_ROOT / "monthly", MONTHLY_RE, 12)
         log("BACKUP_COMPLETE")

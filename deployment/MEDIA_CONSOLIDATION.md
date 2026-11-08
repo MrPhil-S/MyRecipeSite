@@ -1,5 +1,50 @@
 # Persistent media consolidation
 
+## Release snapshots copied to the NAS (2026-11-08 Pacific time)
+
+`deployment/backup_production_release.ps1` now requires three verified copies
+for each release checkpoint: the original Pi snapshot, an off-Pi Windows copy,
+and a NAS copy under `MyRecipeSite/release-backups/<ReleaseName>/<snapshot>`.
+The Pi helper is installed at
+`/home/pi/myrecipesite-deploy-backups/copy_release_snapshot_to_nas.py`.
+It copies each release snapshot into a new NAS folder and verifies all files
+against the Pi snapshot before reporting success. The nightly job does not
+write to `release-backups`; use both `-Phase Before` and `-Phase After` during
+each production deployment. Include `release-backups` when configuring the
+Synology Hyper Backup off-site task. Full snapshots contain private settings.
+
+## Backup folder names and archive (2026-11-08 Pacific time)
+
+The active NAS folders are now `MyRecipeSite/media` and
+`MyRecipeSite/databases`, each with `daily/` and `monthly/` snapshots. The
+existing snapshots from the former `consolidated-media` and
+`consolidated-databases` folders were moved into these active folders; the
+nightly job continues in the same series. The older, pre-consolidation
+`MyRecipeSite/daily` and `MyRecipeSite/monthly` folders were moved to
+`MyRecipeSite/archive/pre-consolidation-2026-10-27/`. The archive is excluded
+from automated backup retention. Historical paths in the dated sections below
+describe where snapshots were originally created. The former and installed
+backup scripts, one-time rename helper, and service files are saved at
+`/home/pi/myrecipesite-deploy-backups/nas-folder-rename-20261108`.
+
+## Nightly database backup added (2026-11-08 Pacific time)
+
+On this date, `myrecipesite-assets-backup.timer` began backing up both
+`MyRecipes` and `MyRecipes_DEV` near 03:15 Pi local time. The original NAS
+destination was `MyRecipeSite/consolidated-databases`; it has since moved to
+`MyRecipeSite/databases` as recorded above.
+Database and production-media series each retain 30 daily and 12 monthly
+snapshots. Both database dumps and their monthly copies were created and
+verified on the NAS on 2026-11-08; the updated systemd service completed
+successfully, and the timer remains active. The previous media-only snapshots
+were left intact. The full Pi app/configuration snapshot script remains a
+manual step before a production release or settings change; app release files
+are not copied by the nightly job. The Windows
+`deployment/backup_production_release.ps1` command now runs that step before
+and after a release, copies each snapshot to the NAS and Windows, and verifies
+all three copies. The old installed backup script and units are saved at
+`/home/pi/myrecipesite-deploy-backups/nightly-pre-db-20261108`.
+
 ## Legacy folder retirement (2026-11-07 Pacific time)
 
 Production database settings were copied to
