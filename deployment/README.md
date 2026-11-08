@@ -13,9 +13,9 @@ scripts are preserved under
 The dated deployment investigations and six-phase local cleanup record are at
 `C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\cleanup-guidance_20261104`.
 These are historical records, not current upgrade or rollback procedures.
-The former Flask source remains archived locally. Old Pi media trees are kept
-for rollback, not used by the current app. Their eventual removal is separate
-from deployment. This file is the maintained deployment guide.
+The former Flask source remains archived locally. Old Pi app and media trees
+were moved into `/home/pi/myrecipesite-retired/legacy-20261108` and are no
+longer used by the current app. This file is the maintained deployment guide.
 In the paths below, `<WindowsUser>` means the Windows profile folder name.
 PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 
@@ -24,7 +24,7 @@ PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 | Environment | Address | App location | Database |
 | --- | --- | --- | --- |
 | Local development | `http://127.0.0.1:8001/` | `C:\projects\MyRecipeSite`; `recipe_app_v2/start_native.ps1` | `MyRecipes_DEV` |
-| Pi staging | `http://192.168.1.13:8011/` | `/home/pi/fastapi-preview-releases/media-4c74a2b`; `recipe-fastapi-preview.service` | `MyRecipes_DEV` |
+| Pi staging | `http://192.168.1.13:8011/` | `/home/pi/fastapi-preview-releases/current`; `recipe-fastapi-preview.service` | `MyRecipes_DEV` |
 | Pi production | `http://192.168.1.13:5000/` | `/home/pi/myrecipes-v2/current`; `recipe-fastapi-production.service` behind Nginx | `MyRecipes` |
 
 Local development and Pi staging share the same `MyRecipes_DEV` database at
@@ -32,9 +32,12 @@ Local development and Pi staging share the same `MyRecipes_DEV` database at
 The production `current` symlink points to
 `/home/pi/myrecipes-v2/releases/media-4c74a2b`. Staging serves port
 8011 directly, so it does not test the production Nginx route. Refresh these
-facts before each deployment. Staging's environment file remains
-`/home/pi/fastapi-preview/.env`; its effective code path is selected by the
-systemd override, not by that environment file's location.
+facts before each deployment. Staging's `current` pointer presently resolves
+to `/home/pi/fastapi-preview-releases/media-4c74a2b`. Its private settings
+are in `/home/pi/fastapi-preview-data/.env` and `config.ini`.
+Production's private database settings are in
+`/home/pi/myrecipes-v2/database-config.ini`. Both settings files sit outside
+the versioned app releases.
 
 All persistent media and editable aliases use one `RECIPE_UPLOADS` root per
 environment: local `$env:USERPROFILE\MyRecipeSite_Local\media`, staging
@@ -95,11 +98,14 @@ media root, including new uploads and editable aliases. Its NAS series is
 old-layout snapshots remain untouched outside this series. Daily snapshots
 retain 30 days; monthly snapshots retain 12 months. The verified nightly timer
 is enabled for 03:15 Pi local time (up to five minutes randomized delay).
-Asset backups do not include databases. Use `backup_pi.sh` for release
-snapshots: it includes both
+Asset backups do not include databases. Use the maintained
+`/home/pi/myrecipesite-deploy-backups/backup_pi.sh` for release snapshots:
+it reads the private database config at
+`/home/pi/myrecipes-v2/database-config.ini` and includes both
 databases, both Pi media roots, release folders, configuration and service
-overrides, plus old media while those paths still exist. Missing optional
-legacy paths are recorded rather than blocking future backups. Copy a fresh
+overrides. The retired legacy archive is separately protected by the verified
+2026-11-08 snapshot; missing optional legacy paths do not block new backups.
+Copy a fresh
 complete snapshot off Pi and verify its hashes before any production change.
 Never replace editable aliases with packaged seed data.
 
@@ -110,14 +116,16 @@ Never replace editable aliases with packaged seed data.
    A daily commit is not a deployment, and a `preview` archive is never a
    production artifact. Do not update either running Pi app tree in place.
 2. Stage that exact archive in a new Pi staging release directory with its own
-   virtual environment. Test `/health`, pages, images, PDFs and the changed
+   virtual environment. After validation, update
+   `/home/pi/fastapi-preview-releases/current` atomically and restart the
+   staging service. Test `/health`, pages, images, PDFs and the changed
    feature on port 8011. Use only owned test records, because staging shares
    `MyRecipes_DEV` with local development.
 3. Compare the actual staging and production schemas. Rehearse any approved
    migration against a suitable test copy and prepare exact rollback checks.
    A code diff alone does not authorize DDL.
 4. Take and verify a fresh production backup covering both databases, code,
-   configuration, all three media trees, v2 uploads and editable aliases.
+   private configuration, both active media roots and editable aliases.
    Verify the off-Pi copy before the production checkpoint.
 5. Start a separate read-only production candidate beside the running release,
    using the same archive tested on staging and the existing persistent media.

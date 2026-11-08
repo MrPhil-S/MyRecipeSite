@@ -6,7 +6,7 @@ umask 077
 
 backup_base=/home/pi/myrecipesite-deploy-backups
 backup_dir="$backup_base/snapshot-$(date -u +%Y%m%dT%H%M%SZ)"
-config_file=/var/www/MyRecipeSite/config.ini
+config_file=/home/pi/myrecipes-v2/database-config.ini
 prod_options=
 dev_options=
 
@@ -97,9 +97,8 @@ for section in prod dev; do
 done
 
 required_paths=(
-    home/pi/fastapi-preview
+    home/pi/fastapi-preview-data
     home/pi/fastapi-preview-releases
-    home/pi/fastapi-preview-data/uploads
     home/pi/myrecipes-v2
     var/lib/myrecipesite-v2
     etc/systemd/system/recipe-fastapi-production.service
@@ -107,6 +106,7 @@ required_paths=(
     etc/nginx/sites-available/myrecipesite_app
 )
 optional_paths=(
+    home/pi/fastapi-preview
     home/pi/git/MyRecipeSite
     var/www/MyRecipeSite
     var/lib/myrecipesite

@@ -1,0 +1,31 @@
+[Unit]
+Description=MyRecipeSite FastAPI preview (separate from production)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+SupplementaryGroups=www-data
+WorkingDirectory=/home/pi/fastapi-preview-releases/current
+EnvironmentFile=/home/pi/fastapi-preview-data/.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/home/pi/fastapi-preview-releases/current/.venv/bin/python -m uvicorn recipe_app_v2.main:app --host 192.168.1.13 --port 8011
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=false
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateTmp=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/home/pi/fastapi-preview-data/uploads
+
+[Install]
+WantedBy=multi-user.target

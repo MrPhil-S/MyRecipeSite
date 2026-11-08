@@ -1,6 +1,56 @@
 # Persistent media consolidation
 
-This is the release plan for moving existing recipe images, source PDFs,
+## Legacy folder retirement (2026-11-07 Pacific time)
+
+Production database settings were copied to
+`/home/pi/myrecipes-v2/database-config.ini` (mode 600, owned by `pi`).
+`/home/pi/myrecipes-v2/production.env` now points `RECIPE_CONFIG` there.
+Staging's private `config.ini` and `.env` are under
+`/home/pi/fastapi-preview-data` (also mode 600). Staging now uses
+`/home/pi/fastapi-preview-releases/current`, which points to
+`media-4c74a2b`; its service has no dated override or old staging-root path.
+The maintained full-backup script at
+`/home/pi/myrecipesite-deploy-backups/backup_pi.sh` reads the new private
+database config and includes staging's persistent data directory.
+
+A fresh full snapshot of both databases, current code/settings, and all old
+and new media passed archive and SHA256 checks on the Pi. Its off-Pi copy
+passed matching hashes for all three artifacts. The protected locations are:
+
+- Pi: `/home/pi/myrecipesite-deploy-backups/snapshot-20261108T063945Z`
+- PC: `$env:USERPROFILE\MyRecipeSite_Local\archives\legacy-retirement_20261108\snapshot-20261108T063945Z`
+
+Nine old paths were then **moved, not deleted**, into
+`/home/pi/myrecipesite-retired/legacy-20261108` (private root-owned folder).
+The archive's `PATHS.json` maps every original path to its new location.
+It includes both old Flask checkouts, the old staging app tree, old media,
+the `0220515` production and `media-430f3d2` staging releases, the old
+incoming deployment folder, an older manual backup script, and the old
+uWSGI configuration. The other old manual backup script is in the archived
+incoming folder. The retired uWSGI service remains masked; the old Flask
+service remains disabled.
+
+Both active FastAPI services were restarted after the move. Their health,
+library, plan, image-alias, recipe-photo, ingredient-image, and source-PDF
+requests passed on ports 5000 and 8011. The nightly media backup timer
+remains active. The maintained full-backup script's current paths and shell
+syntax were checked. Its previous full execution was the verified snapshot
+above.
+
+To reverse only the folder move, use the saved mapping on the Pi and move
+each archived path back to its original location after verifying it is free.
+Do not overwrite a new path. The archived old releases require their media
+trees restored before a rollback to the old media-reading code. Restoring
+folders does not enable old services or change either database. The Pi copy
+and off-Pi snapshot contain private credentials: keep them out of Git.
+
+## Earlier consolidation record
+
+The following sections describe the completed migration and its original
+rollback design. Their old paths are historical; the retired archive above
+records where those folders are stored now.
+
+This was the release plan for moving existing recipe images, source PDFs,
 ingredient images, new uploads, and editable aliases under one persistent root
 per environment. It does not authorize the deferred cooked-date picker or a
 database migration. Keep the public URLs `/recipe-images/`, `/source-pdfs/`,
@@ -75,7 +125,7 @@ Follow-up verification on 2026-11-07 confirmed both Pi apps healthy on the
 same release and the unattended 03:16 backup completed successfully with
 1,339 files. The timer remains enabled.
 
-## Remaining cleanup
+## Retirement audit before the folder move
 
 ### Retirement audit on 2026-11-07: NOT cleared for removal
 
