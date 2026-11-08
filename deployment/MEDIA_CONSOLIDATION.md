@@ -85,13 +85,8 @@ ingredient-image and existing PDF-download checks with all three legacy media
 directories and both old versioned releases inaccessible. This verifies the
 tested FastAPI readers, not all remaining services on the Pi.
 
-Retirement blockers found:
+Remaining retirement dependencies:
 
-- Six uWSGI processes still run with
-  `/etc/uwsgi/apps-enabled/myrecipesite.ini`, whose Python path is
-  `/var/www/MyRecipeSite/`. The old app must be explicitly decommissioned.
-- `myrecipessite.service` is failed but still enabled; it can attempt to start
-  old code under `/home/pi/git/MyRecipeSite` at boot.
 - Production still requires `/var/www/MyRecipeSite/config.ini`; staging
   requires `/home/pi/fastapi-preview/.env` and its `config.ini`. Do not remove
   these parent directories wholesale.
@@ -112,15 +107,27 @@ temporary test units disappeared. The previous isolated candidate verified
 normal readers but **did not verify full-book PDF generation**. Do not repeat
 that test without a strict memory limit and a small data fixture.
 
-The reboot also confirmed that six legacy uWSGI workers start automatically.
-The old `myrecipessite.service` remains enabled, although its startup fails.
+The reboot confirmed that six legacy uWSGI workers started automatically and
+the failed old `myrecipessite.service` was still enabled. Both startup paths
+were subsequently disabled: `myrecipessite.service` is disabled and inactive;
+the only uWSGI app link was moved from `/etc/uwsgi/apps-enabled` to
+`/home/pi/myrecipesite-deploy-backups/legacy-services-disabled-20261107/`,
+and `uwsgi.service` is masked and inactive. Its six workers exited. The saved
+service unit and uWSGI configuration are in that same backup folder. To undo
+this change, restore the archived app link to `/etc/uwsgi/apps-enabled`,
+unmask and start `uwsgi.service`, and enable the old Flask service only if it
+is actually needed. Do not restore old app services merely to roll back the
+current FastAPI release.
+
+After disabling the legacy startup paths, both FastAPI services passed
+health, library, recipe-photo, ingredient-image, and source-PDF checks.
 The nightly consolidated media backup remains enabled; its last recorded run
 on 2026-11-07 completed successfully. The active FastAPI apps do not require
-the old versioned release folders for the tested requests. **Retirement is
-blocked by the remaining legacy service and script references**; confirm a
-replacement configuration path and decommission those dependencies before
-removing any legacy media trees or parent directories. No old files or
-releases were deleted during the audit.
+the old versioned release folders for the tested requests. **Retirement of
+old parent trees remains blocked by the configuration and old script
+references above.** Keep the old media and release copies until their
+rollback purpose and remaining references are reviewed. No old media or
+releases were deleted during this work.
 
 No media cutover remains for local, staging or production. After a suitable
 recovery window, review retirement of the old media trees and releases as a
