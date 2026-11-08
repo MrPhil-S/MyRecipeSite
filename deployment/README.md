@@ -1,6 +1,6 @@
 # FastAPI deployment reference
 
-The recorded Pi layout (last read-only check 2026-10-26) has FastAPI production
+The Pi layout verified during the 2026-11-05 media release has FastAPI production
 behind Nginx on public port 5000 and a separate FastAPI staging service on
 port 8011. Production uses `MyRecipes`; local development and staging share
 `MyRecipes_DEV`. Both Pi applications run through systemd/Uvicorn, without
@@ -13,8 +13,9 @@ scripts are preserved under
 The dated deployment investigations and six-phase local cleanup record are at
 `C:\Users\<WindowsUser>\MyRecipeSite_Local\archives\cleanup-guidance_20261104`.
 These are historical records, not current upgrade or rollback procedures.
-The former Flask source remains archived locally; its Pi service and media
-retirement require separate work. This file is the maintained deployment guide.
+The former Flask source remains archived locally. Old Pi media trees are kept
+for rollback, not used by the current app. Their eventual removal is separate
+from deployment. This file is the maintained deployment guide.
 In the paths below, `<WindowsUser>` means the Windows profile folder name.
 PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 
@@ -23,15 +24,26 @@ PowerShell commands use `$env:USERPROFILE` so they work without editing it.
 | Environment | Address | App location | Database |
 | --- | --- | --- | --- |
 | Local development | `http://127.0.0.1:8001/` | `C:\projects\MyRecipeSite`; `recipe_app_v2/start_native.ps1` | `MyRecipes_DEV` |
-| Pi staging | `http://192.168.1.13:8011/` | `/home/pi/fastapi-preview`; `recipe-fastapi-preview.service` | `MyRecipes_DEV` |
+| Pi staging | `http://192.168.1.13:8011/` | `/home/pi/fastapi-preview-releases/media-4c74a2b`; `recipe-fastapi-preview.service` | `MyRecipes_DEV` |
 | Pi production | `http://192.168.1.13:5000/` | `/home/pi/myrecipes-v2/current`; `recipe-fastapi-production.service` behind Nginx | `MyRecipes` |
 
 Local development and Pi staging share the same `MyRecipes_DEV` database at
 `192.168.1.14:3307`; a local data or schema change affects staging too.
-The recorded production `current` symlink pointed to
-`/home/pi/myrecipes-v2/releases/0220515` on 2026-10-26. Staging serves port
+The production `current` symlink points to
+`/home/pi/myrecipes-v2/releases/media-4c74a2b`. Staging serves port
 8011 directly, so it does not test the production Nginx route. Refresh these
-facts before a separately authorized deployment.
+facts before each deployment. Staging's environment file remains
+`/home/pi/fastapi-preview/.env`; its effective code path is selected by the
+systemd override, not by that environment file's location.
+
+All persistent media and editable aliases use one `RECIPE_UPLOADS` root per
+environment: local `$env:USERPROFILE\MyRecipeSite_Local\media`, staging
+`/home/pi/fastapi-preview-data/uploads`, production
+`/var/lib/myrecipesite-v2/uploads`. Each contains `images`, `pdfs`, and
+`ingredient_images`. Production refuses to start with a missing, relative,
+nonexistent, or in-release upload root. New releases need no media symlinks.
+Local and staging share database rows but not media files; new uploads are
+not automatically synchronized between those environments.
 
 ## Runtime archive
 
@@ -77,15 +89,18 @@ imports. The app archive intentionally excludes `deployment/*.py`.
 The production write-flag helper remains for review with a future procedure;
 none of these tools were run on Pi in Phase 06.
 
-The Pi asset-backup timer was confirmed disabled on 2026-11-05. Its installed
-script still covers only the three legacy directories. This branch updates
-the source list to the single production media root, but that definition must
-not be installed or enabled until media has been copied and a complete new
-snapshot verified. Existing NAS snapshots lack v2 uploads and remain
-untouched. The `backup_pi.sh` full-snapshot script includes the old media,
-production uploads, code, configuration, and both databases; it still expects
-old Pi paths. Refresh its source list before later releases. Copy a fresh
-complete backup off Pi and verify its hashes before any production change.
+The installed asset-backup script now covers the consolidated production
+media root, including new uploads and editable aliases. Its NAS series is
+`//192.168.1.14/pi_myRecipes_backup/MyRecipeSite/consolidated-media`;
+old-layout snapshots remain untouched outside this series. Daily snapshots
+retain 30 days; monthly snapshots retain 12 months. The verified nightly timer
+is enabled for 03:15 Pi local time (up to five minutes randomized delay).
+Asset backups do not include databases. Use `backup_pi.sh` for release
+snapshots: it includes both
+databases, both Pi media roots, release folders, configuration and service
+overrides, plus old media while those paths still exist. Missing optional
+legacy paths are recorded rather than blocking future backups. Copy a fresh
+complete snapshot off Pi and verify its hashes before any production change.
 Never replace editable aliases with packaged seed data.
 
 ## Next FastAPI release
@@ -104,21 +119,24 @@ Never replace editable aliases with packaged seed data.
 4. Take and verify a fresh production backup covering both databases, code,
    configuration, all three media trees, v2 uploads and editable aliases.
    Verify the off-Pi copy before the production checkpoint.
-5. Start a separate production candidate beside the running FastAPI release,
+5. Start a separate read-only production candidate beside the running release,
    using the same archive tested on staging and the existing persistent media.
-   Test it before changing the public Nginx route.
-6. At the separately approved cutover, route port 5000 to the healthy candidate
-   and test the public app. Keep the previous FastAPI process, release and Nginx
-   configuration available for code rollback. A database restore is a separate
+   Test it before changing the active production release.
+6. At the approved cutover, atomically switch `/home/pi/myrecipes-v2/current`
+   to the prepared release and restart `recipe-fastapi-production.service`.
+   Nginx stays on port 5000, proxying to 8012. Test the public app and owned
+   upload fixture; keep the previous release and service file for rollback.
+   Stop the temporary candidate after verification. A database restore is a separate
    data-loss decision. Write and review a version-specific promotion and
    rollback procedure before doing any of these Pi steps.
 
 The original Flask cutover scripts in the archive do not apply to a
 FastAPI-to-FastAPI release. Before media consolidation, the three legacy trees
 are reached through release symlinks and new uploads through `RECIPE_UPLOADS`.
-The consolidation branch changes readers and backups to one root per
-environment; preserve the old trees for rollback until that release is
-verified. Follow [the consolidation runbook](MEDIA_CONSOLIDATION.md).
+Consolidation is deployed: readers and backups use one root per environment.
+Preserve the old trees for the recovery window. Follow
+[the consolidation runbook](MEDIA_CONSOLIDATION.md) for exact release evidence
+and rollback commands.
 
 ## Deferred cooked-date picker
 
