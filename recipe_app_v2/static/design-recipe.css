@@ -16,6 +16,11 @@
 .photo-favorite { position: absolute; top: 16px; left: 16px; }
 .hero-photo figcaption { position: absolute; bottom: 16px; left: 16px; right: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; background: transparent; padding: 0; border-radius: 0; font-size: 10px; }
 .photo-badge { display: inline-flex; align-items: center; min-height: 29px; padding: 6px 10px; background: #fff; color: var(--ink); border-radius: 2px; box-shadow: 0 1px 3px #17191d1c; white-space: nowrap; }
+.photo-cooked-action { margin: 0; }
+.photo-badge--cooked { gap: 8px; border: 0; font: inherit; cursor: pointer; }
+.photo-badge--cooked:hover, .photo-badge--cooked:focus-visible { color: var(--accent); }
+.photo-badge--cooked:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.photo-badge-plus { font-size: 16px; font-weight: 700; line-height: 10px; }
 .photo-badge--planned { color: var(--accent); }
 @media (min-width: 601px) {
   .hero-photo figcaption:has(.photo-badge--planned) { right: 16px; justify-content: space-between; }

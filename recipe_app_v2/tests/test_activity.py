@@ -294,6 +294,10 @@ class ActivityTests(unittest.TestCase):
 
     def test_detail_htmx_actions_return_fragments_without_extra_visits(self):
         import json
+        initial = self.client.get('/recipes/1?log_visit=false').text
+        self.assertIn('class="photo-badge photo-badge--cooked"', initial)
+        self.assertIn('aria-label="Add a cooked time for Chicken soup; cooked 0 times"', initial)
+        self.assertIn('class="photo-badge-plus" aria-hidden="true">+</span>', initial)
         data = self.form('/recipes/1?log_visit=false')
         target = '/recipes/1?collection_id=-2&cuisine_id=0'
         response = self.client.post('/recipes/1/actions/cooked',
@@ -306,6 +310,7 @@ class ActivityTests(unittest.TestCase):
         self.assertEqual(fragment.status_code, 200)
         self.assertIn('id="recipe-detail-page"', fragment.text)
         self.assertIn('Cooked 1 time', fragment.text)
+        self.assertIn('aria-label="Add a cooked time for Chicken soup; cooked 1 time"', fragment.text)
         self.assertIn('hx-swap-oob="outerHTML"', fragment.text)
         self.assertNotIn('<html', fragment.text)
         self.assertEqual(self.count(recipe_view_date), 0)
