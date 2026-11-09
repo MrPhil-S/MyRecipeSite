@@ -34,8 +34,6 @@ RUNTIME = tuple(sorted(
     + [APP + "static/" + name for name in STATIC]
     + [APP + "image_alias_seed.json", APP + "requirements.txt"]
 ))
-DEFERRED_MIGRATION = APP + "migrations/versions/0002_cooked_recorded_dt.py"
-GUARD_WORDS = (b"recorded_dt", b"custom_cooked_date", b"custom-date", b"custom_date")
 
 
 def git(*args):
@@ -57,8 +55,6 @@ def build(output, mode):
     tracked = set(git("ls-files", "-z", "--", "recipe_app_v2").decode().strip("\0").split("\0"))
     dirty = bool(git("status", "--porcelain", "--untracked-files=all"))
     committed = set(git("ls-tree", "-r", "--name-only", "-z", commit, "--", "recipe_app_v2").decode().strip("\0").split("\0"))
-    if DEFERRED_MIGRATION in committed or (ROOT / DEFERRED_MIGRATION).exists():
-        fail("Deferred cooked-date migration is present; archive blocked.")
     if mode == "release" and dirty:
         fail("Committed release requires a clean working tree.")
 
@@ -78,8 +74,6 @@ def build(output, mode):
             provenance[path] = "tracked-working-tree" if path in tracked else "untracked-working-tree"
         if not data:
             fail("Empty runtime input: " + path)
-        if path.endswith((".py", ".html", ".js")) and any(word in data for word in GUARD_WORDS):
-            fail("Deferred cooked-date runtime content found in: " + path)
         source[path] = data
 
     # A newly added template or asset must receive an explicit runtime review.

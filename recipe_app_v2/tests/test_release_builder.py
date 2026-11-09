@@ -1,4 +1,4 @@
-"""Release provenance and deferred-feature checks in an isolated Git repository."""
+"""Release provenance and input checks in an isolated Git repository."""
 
 import hashlib
 import json
@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from deployment.build_release import GUARD_WORDS, ROOT, RUNTIME
+from deployment.build_release import ROOT, RUNTIME
 
 
 class ReleaseBuilderTests(unittest.TestCase):
@@ -23,13 +23,7 @@ class ReleaseBuilderTests(unittest.TestCase):
         for name in RUNTIME:
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            data = (ROOT / name).read_bytes()
-            # Keep this isolated fixture deployable even when the working branch
-            # contains the explicitly deferred cooked-date feature.
-            if name.endswith((".py", ".html", ".js")):
-                for word in GUARD_WORDS:
-                    data = data.replace(word, b"fixture_field")
-            target.write_bytes(data)
+            shutil.copy2(ROOT / name, target)
         self.git("init", "-q")
         self.git("add", ".")
         self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
@@ -69,17 +63,28 @@ class ReleaseBuilderTests(unittest.TestCase):
             self.assertIn(b"reviewed preview edit",
                           archive.extractfile("recipe_app_v2/templates/shared/icons.html").read())
 
-    def test_missing_input_and_deferred_migration_are_rejected(self):
+    def test_missing_runtime_input_is_rejected(self):
         (self.root / "recipe_app_v2/templates/shared/icons.html").unlink()
         result = self.build("preview", "missing.tar.gz")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Required runtime input is missing", result.stderr)
+
+    def test_migration_source_does_not_block_release_or_enter_runtime_archive(self):
         migration = self.root / "recipe_app_v2/migrations/versions/0002_cooked_recorded_dt.py"
         migration.parent.mkdir(parents=True)
-        migration.write_text("pass\n")
-        result = self.build("preview", "deferred.tar.gz")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Deferred cooked-date migration", result.stderr)
+        migration.write_text("revision = '0002'\n")
+        runtime = self.root / "recipe_app_v2/main.py"
+        runtime.write_bytes(runtime.read_bytes() + b"\n# recorded_dt custom_date\n")
+        self.git("add", ".")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                 "commit", "-qm", "add migration source")
+        result = self.build("release", "with-migration.tar.gz")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with tarfile.open(self.root / "tmp/with-migration.tar.gz") as archive:
+            self.assertNotIn("recipe_app_v2/migrations/versions/0002_cooked_recorded_dt.py",
+                             archive.getnames())
+            self.assertIn(b"recorded_dt custom_date",
+                          archive.extractfile("recipe_app_v2/main.py").read())
 
     def test_release_requires_required_input_in_the_commit(self):
         icon = self.root / "recipe_app_v2/templates/shared/icons.html"
@@ -91,13 +96,7 @@ class ReleaseBuilderTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Required committed runtime input is missing", result.stderr)
 
-    def test_deferred_runtime_and_unreviewed_asset_are_rejected(self):
-        source = self.root / "recipe_app_v2/main.py"
-        source.write_bytes(source.read_bytes() + b"\n# custom_date handler\n")
-        result = self.build("preview", "runtime.tar.gz")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Deferred cooked-date runtime content", result.stderr)
-        source.write_bytes((ROOT / "recipe_app_v2/main.py").read_bytes())
+    def test_unreviewed_asset_is_rejected(self):
         extra = self.root / "recipe_app_v2/static/unreviewed.js"
         extra.write_text("alert(1)")
         result = self.build("preview", "asset.tar.gz")

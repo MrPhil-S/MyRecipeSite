@@ -209,13 +209,16 @@ Preserve the old trees for the recovery window. Follow
 [the consolidation runbook](MEDIA_CONSOLIDATION.md) for exact release evidence
 and rollback commands.
 
-## Deferred cooked-date picker
+## Cooked-date migration and release packaging
 
-Root `AGENTS.md` excludes its UI, custom-date handling and `0002` migration
-from Pi deployment until the user explicitly requests that feature. The local
+`build_release.py` accepts the cooked-date runtime and no longer blocks a
+checkout containing migration `0002`. The runtime archive still excludes
+migrations; generate, review, and apply migration SQL separately before
+starting code that needs the new column. Root `AGENTS.md` still requires an
+explicit instruction before deploying the feature to the Pi. The local
 `MyRecipes_DEV` database already has `recorded_dt`; do not remove it. The
 production schema lacked that column at the dated 2026-10-24 inspection.
 Recheck both schemas before planning the feature. The existing Alembic `0001`
 is an offline baseline for an empty database; do not run `alembic upgrade head`
 on production. The archived `FUTURE_DEPLOYMENTS.md` retains the detailed
-historical feature example. No schema change is part of this cleanup.
+historical feature example. Changing the builder does not change any database.
