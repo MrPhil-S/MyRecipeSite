@@ -88,12 +88,12 @@ Preview artifacts must never be transferred to either Pi.
 
 `release` mode requires a clean working tree and reads each runtime member
 from the recorded commit. It fails if a required member, including the shared
-icons template, is absent from that commit. It is available only after a
-separately authorized review and commit. Both modes reject the deferred
-`0002_cooked_recorded_dt.py` migration and custom cooked-date runtime content.
-Do not change that guard or deploy the local feature without the user's
-explicit instruction under root `AGENTS.md`. The local `recorded_dt` column
-remains in `MyRecipes_DEV`.
+icons template, is absent from that commit. The builder accepts cooked-date
+runtime code and a checkout containing `0002_cooked_recorded_dt.py`, but
+migration files are not included in the archive or applied to a database.
+Review and execute migration SQL separately. Root `AGENTS.md` still requires
+an explicit instruction before deploying this feature to the Pi. The local
+`recorded_dt` column remains in `MyRecipes_DEV`.
 
 ## Operations and data
 
