@@ -73,8 +73,10 @@ class ActivityTests(unittest.TestCase):
         with Session(self.engine) as session:
             now = session.scalar(select(func.current_timestamp()))
             older = now - timedelta(hours=2)
-            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=older),
-                             recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=1))])
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=older,
+                                                recorded_dt=older),
+                             recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=1),
+                                                recorded_dt=now - timedelta(hours=1))])
             session.commit()
         response = self.client.get('/recipes/1?log_visit=false')
         self.assertIn('actions/undo-cooked', response.text)
@@ -88,7 +90,8 @@ class ActivityTests(unittest.TestCase):
     def test_undo_cooked_expires_after_24_hours(self):
         with Session(self.engine) as session:
             now = session.scalar(select(func.current_timestamp()))
-            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=25)),
+            session.add_all([recipe_cooked_date(recipe_id=1, recipe_cooked_dt=now - timedelta(hours=25),
+                                                recorded_dt=now - timedelta(hours=25)),
                              Recipe_Plan_Date(recipe_id=1)])
             session.commit()
         self.assertNotIn('actions/undo-cooked', self.client.get('/recipes/1?log_visit=false').text)
@@ -105,7 +108,8 @@ class ActivityTests(unittest.TestCase):
 
     def test_cooked_can_be_recorded_again_after_an_existing_event(self):
         with Session(self.engine) as session:
-            session.add(recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2025, 1, 1)))
+            session.add(recipe_cooked_date(recipe_id=1, recipe_cooked_dt=datetime(2025, 1, 1),
+                                           recorded_dt=datetime(2025, 1, 1)))
             session.commit()
         page = self.client.get('/recipes/1?log_visit=false').text
         self.assertIn('>Mark cooked</button>', page)
@@ -114,6 +118,19 @@ class ActivityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         self.assertEqual(self.count(recipe_cooked_date), 2)
         self.assertIn('actions/undo-cooked', self.client.get('/recipes/1?log_visit=false').text)
+
+    def test_backdated_cooking_can_be_undone_within_24_hours_of_recording(self):
+        data = dict(self.form(), cooked_date='2025-01-02')
+        response = self.client.post('/recipes/1/actions/cooked', data=data, follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        with Session(self.engine) as session:
+            cooked = session.scalar(select(recipe_cooked_date))
+            self.assertEqual(cooked.recipe_cooked_dt.date(), datetime(2025, 1, 2).date())
+            self.assertGreater(cooked.recorded_dt, cooked.recipe_cooked_dt)
+        self.assertIn('actions/undo-cooked', self.client.get('/recipes/1?log_visit=false').text)
+        response = self.client.post('/recipes/1/actions/undo-cooked', data=self.form(), follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(self.count(recipe_cooked_date), 0)
 
     def test_favorites_are_idempotent_existing_collection_links_and_shared_badges(self):
         data = self.form()

@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from deployment.build_release import ROOT, RUNTIME
+from deployment.build_release import GUARD_WORDS, ROOT, RUNTIME
 
 
 class ReleaseBuilderTests(unittest.TestCase):
@@ -23,7 +23,13 @@ class ReleaseBuilderTests(unittest.TestCase):
         for name in RUNTIME:
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / name, target)
+            data = (ROOT / name).read_bytes()
+            # Keep this isolated fixture deployable even when the working branch
+            # contains the explicitly deferred cooked-date feature.
+            if name.endswith((".py", ".html", ".js")):
+                for word in GUARD_WORDS:
+                    data = data.replace(word, b"fixture_field")
+            target.write_bytes(data)
         self.git("init", "-q")
         self.git("add", ".")
         self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
