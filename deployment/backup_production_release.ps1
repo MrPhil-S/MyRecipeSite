@@ -38,7 +38,9 @@ if ($LASTEXITCODE -ne 0 -or @($remoteHashOutput).Count -ne 1 -or
 $remoteHash = $Matches[1].ToLowerInvariant()
 $localText = [System.IO.File]::ReadAllText($localScript) -replace "`r`n", "`n"
 $localBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($localText)
-$localHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($localBytes)).ToLowerInvariant()
+$sha256 = [Security.Cryptography.SHA256]::Create()
+try { $localHash = [BitConverter]::ToString($sha256.ComputeHash($localBytes)).Replace('-', '').ToLowerInvariant() }
+finally { $sha256.Dispose() }
 if ($remoteHash -ne $localHash) {
     throw 'Pi backup script differs from deployment/backup_pi.sh. Review and install the intended version first.'
 }
@@ -50,7 +52,9 @@ if ($LASTEXITCODE -ne 0 -or @($nasHashOutput).Count -ne 1 -or
 $installedNasHash = $Matches[1].ToLowerInvariant()
 $nasText = [System.IO.File]::ReadAllText($localNasHelper) -replace "`r`n", "`n"
 $nasBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($nasText)
-$reviewedNasHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($nasBytes)).ToLowerInvariant()
+$sha256 = [Security.Cryptography.SHA256]::Create()
+try { $reviewedNasHash = [BitConverter]::ToString($sha256.ComputeHash($nasBytes)).Replace('-', '').ToLowerInvariant() }
+finally { $sha256.Dispose() }
 if ($installedNasHash -ne $reviewedNasHash) {
     throw 'Pi NAS copy helper differs from deployment/copy_release_snapshot_to_nas.py. Review and install the intended version first.'
 }
