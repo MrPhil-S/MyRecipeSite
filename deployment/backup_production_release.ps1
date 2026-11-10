@@ -30,23 +30,27 @@ foreach ($program in @('ssh', 'scp')) {
 }
 
 $sshArgs = @('-i', $key, '-o', 'IdentitiesOnly=yes', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10')
-$remoteHashOutput = & ssh @sshArgs $piHost "sha256sum $remoteScript"
+$remoteHashOutput = & ssh @sshArgs $piHost "tr -d '\r' < $remoteScript | sha256sum"
 if ($LASTEXITCODE -ne 0 -or @($remoteHashOutput).Count -ne 1 -or
-    -not ($remoteHashOutput -match '^([a-fA-F0-9]{64})  /home/pi/myrecipesite-deploy-backups/backup_pi\.sh$')) {
+    -not ($remoteHashOutput -match '^([a-fA-F0-9]{64})  -$')) {
     throw 'Cannot verify the installed Pi backup script. No backup started.'
 }
 $remoteHash = $Matches[1].ToLowerInvariant()
-$localHash = (Get-FileHash -LiteralPath $localScript -Algorithm SHA256).Hash.ToLowerInvariant()
+$localText = [System.IO.File]::ReadAllText($localScript) -replace "`r`n", "`n"
+$localBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($localText)
+$localHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($localBytes)).ToLowerInvariant()
 if ($remoteHash -ne $localHash) {
     throw 'Pi backup script differs from deployment/backup_pi.sh. Review and install the intended version first.'
 }
-$nasHashOutput = & ssh @sshArgs $piHost "sha256sum $remoteNasHelper"
+$nasHashOutput = & ssh @sshArgs $piHost "tr -d '\r' < $remoteNasHelper | sha256sum"
 if ($LASTEXITCODE -ne 0 -or @($nasHashOutput).Count -ne 1 -or
-    -not ($nasHashOutput -match '^([a-fA-F0-9]{64})  /home/pi/myrecipesite-deploy-backups/copy_release_snapshot_to_nas\.py$')) {
+    -not ($nasHashOutput -match '^([a-fA-F0-9]{64})  -$')) {
     throw 'Cannot verify the installed Pi NAS copy helper. No backup started.'
 }
 $installedNasHash = $Matches[1].ToLowerInvariant()
-$reviewedNasHash = (Get-FileHash -LiteralPath $localNasHelper -Algorithm SHA256).Hash.ToLowerInvariant()
+$nasText = [System.IO.File]::ReadAllText($localNasHelper) -replace "`r`n", "`n"
+$nasBytes = [System.Text.UTF8Encoding]::new($false).GetBytes($nasText)
+$reviewedNasHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($nasBytes)).ToLowerInvariant()
 if ($installedNasHash -ne $reviewedNasHash) {
     throw 'Pi NAS copy helper differs from deployment/copy_release_snapshot_to_nas.py. Review and install the intended version first.'
 }
